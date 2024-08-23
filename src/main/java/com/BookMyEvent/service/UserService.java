@@ -1,14 +1,17 @@
 package com.BookMyEvent.service;
 
-import com.BookMyEvent.entity.Users;
+import com.BookMyEvent.entity.User;
+import com.BookMyEvent.entity.dto.UserResponseDto;
 
 import java.util.List;
 
 public interface UserService {
 
-   List<Users> findAll();
+   List<UserResponseDto> findAllUserProfiles();
 
-   Users findById(String id);
+   UserResponseDto findUserInfoById(String id);
 
-   Users save(Users user);
+   UserResponseDto findUserInfoByEmail(String userEmail);
+
+   UserResponseDto save(User user);
 }

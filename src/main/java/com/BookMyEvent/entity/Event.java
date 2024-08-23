@@ -9,11 +9,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Document
+@Document(collection = "events")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Events {
+public class Event {
 
   @Id
   private String id;
@@ -25,6 +25,6 @@ public class Events {
   private String phoneNumber;
   private Long ticketPrice;
   private String location;
-  private List<Users> organizers;
+  private List<User> organizers;
 
 }

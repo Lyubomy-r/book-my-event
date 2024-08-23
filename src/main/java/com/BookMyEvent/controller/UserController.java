@@ -1,15 +1,13 @@
 package com.BookMyEvent.controller;
 
-import com.BookMyEvent.dao.EventRepository;
-import com.BookMyEvent.dao.UsersRepository;
-import com.BookMyEvent.entity.Events;
-import com.BookMyEvent.entity.Users;
+import com.BookMyEvent.entity.User;
+import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.service.UserService;
-import com.BookMyEvent.service.serviceImp.UserServiceImp;
-import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,21 +18,23 @@ import java.util.List;
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
+@Slf4j
 public class UserController {
 
   private final UserService userService;
 
   @GetMapping()
-  public ResponseEntity<List<Users>> findAll (){
-    return ResponseEntity.ok(userService.findAll());
+  public ResponseEntity<List<UserResponseDto>> findAllUserProfiles() {
+    return ResponseEntity.ok(userService.findAllUserProfiles());
   }
-  @GetMapping("/{id}")
-  public ResponseEntity<Users> findById (@PathParam("id") String id){
-    return ResponseEntity.ok(userService.findById(id));
+
+  @GetMapping("/{userId}")
+  public ResponseEntity<UserResponseDto> findUserInfoById(@PathVariable("userId") String userId) {
+    return ResponseEntity.ok(userService.findUserInfoById(userId));
   }
 
   @PostMapping()
-  public ResponseEntity<Users> save (@RequestBody Users user){
+  public ResponseEntity<UserResponseDto> save(@RequestBody User user) {
     return ResponseEntity.ok(userService.save(user));
   }
 
