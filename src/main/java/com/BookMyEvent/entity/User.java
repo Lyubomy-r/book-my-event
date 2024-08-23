@@ -9,11 +9,11 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
 
-@Document
+@Document(collection = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Users {
+public class User {
 
   @Id
   private String id;
