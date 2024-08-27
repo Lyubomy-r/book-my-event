@@ -24,6 +24,7 @@ public class Event {
   private LocalDateTime creationDate;
   private String phoneNumber;
   private Long ticketPrice;
+  private Integer numberOfTickets;
   private String location;
   private List<User> organizers;
 

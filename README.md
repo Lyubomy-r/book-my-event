@@ -10,10 +10,10 @@ It handles user authentication, event creation, ticket transactions, and ensures
 - Java 17 
 - PostgreSQL, MongoDB. 
 - Lombok 
+- Mapper
 - Slf4j 
 - Swagger 
-- JUnit, Mockito 
-- GitHub 
+- JUnit, Mockito
 - Maven 
 
 ## Public IP
