@@ -11,7 +11,7 @@ import java.util.Optional;
 @Repository
 public interface EventRepository extends MongoRepository<Event, String> {
 
-  @Query(value = "{ 'id': ?0 }", fields = "{ 'numberOfTickets': 1,'_id': 0}")
+  @Query(value = "{ 'id': ?0 }", fields = "{ 'numberOfTickets': 1}")
   Optional<Event> findEventNumberOfTickets(String id);
 
 

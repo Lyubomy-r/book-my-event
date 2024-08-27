@@ -7,11 +7,5 @@ import java.util.List;
 
 public interface UserService {
 
-   List<UserResponseDto> findAllUserProfiles();
 
-   UserResponseDto findUserInfoById(String id);
-
-   UserResponseDto findUserInfoByEmail(String userEmail);
-
-   UserResponseDto save(User user);
 }
