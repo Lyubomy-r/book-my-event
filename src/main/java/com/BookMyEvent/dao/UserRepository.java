@@ -12,14 +12,14 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends MongoRepository<User, String> {
 
-  @Query(value = "{ 'id': ?0 }", fields = "{ 'id': 1, 'name': 1, 'email': 1, 'creationDate': 1, 'location': 1 }")
+  @Query(value = "{ 'id': ?0 }", fields = "{ 'id': 1, 'name': 1, 'email': 1, 'mailConfirmation': 1,'role': 1, 'creationDate': 1, 'location': 1 }")
   Optional<UserResponseDto> findUserInfoById(String id);
 
-  @Query(value = "{}", fields = "{ 'id': 1, 'name': 1, 'email': 1, 'creationDate': 1, 'location': 1}")
+  @Query(value = "{}", fields = "{  'id': 1, 'name': 1, 'email': 1,'mailConfirmation': 1,'role': 1, 'creationDate': 1, 'location': 1 }")
   List<UserResponseDto> findAllUserProfiles();
 
-  @Query(value = "{ 'email': ?0 }", fields = "{ 'id': 1, 'name': 1, 'email': 1, 'creationDate': 1, 'location': 1 }")
-  Optional<UserResponseDto> findUserInfoByEmail(String userEmail);
+  @Query(value = "{ 'email': ?0 }", fields = "{ 'id': 1, 'name': 1, 'email': 1,'mailConfirmation': 1,'role': 1, 'creationDate': 1, 'location': 1 }")
+  User findUserInfoByEmail(String userEmail);
 
   boolean existsByEmail(String id);
 
