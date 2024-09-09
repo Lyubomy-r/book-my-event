@@ -42,7 +42,7 @@ public class MailServiceImp implements MailService {
         session.setDebug(true);
         try {
             var password = randomPasswordGenerator();
-            var url = "http://localhost:8080/mail-confirmation/" + emailTo + "/" + password;
+            var url = "http://localhost:8080/api/v1/mail-confirmation/" + emailTo + "/" + password;
             var message = new MimeMessage(session);
             message.setFrom(new InternetAddress(from));
             message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
