@@ -6,6 +6,6 @@ import com.BookMyEvent.entity.dto.UserResponseDto;
 import java.util.List;
 
 public interface UserService {
-
+   public List<User> GetUsers();
 
 }

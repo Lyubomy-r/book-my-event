@@ -22,5 +22,7 @@ public class UserServiceImp implements UserService {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
 
-
+  public List<User> GetUsers(){
+    return userRepository.findAll();
+  }
 }
