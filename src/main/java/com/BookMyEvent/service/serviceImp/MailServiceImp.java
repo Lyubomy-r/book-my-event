@@ -42,7 +42,7 @@ public class MailServiceImp implements MailService {
         session.setDebug(true);
         try {
             var password = randomPasswordGenerator();
-            var url = "http://localhost:8080/api/v1/mail-confirmation/" + emailTo + "/" + password;
+            var url = "http://localhost:8080/api/v1/authorize/mail-confirmation/" + emailTo + "/" + password;
             var message = new MimeMessage(session);
             message.setFrom(new InternetAddress(from));
             message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
@@ -54,7 +54,7 @@ public class MailServiceImp implements MailService {
 
             // Hash the password
             var hashedPassword = passwordEncoder.encode(password);
-            mailRepository.save(new UserEmailData(hashedPassword,emailTo));
+            mailRepository.save(new UserEmailData(emailTo,hashedPassword));
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -64,7 +64,7 @@ public class MailServiceImp implements MailService {
         var UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         var LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
         var DIGITS = "0123456789";
-        var SPECIAL_CHARACTERS = "!@#$%^&*()-_";
+        var SPECIAL_CHARACTERS = "!&*()";
 
         var ALL_CHARACTERS = UPPERCASE + LOWERCASE + DIGITS + SPECIAL_CHARACTERS;
         var RANDOM = new SecureRandom();

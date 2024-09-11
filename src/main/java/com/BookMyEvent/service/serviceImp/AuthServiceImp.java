@@ -53,6 +53,8 @@ public class AuthServiceImp implements AuthService {
             var passwordEncoder = new BCryptPasswordEncoder();
             if (passwordEncoder.matches(password, userEmailData.getEmailCode())) {
                 user.get().setMailConfirmation(true);
+                var existingUser = user.get();
+                repository.save(existingUser);
                 return ResponseEntity.ok("Email is confirmed");
             }
             else {
