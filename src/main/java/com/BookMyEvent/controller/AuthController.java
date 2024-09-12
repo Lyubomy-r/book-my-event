@@ -42,4 +42,5 @@ public class AuthController {
         return service.login(loginData);
     }
 
+
 }
