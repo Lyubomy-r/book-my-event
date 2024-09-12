@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/secured")
+@RequestMapping("/admin")
 @Slf4j
 @RequiredArgsConstructor
 public class AdminController {

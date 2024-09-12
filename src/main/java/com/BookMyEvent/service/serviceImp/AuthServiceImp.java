@@ -69,15 +69,27 @@ public class AuthServiceImp implements AuthService {
 
     }
 
-    private String generateToken(Authentication authentication) {
-        var token = Jwts.builder()
-                .setSubject(authentication.getName())
-                .claim("role", Role.USER )  // Добавляем роль в токен
-                .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + 1000 * 60 * 60 * 10)) // 10 часов
-                .signWith(SignatureAlgorithm.HS512, "SecretKeyToGenJWTs")
-                .compact();
-        return token;
+    private String generateToken(Authentication authentication, Role role) {
+        if(role == Role.ADMIN){
+            var token = Jwts.builder()
+                    .setSubject(authentication.getName())
+                    .claim("role", Role.ADMIN )  // Добавляем роль в токен
+                    .setIssuedAt(new Date())
+                    .setExpiration(new Date((new Date()).getTime() + 1000 * 60 * 60 * 10)) // 10 часов
+                    .signWith(SignatureAlgorithm.HS512, "SecretKeyToGenJWTs")
+                    .compact();
+            return token;
+        }
+        else {
+            var token = Jwts.builder()
+                    .setSubject(authentication.getName())
+                    .claim("role", Role.USER )  // Добавляем роль в токен
+                    .setIssuedAt(new Date())
+                    .setExpiration(new Date((new Date()).getTime() + 1000 * 60 * 60 * 10)) // 10 часов
+                    .signWith(SignatureAlgorithm.HS512, "SecretKeyToGenJWTs")
+                    .compact();
+            return token;
+        }
     }
 
     public ResponseEntity<String> login(LoginDto loginData ) {
@@ -87,7 +99,7 @@ public class AuthServiceImp implements AuthService {
                 var passwordEncoder = new BCryptPasswordEncoder();
                 if (passwordEncoder.matches(loginData.getPassword(), user.get().getPassword())) {
                     var authentication = SecurityContextHolder.getContext().getAuthentication();
-                    var token = generateToken(authentication);
+                    var token = generateToken(authentication, user.get().getRole());
                     return ResponseEntity.ok().body(token);
                 }
                 else {

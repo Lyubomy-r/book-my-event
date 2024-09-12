@@ -50,7 +50,7 @@ public class JwtAuthentication extends OncePerRequestFilter {
                 .setSigningKey("SecretKeyToGenJWTs")
                 .parseClaimsJws(token)
                 .getBody();
-        return claims.get("role", String.class);
+        return "ROLE_" + claims.get("role", String.class);
     }
 
     private String extractJwtFromRequest(HttpServletRequest request) {
