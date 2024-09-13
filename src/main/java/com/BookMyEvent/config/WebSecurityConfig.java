@@ -36,6 +36,7 @@ public class WebSecurityConfig {
                 .cors(cors -> cors.disable()) // Отключаем CORS и CSRF, если не требуется
                 .authorizeHttpRequests((requests) -> requests
                         .requestMatchers("/secured/**").authenticated()
+                        .requestMatchers("/user/**").hasRole("USER")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().permitAll()
                 )
