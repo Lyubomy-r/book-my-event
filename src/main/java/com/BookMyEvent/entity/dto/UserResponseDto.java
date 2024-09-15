@@ -1,5 +1,6 @@
 package com.BookMyEvent.entity.dto;
 
+import com.BookMyEvent.entity.Status;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,4 +17,5 @@ public class UserResponseDto {
     private String email;
     private LocalDateTime creationDate;
     private String location;
+    private Status status;
 }
