@@ -1,5 +1,7 @@
 package com.BookMyEvent.entity;
 
+import com.BookMyEvent.entity.Enums.Role;
+import com.BookMyEvent.entity.Enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,6 +24,8 @@ public class User {
   @Indexed(unique = true)
   private String email;
   private String password;
+  private boolean mailConfirmation;
+  private Role role;
   private LocalDateTime creationDate;
   private String location;
   private Status status;

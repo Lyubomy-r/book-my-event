@@ -17,9 +17,7 @@ It handles user authentication, event creation, ticket transactions, and ensures
 - Maven 
 
 ## Public IP
-[Public IP]
-(........)
+[Public IP](https://rendereventapp.onrender.com)
 
-[swagger doc.] 
-(........)
+[Swagger doc.](https://rendereventapp.onrender.com/api/v1/swagger-ui/index.html)
 

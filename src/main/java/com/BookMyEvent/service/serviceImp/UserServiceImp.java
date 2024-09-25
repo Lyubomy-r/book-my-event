@@ -9,7 +9,6 @@ import com.BookMyEvent.mapper.UserMapper;
 import com.BookMyEvent.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -40,8 +39,7 @@ public class UserServiceImp implements UserService {
       log.warn("UserServiceImp::findUserInfoById. Return error message.");
       throw new GeneralException("User ID cannot be null or empty", HttpStatus.BAD_REQUEST);
     }
-    ObjectId objectId = new ObjectId(userId);
-    Optional<UserResponseDto> user = userRepository.findUserInfoById(objectId);
+    Optional<UserResponseDto> user = userRepository.findUserInfoById(userId);
     if (user.isPresent()) {
       log.info("UserServiceImp::findUserInfoById. Return user by ID: {}.", userId);
 
@@ -86,7 +84,6 @@ public class UserServiceImp implements UserService {
     }
   }
 
-
   @Override
   public UserResponseDto updateFieldsFromAdmin(String userId, UserUpdateDto userUpdateDto) {
     if (userUpdateDto == null || (userId == null || userId.isEmpty())) {
@@ -119,6 +116,4 @@ public class UserServiceImp implements UserService {
       throw new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
     }
   }
-
-
 }

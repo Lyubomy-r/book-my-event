@@ -1,6 +1,7 @@
 package com.BookMyEvent.entity.dto;
 
-import com.BookMyEvent.entity.Status;
+import com.BookMyEvent.entity.Enums.Role;
+import com.BookMyEvent.entity.Enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,8 @@ public class UserResponseDto {
     private String name;
     private String email;
     private LocalDateTime creationDate;
+    private boolean mailConfirmation;
+    private Role role;
     private String location;
     private Status status;
 }
