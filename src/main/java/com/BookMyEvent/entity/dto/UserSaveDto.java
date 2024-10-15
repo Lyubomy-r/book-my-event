@@ -1,6 +1,7 @@
 package com.BookMyEvent.entity.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.Email;
@@ -11,6 +12,7 @@ import jakarta.validation.constraints.Size;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class UserSaveDto {
 
     @NotBlank(message = "Ім'я користувача не може бути порожнім")

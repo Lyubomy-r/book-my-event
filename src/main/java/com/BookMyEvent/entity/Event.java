@@ -22,10 +22,13 @@ public class Event {
   private String photoUrl;
   private LocalDateTime eventStartDate;
   private LocalDateTime creationDate;
+  private Integer availableTickets;
   private String phoneNumber;
   private Long ticketPrice;
   private Integer numberOfTickets;
   private String location;
   private List<User> organizers;
+  private double rating;
+  private EventType eventType;
 
 }

@@ -24,6 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -59,11 +60,14 @@ public class AuthServiceImp implements AuthService {
             var hashedPassword = passwordEncoder.encode(userData.getPassword());
             userData.setPassword(hashedPassword);
             User newUser = userMapper.toUserFromUserSaveDto(userData);
+            LocalDateTime timeCreate = LocalDateTime.now();
+            newUser.setCreationDate(timeCreate);
             newUser.setMailConfirmation(false);
             newUser.setRole(Role.USER);
             newUser.setStatus(Status.ACTIVE);
+
             repository.save(newUser);
-            String response = "User registered successfully";
+            String response = "User registered successfully.";
             log.info("AuthServiceImp::userRegistration. Return message ({}).", response);
             return response;
         }

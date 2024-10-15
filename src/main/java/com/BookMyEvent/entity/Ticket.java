@@ -17,6 +17,7 @@ import java.time.LocalTime;
 @NoArgsConstructor
 public class Ticket {
 
+
   @Id
   private String id;
   private String title;
@@ -24,10 +25,13 @@ public class Ticket {
   private ObjectId eventId;
   private ObjectId userId;
   private LocalDate startDate;
+  private LocalDateTime reservationExpires;
   private LocalTime startTime;
   private LocalDateTime buyingDate;
   private Long row;
   private Long seat;
+  private int numberOfTickets;
+
   private String ticketPrice;
   private String location;
 }

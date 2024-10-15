@@ -3,6 +3,7 @@ package com.BookMyEvent.entity;
 import com.BookMyEvent.entity.Enums.Role;
 import com.BookMyEvent.entity.Enums.Status;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class User {
 
   @Id

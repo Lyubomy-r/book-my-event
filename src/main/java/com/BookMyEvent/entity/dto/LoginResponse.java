@@ -8,7 +8,7 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-@Builder
+//@Builder
 @Data
 public class LoginResponse {
 

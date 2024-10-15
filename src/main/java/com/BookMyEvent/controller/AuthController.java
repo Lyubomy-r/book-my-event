@@ -6,6 +6,7 @@ import com.BookMyEvent.entity.dto.LoginDto;
 import com.BookMyEvent.entity.dto.LoginResponse;
 import com.BookMyEvent.entity.dto.UserSaveDto;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
+import com.BookMyEvent.service.AuthService;
 import com.BookMyEvent.service.serviceImp.AuthServiceImp;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -39,7 +40,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthServiceImp service;
+    private final AuthService service;
 
     @Operation(
         summary = "User signup",

@@ -22,7 +22,9 @@ public class TicketResponseDto {
   private LocalTime startTime;
   private LocalDateTime buyingDate;
   private Long row;
+  private LocalDateTime reservationExpires;
   private Long seat;
+  private int numberOfTickets;
   private String ticketPrice;
   private String location;
 }
