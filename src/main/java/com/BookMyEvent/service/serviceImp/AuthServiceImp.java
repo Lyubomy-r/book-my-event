@@ -25,6 +25,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 @Service
@@ -60,6 +62,9 @@ public class AuthServiceImp implements AuthService {
             userData.setPassword(hashedPassword);
             User newUser = userMapper.toUserFromUserSaveDto(userData);
             LocalDateTime timeCreate = LocalDateTime.now();
+            ZonedDateTime kyivTime = ZonedDateTime.now(ZoneId.of("Europe/Kiev"));
+            log.info("timeCreate "+timeCreate);
+            log.info("kyivTime "+kyivTime);
             newUser.setCreationDate(timeCreate);
             newUser.setMailConfirmation(false);
             newUser.setRole(Role.USER);

@@ -6,7 +6,8 @@ public enum EventType {
     CONCERTS("Концерт"),
     MASTER_CLASS("Майстер клас"),
     BUSINESS_NETWORKING("Бізнес та нетворкінг"),
-    SPORTS_EVENTS("Спортивні заходи");
+    SPORTS_EVENTS("Спортивні заходи"),
+    OTHER("Інше");
 
     private final String ukrainianName;
 
