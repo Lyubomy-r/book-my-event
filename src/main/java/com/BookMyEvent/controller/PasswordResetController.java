@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,8 +32,8 @@ public class PasswordResetController {
 
     @Operation(
         summary = "Reset Password",
-        description = "Reset the user's password using the provided token and new password.",
-        security = {@SecurityRequirement(name = "bearerAuth")}
+        description = "Reset the user's password using the provided token and new password. " +
+            "Request example (POST) /api/v1/reset-password?token=28b93097-410b-4aed-957d-f79ac2794934&newPassword=Asdfghjkl12w"
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Password successfully updated.",
@@ -51,7 +50,7 @@ public class PasswordResetController {
                     schema = @Schema(implementation = ErrorResponseDto.class))
             }),
         @ApiResponse(responseCode = "404",
-            description = "User not found.",
+            description = "User not found. Or the same password.",
             content = {
                 @Content(
                     mediaType = APPLICATION_JSON_VALUE,
@@ -77,8 +76,8 @@ public class PasswordResetController {
 
     @Operation(
         summary = "Request Password Reset",
-        description = "Request a password reset link to be sent to the user's email address."
-//      security = {@SecurityRequirement(name = "bearerAuth")}
+        description = "Request a password reset link to be sent to the user's email address. " +
+            "Request example (GET) /api/v1/reset-password?email=giomaicdl@mail.com"
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200",
@@ -95,13 +94,13 @@ public class PasswordResetController {
                     mediaType = APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = ErrorResponseDto.class))
             }),
-//      @ApiResponse(responseCode = "400",
-//          description = "Invalid email address.",
-//          content = {
-//              @Content(
-//                  mediaType = APPLICATION_JSON_VALUE,
-//                  schema = @Schema(implementation = ErrorResponseDto.class))
-//          })
+      @ApiResponse(responseCode = "401",
+          description = "Email address not verified.",
+          content = {
+              @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(implementation = ErrorResponseDto.class))
+          }),
       @ApiResponse(responseCode = "500",
           description = "Internal server error."
 //          content = {
@@ -114,9 +113,10 @@ public class PasswordResetController {
     @GetMapping
     public ResponseEntity<AppResponse> requestPasswordReset(@RequestParam String email) {
         log.info("PasswordResetController::requestPasswordReset - Requesting password reset for email: {}", email);
-        passwordResetService.requestPasswordReset(email);
-        AppResponse response = new AppResponse(
-            HttpStatus.OK.value(), "Password reset link has been sent to your email.");
-        return ResponseEntity.ok(response);
+
+         passwordResetService.requestPasswordReset(email);
+          AppResponse response = new AppResponse(
+              HttpStatus.OK.value(), "Password reset link has been sent to your email.");
+          return ResponseEntity.ok(response);
     }
 }

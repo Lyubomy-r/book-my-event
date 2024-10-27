@@ -2,6 +2,7 @@ package com.BookMyEvent.exception.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,6 +17,7 @@ public class ErrorResponseDto {
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ssa")
   private LocalDateTime timestamp;
 
+  @JsonProperty("status")
   private Integer statusCode;
 
   private String message;

@@ -69,9 +69,17 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendPasswordResetConfirmationEmail(String email) {
+        String url = "https://sergiy5.github.io/evently_front/";
         log.info("EmailServiceImpl::sendPasswordResetConfirmationEmail - Sending password reset confirmation email to: {}", email);
-        String message = "Your password has been successfully reset.";
-        sendSimpleMessage(email, "Password Reset Confirmation", message);
+        String message = String.format("Привіт!\n\n" +
+            "Ваш пароль було успішно оновлено.\n" +
+            "Тепер ви можете увійти до свого облікового запису за допомогою нового пароля: (%s).\n\n" +
+            "Якщо ви не запитували зміну пароля, будь ласка, зверніться до нашої служби підтримки.\n\n" +
+            "З повагою,\n"
+            + "Команда підтримки BookMyEvent.", url);
+
+
+        sendSimpleMessage(email, "Пароль оновлено", message);
     }
 
     private String buildEmailBody(Ticket ticket) {

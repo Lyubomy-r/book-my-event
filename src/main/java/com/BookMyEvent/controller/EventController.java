@@ -1,7 +1,18 @@
 package com.BookMyEvent.controller;
 
+import com.BookMyEvent.entity.Event;
 import com.BookMyEvent.entity.dto.EventDTO;
+import com.BookMyEvent.entity.dto.EventResponseDto;
+import com.BookMyEvent.entity.dto.LoginDto;
+import com.BookMyEvent.entity.dto.LoginResponse;
+import com.BookMyEvent.exception.model.ErrorResponseDto;
 import com.BookMyEvent.service.EventService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +31,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
 @Slf4j
+@Tag(name = "Events Controller")
 @RestController
 @RequestMapping("/events")
 public class EventController {
@@ -51,16 +65,28 @@ public class EventController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
     }
 
+    @Operation(
+        summary = "Get All Events",
+        responses = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "Get All Events",
+                content = {
+                    @Content(
+                        mediaType = APPLICATION_JSON_VALUE,
+                        schema = @Schema(implementation = Event.class))
+                })
+        })
     @GetMapping
-    public ResponseEntity<List<EventDTO>> getAllEvents() {
-        log.info("Class: {}, Method: getAllEvents - Fetching all events", this.getClass().getSimpleName());
-        List<EventDTO> events = eventService.getEvents();
+    public ResponseEntity<List<Event>> getAllEvents() {
+        log.info("Class: {}, Method: getAllEvents - Fetching all events.", this.getClass().getSimpleName());
+        List<Event> events = eventService.getEvents();
         return ResponseEntity.ok(events);
     }
 
     @DeleteMapping("/clearPastEvents")
     public ResponseEntity<Void> clearPastEvents() {
-        log.info("Class: {}, Method: clearPastEvents - Clearing past events", this.getClass().getSimpleName());
+        log.info("Class: {}, Method: clearPastEvents - Clearing past events.", this.getClass().getSimpleName());
         eventService.deletePastEvents();
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }

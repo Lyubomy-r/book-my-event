@@ -14,7 +14,7 @@ public class AppResponse {
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ssa")
   private LocalDateTime timestamp;
 
-  @JsonProperty("statusСode")
+  @JsonProperty("status")
   private Integer statusCode;
 
   private String message;

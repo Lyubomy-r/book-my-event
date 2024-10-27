@@ -1,25 +1,21 @@
-package com.BookMyEvent.entity;
+package com.BookMyEvent.entity.dto;
 
-import com.BookMyEvent.entity.Enums.EventCategory;
-import com.BookMyEvent.entity.Enums.EventType;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.BookMyEvent.entity.DateDetails;
+import com.BookMyEvent.entity.Location;
+import com.BookMyEvent.entity.User;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Document(collection = "events")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Event {
+public class EventResponseDto {
 
-  @Id
   private String id;
   private String title;
   private String description;
@@ -32,14 +28,12 @@ public class Event {
   private String phoneNumber;
   @JsonProperty("price")
   private Long ticketPrice;
-  @JsonIgnore
   private Integer numberOfTickets;
   private Location location;
   private List<User> organizers;
   private double rating;
   @JsonProperty("type")
-  private EventType eventType;
+  private String eventType;
   @JsonProperty("category")
-  private EventCategory eventCategory;
-
+  private String eventCategory;
 }

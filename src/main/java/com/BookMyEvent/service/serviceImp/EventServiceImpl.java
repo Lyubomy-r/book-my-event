@@ -3,6 +3,7 @@ package com.BookMyEvent.service.serviceImp;
 import com.BookMyEvent.dao.EventRepository;
 import com.BookMyEvent.entity.Event;
 import com.BookMyEvent.entity.dto.EventDTO;
+import com.BookMyEvent.entity.dto.EventResponseDto;
 import com.BookMyEvent.exception.GeneralException;
 import com.BookMyEvent.mapper.EventMapper;
 import com.BookMyEvent.service.EventService;
@@ -13,6 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,14 +57,14 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventDTO> getEvents() {
+    public List<Event> getEvents() {
         log.info("EventServiceImpl::getEvents - Fetching all events");
         List<Event> events = eventRepository.findAll();
-        List<EventDTO> eventDTOs = events.stream()
-                .map(eventMapper::toEventDTO)
-                .collect(Collectors.toList());
-        log.info("EventServiceImpl::getEvents - Found {} events", eventDTOs.size());
-        return eventDTOs;
+//        List<EventResponseDto> eventDTOs = events.stream()
+//                .map(eventMapper::toEventResponseDtoFromEvent)
+//                .collect(Collectors.toList());
+        log.info("EventServiceImpl::getEvents - Found {} events", events.size());
+        return events;
     }
 
     @Override
@@ -98,8 +100,8 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public void deletePastEvents() {
         log.info("EventServiceImpl::deletePastEvents - Deleting past events...");
-        LocalDateTime now = LocalDateTime.now().minusDays(1);
-        List<Event> pastEvents = eventRepository.findByEventStartDate(now);
+        LocalDate now = LocalDate.now().minusDays(1);
+        List<Event> pastEvents = eventRepository.findByDateDay(now.toString());
 //        LocalDateTime now = LocalDateTime.now();
 //        List<Event> pastEvents = eventRepository.findByEndDateBefore(now);
         if (pastEvents.isEmpty()) {

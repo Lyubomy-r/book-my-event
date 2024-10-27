@@ -8,7 +8,7 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-//@Builder
+
 @Data
 public class LoginResponse {
 
@@ -20,6 +20,7 @@ public class LoginResponse {
   private String userName;
   private String accessToken;
   private String message;
+  @JsonProperty("status")
   private Integer statusCode;
 
 

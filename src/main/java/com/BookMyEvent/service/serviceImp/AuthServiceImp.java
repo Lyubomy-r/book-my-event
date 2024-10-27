@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -36,7 +36,7 @@ public class AuthServiceImp implements AuthService {
 
     private final UserMapper userMapper;
     private final UserRepository repository;
-
+    private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
     private final MailConfirmationRepository mailRepository;
 
@@ -56,7 +56,6 @@ public class AuthServiceImp implements AuthService {
             throw new GeneralException("Email is already in use.", HttpStatus.BAD_REQUEST);
         } else {
             mailService.mailSender(userData.getEmail());
-            var passwordEncoder = new BCryptPasswordEncoder();
             var hashedPassword = passwordEncoder.encode(userData.getPassword());
             userData.setPassword(hashedPassword);
             User newUser = userMapper.toUserFromUserSaveDto(userData);
@@ -98,7 +97,6 @@ public class AuthServiceImp implements AuthService {
         var userEmailData = mailRepository.findByEmail(email);
         String response;
         if(userEmailData != null){
-            var passwordEncoder = new BCryptPasswordEncoder();
             if (passwordEncoder.matches(password, userEmailData.getEmailCode())) {
                 user.setMailConfirmation(true);
 
@@ -138,7 +136,6 @@ public class AuthServiceImp implements AuthService {
         var user = repository.findUserByEmail(loginData.getEmail());
         if (user.isPresent()) {
             if (user.get().isMailConfirmation()) {
-                var passwordEncoder = new BCryptPasswordEncoder();
                 if (passwordEncoder.matches(loginData.getPassword(), user.get().getPassword())) {
                     var authentication = SecurityContextHolder.getContext().getAuthentication();
                     var token = generateToken(authentication, user.get().getRole());
@@ -151,24 +148,31 @@ public class AuthServiceImp implements AuthService {
                     return tokenPair;
                 } else {
                     log.warn("AuthServiceImp::login. Return  message: Wrong password");
-                    return new LoginResponse(user.get().getId().toHexString(),
-                        user.get().getName(),
-                        "Wrong password",
-                        HttpStatus.BAD_REQUEST.value());
+//                    return new LoginResponse(user.get().getId().toHexString(),
+//                        user.get().getName(),
+//                        "Wrong password",
+//                        HttpStatus.BAD_REQUEST.value());
+                    throw new GeneralException("Wrong password", HttpStatus.BAD_REQUEST);
                 }
             } else {
-                log.warn("AuthServiceImp::login. Return  message.Confirm your email ({})",loginData.getEmail());
-                return new LoginResponse(user.get().getId().toHexString(),
-                    user.get().getName(),
-                    String.format("Confirm your email (%s)", loginData.getEmail()),
-                    HttpStatus.UNAUTHORIZED.value());
+                log.warn("AuthServiceImp::login. Return  message.Confirm your email ({})", loginData.getEmail());
+//                return new LoginResponse(user.get().getId().toHexString(),
+//                    user.get().getName(),
+//                    String.format("Confirm your email (%s)", loginData.getEmail()),
+//                    HttpStatus.UNAUTHORIZED.value());
+
+                throw new GeneralException(String.format("Confirm your email (%s)", loginData.getEmail()),
+                    HttpStatus.UNAUTHORIZED);
 
             }
         } else {
             log.warn("AuthServiceImp::login. Return error message: Email is not registered");
-            return new LoginResponse(
-                String.format("Email (%s) is not registered.", loginData.getEmail()),
-                HttpStatus.BAD_REQUEST.value());
+//            return new LoginResponse(
+//                String.format("Email (%s) is not registered.", loginData.getEmail()),
+//                HttpStatus.BAD_REQUEST.value());
+
+            throw new GeneralException(String.format("Email (%s) is not registered.", loginData.getEmail()),
+                HttpStatus.BAD_REQUEST);
         }
     }
 }
