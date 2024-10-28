@@ -14,4 +14,6 @@ public interface AuthService {
     LoginResponse login(LoginDto loginData);
 
     EmailVerificationResponseDTO checkExistEmail(String email);
+
+    String sendLetterToUser(String email);
 }

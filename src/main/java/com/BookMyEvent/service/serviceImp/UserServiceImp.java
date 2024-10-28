@@ -9,6 +9,9 @@ import com.BookMyEvent.mapper.UserMapper;
 import com.BookMyEvent.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -115,5 +118,25 @@ public class UserServiceImp implements UserService {
       log.warn("UserServiceImp::delete. Return error message.");
       throw new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
     }
+  }
+
+  @Override
+  public Page<User> getPage(int size, int page) {
+    log.info("Fetching page of users with page number: {} and size: {}", page, size);
+
+    if (size <= 0) {
+      log.warn("Invalid page size: {}. Setting to default size: 10", size);
+      size = 10;
+    }
+    if (page < 0) {
+      log.warn("Invalid page number: {}. Setting to default page: 0", page);
+      page = 0;
+    }
+
+    Pageable pageable = PageRequest.of(page, size);
+    Page<User> userPage = userRepository.findAll(pageable);
+    log.info("Fetched {} users from page {}", userPage.getNumberOfElements(), page);
+
+    return userPage;
   }
 }
