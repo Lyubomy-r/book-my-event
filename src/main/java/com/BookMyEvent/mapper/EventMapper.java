@@ -56,6 +56,6 @@ public interface EventMapper {
     @Mapping(target = "location", source = "event.location")
     @Mapping(target = "organizers", source = "event.organizers")
     @Mapping(target = "eventType", expression = "java(event.getEventType() != null ? event.getEventType().getUkrainianName() : null)")
-    @Mapping(target = "eventCategory", expression = "java(event.getEventCategory() != null ? event.getEventCategory().getUkrainianName() : null)")
+    @Mapping(target = "eventCategory", expression = "java(event.getEventCategory() != null ? event.getEventCategory().toString(): null)")
     EventResponseDto toEventResponseDtoFromEvent(Event event);
 }
