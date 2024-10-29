@@ -133,11 +133,203 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Operation(
+            summary = "Delete a user by ID",
+            description = "Deletes a user from the system using their unique user ID. If the user ID is not provided, invalid, or not found, an error is returned.",
+            parameters = {
+                    @Parameter(
+                            name = "userId",
+                            description = "The unique identifier of the user to be deleted",
+                            required = true,
+                            example = "1229316345"
+                    )
+            },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "User deleted successfully",
+                            content = @Content(
+                                    mediaType = APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = AppResponse.class),
+                                    examples = @ExampleObject(
+                                            name = "Success Response",
+                                            value = """
+                    {
+                      "statusCode": 200,
+                      "message": "User was deleted successfully."
+                    }
+                    """
+                                    )
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid user ID or missing ID",
+                            content = @Content(
+                                    mediaType = APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponseDto.class),
+                                    examples = @ExampleObject(
+                                            name = "Invalid ID Error Response",
+                                            value = """
+                    {
+                      "statusCode": 400,
+                      "message": "User ID cannot be null or empty. 12345abcde"
+                    }
+                    """
+                                    )
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "User not found",
+                            content = @Content(
+                                    mediaType = APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponseDto.class),
+                                    examples = @ExampleObject(
+                                            name = "User Not Found Response",
+                                            value = """
+                    {
+                      "statusCode": 404,
+                      "message": "User with ID 12345abcde not found"
+                    }
+                    """
+                                    )
+                            )
+                    )
+            }
+    )
     @DeleteMapping("/{userId}")
     public ResponseEntity<AppResponse> delete(@PathVariable("userId") String userId) {
         AppResponse response = new AppResponse(
             HttpStatus.OK.value(), userService.delete(userId));
         log.info("UserController::delete - /users/{userId} - Return deletion message.");
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Ban a user",
+            description = "Sets the status of a specified user to 'BANNED', restricting their access to the system. If the user is already banned, an error is returned.",
+            parameters = {
+                    @Parameter(
+                            name = "email",
+                            description = "Email of the user to ban",
+                            required = true,
+                            example = "user@example.com"
+                    )
+            },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "User status updated to 'BANNED'",
+                            content = @Content(
+                                    mediaType = APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = AppResponse.class),
+                                    examples = @ExampleObject(
+                                            name = "Success Response",
+                                            value = """
+                    {
+                      "statusCode": 200,
+                      "message": "User status updated to 'BANNED'"
+                    }
+                    """
+                                    )
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "User already banned or not found",
+                            content = @Content(
+                                    mediaType = APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponseDto.class),
+                                    examples = @ExampleObject(
+                                            name = "Error Response",
+                                            value = """
+                    {
+                      "statusCode": 400,
+                      "message": "User is already banned"
+                    }
+                    """
+                                    )
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "User with the specified email not found",
+                            content = @Content(
+                                    mediaType = APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponseDto.class),
+                                    examples = @ExampleObject(
+                                            name = "User Not Found Response",
+                                            value = """
+                    {
+                      "statusCode": 400,
+                      "message": "User with such email: (user@example.com) not found"
+                    }
+                    """
+                                    )
+                            )
+                    )
+            }
+    )
+    @GetMapping("/banned/{email}")
+    public ResponseEntity<AppResponse> banned(@PathVariable("email") String email){
+        AppResponse response = new AppResponse(HttpStatus.CREATED.value(), userService.banned(email));
+        log.info("UserController::delete - /users/{userId} - Return deletion message.");
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(
+            summary = "Unban a user",
+            description = "Sets the status of a specified user to 'ACTIVE', allowing them access to the system again. If the user is already active, no change is made.",
+            parameters = {
+                    @Parameter(
+                            name = "email",
+                            description = "Email of the user to unban",
+                            required = true,
+                            example = "example@example.com"
+                    )
+            },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "201",
+                            description = "User successfully unbanned or already active",
+                            content = @Content(
+                                    mediaType = APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = AppResponse.class),
+                                    examples = @ExampleObject(
+                                            name = "Success Response",
+                                            value = """
+                    {
+                      "statusCode": 201,
+                      "message": "User activated successfully"
+                    }
+                    """
+                                    )
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "User not found with the specified email",
+                            content = @Content(
+                                    mediaType = APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = AppResponse.class),
+                                    examples = @ExampleObject(
+                                            name = "User Not Found Response",
+                                            value = """
+                    {
+                      "statusCode": 404,
+                      "message": "User not found"
+                    }
+                    """
+                                    )
+                            )
+                    )
+            }
+    )
+    @GetMapping("/unban/{email}")
+    public ResponseEntity<AppResponse> unban(@PathVariable("email") String email) {
+        AppResponse response = new AppResponse(HttpStatus.CREATED.value(), userService.unban(email));
+        log.info("UserController::delete - /users/{userId} - Return deletion message.");
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

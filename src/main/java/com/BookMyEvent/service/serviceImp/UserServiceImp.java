@@ -1,6 +1,7 @@
 package com.BookMyEvent.service.serviceImp;
 
 import com.BookMyEvent.dao.UserRepository;
+import com.BookMyEvent.entity.Enums.Status;
 import com.BookMyEvent.entity.User;
 import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.entity.dto.UserUpdateDto;
@@ -138,5 +139,57 @@ public class UserServiceImp implements UserService {
     log.info("Fetched {} users from page {}", userPage.getNumberOfElements(), page);
 
     return userPage;
+  }
+
+  @Override
+  public String banned(String email) {
+    log.info("Attempting to ban user with email: {}", email);
+
+    var userOptional = userRepository.findUserByEmail(email);
+    if (userOptional.isPresent()) {
+      var user = userOptional.get();
+      log.info("User found: {} with current status: {}", user.getEmail(), user.getStatus());
+
+      if (!user.getStatus().equals(Status.BANNED)) {
+        user.setStatus(Status.BANNED);
+        userRepository.save(user);
+        log.info("User status updated to 'BANNED' for user: {}", user.getEmail());
+        return "User status updated to 'BANNED'";
+      } else {
+        log.warn("User with email: {} is already banned.", email);
+        throw new GeneralException("User is already banned", HttpStatus.BAD_REQUEST);
+      }
+    } else {
+      log.warn("No user found with email: {}", email);
+      throw new GeneralException(
+              String.format("User with such email: (%s) not found", email),
+              HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @Override
+  public String unban(String email) {
+    log.info("Attempting to activate user with email: {}", email);
+
+    var userOptional = userRepository.findUserByEmail(email);
+    if (userOptional.isPresent()) {
+      var user = userOptional.get();
+      log.info("User found: {} with current status: {}", user.getEmail(), user.getStatus());
+
+      if (!user.getStatus().equalsIgnoreCase(Status.ACTIVE.toString())) {
+        user.setStatus(Status.ACTIVE);
+        userRepository.save(user);
+        log.info("User status successfully updated to 'ACTIVE' for user: {}", user.getEmail());
+        return "User activated successfully";
+      } else {
+        log.warn("User with email: {} is already active.", email);
+        return "User is already active";
+      }
+    } else {
+      log.warn("No user found with email: {}", email);
+    }
+
+    log.info("Activation operation for user with email {} completed with result: 'User not found'", email);
+    return "User not found";
   }
 }
