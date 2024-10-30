@@ -52,7 +52,7 @@ public class WebSecurityConfig {
                 .cors(cors -> cors.configurationSource(corsFilterRegistrationBean()))
                 .authorizeHttpRequests((requests) -> requests
                         .requestMatchers("/secured/**").authenticated()
-                        .requestMatchers("/users/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/users/**").hasAnyRole("VISITOR", "ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().permitAll()
                 )

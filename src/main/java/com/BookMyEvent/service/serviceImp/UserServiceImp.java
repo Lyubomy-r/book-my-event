@@ -176,7 +176,7 @@ public class UserServiceImp implements UserService {
       var user = userOptional.get();
       log.info("User found: {} with current status: {}", user.getEmail(), user.getStatus());
 
-      if (!user.getStatus().equalsIgnoreCase(Status.ACTIVE.toString())) {
+      if (!user.getStatus().equals(Status.ACTIVE)) {
         user.setStatus(Status.ACTIVE);
         userRepository.save(user);
         log.info("User status successfully updated to 'ACTIVE' for user: {}", user.getEmail());

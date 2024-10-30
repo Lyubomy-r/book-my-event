@@ -62,7 +62,7 @@ public class AuthServiceImp implements AuthService {
             LocalDateTime timeCreate = LocalDateTime.now();
             newUser.setCreationDate(timeCreate);
             newUser.setMailConfirmation(false);
-            newUser.setRole(Role.USER);
+            newUser.setRole(Role.VISITOR);
             newUser.setStatus(Status.ACTIVE);
             repository.save(newUser);
             String response = "User registered successfully.";
