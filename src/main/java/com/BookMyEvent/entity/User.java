@@ -36,8 +36,6 @@ public class User {
   private String location;
   private Status status;
 
-  @DBRef
-  private List<Event> savedEvents = new ArrayList<>();
 
   @DBRef
   private List<Event> createdEvents = new ArrayList<>();

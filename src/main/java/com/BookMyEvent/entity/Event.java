@@ -47,6 +47,5 @@ public class Event {
   @DBRef
   private User createdBy;
 
-  @DBRef
-  private List<User> savedByUsers = new ArrayList<>();
+  
 }
