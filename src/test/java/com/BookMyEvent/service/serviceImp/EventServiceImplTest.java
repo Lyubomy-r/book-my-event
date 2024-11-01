@@ -51,13 +51,13 @@ class EventServiceImplTest {
     event.setEventCategory(EventCategory.TOP_EVENTS);
     event.setAvailableTickets(100);
     event.setNumberOfTickets(100);
-    event.setDate(new DateDetails(LocalDate.now().toString(), LocalTime.now().toString()));
+    event.setDate(new DateDetails(LocalDate.of(2025, 10, 21).toString(), LocalTime.now().toString()));
   }
 
   @Test
   @DisplayName("Test EventServiceImpl method getEvents")
   void testMethodGetEvents() {
-    EventResponseDto eventResponseDto =  new EventResponseDto();
+    EventResponseDto eventResponseDto = new EventResponseDto();
     eventResponseDto.setId("66c648b600179737a3d5c235");
     eventResponseDto.setTitle("Test Event");
     eventResponseDto.setDescription("Test Description");
@@ -65,10 +65,11 @@ class EventServiceImplTest {
     eventResponseDto.setEventCategory(EventCategory.TOP_EVENTS.toString());
     eventResponseDto.setAvailableTickets(100);
     eventResponseDto.setNumberOfTickets(100);
+    DateDetails dateDetails = new DateDetails("21 жовтня", event.getDate().time());
+    eventResponseDto.setDate(dateDetails);
 
-    eventResponseDto.setDate(new DateDetails(LocalDate.now().toString(), LocalTime.now().toString()));
     when(eventRepository.findAll()).thenReturn(List.of(event));
-    when(eventMapper.toEventResponseDtoFromEvent(event)).thenReturn(eventResponseDto);
+    when(eventMapper.toEventResponseDtoFromEvent(event, dateDetails)).thenReturn(eventResponseDto);
     List<EventResponseDto> result = eventService.getEventsUA();
     assertAll(
         () -> assertFalse(result.isEmpty()),

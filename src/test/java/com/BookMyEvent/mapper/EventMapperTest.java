@@ -1,5 +1,6 @@
 package com.BookMyEvent.mapper;
 
+import com.BookMyEvent.entity.DateDetails;
 import com.BookMyEvent.entity.Enums.EventCategory;
 import com.BookMyEvent.entity.Enums.EventType;
 import com.BookMyEvent.entity.Event;
@@ -9,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
+import java.time.LocalTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,7 +36,7 @@ class EventMapperTest {
     event.setEventCategory(EventCategory.TOP_EVENTS);
 
 
-    EventResponseDto eventResponseDto = eventMapper.toEventResponseDtoFromEvent(event);
+    EventResponseDto eventResponseDto = eventMapper.toEventResponseDtoFromEvent(event,new DateDetails("21 жовтня", LocalTime.now().toString()));
     log.info("eventResponseDto : {}", eventResponseDto);
 
     assertEquals(event.getId(), eventResponseDto.getId());

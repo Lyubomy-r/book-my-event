@@ -1,6 +1,7 @@
 package com.BookMyEvent.service.serviceImp;
 
 import com.BookMyEvent.dao.EventRepository;
+import com.BookMyEvent.entity.DateDetails;
 import com.BookMyEvent.entity.Event;
 import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventResponseDto;
@@ -16,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -62,7 +65,10 @@ public class EventServiceImpl implements EventService {
         List<Event> events = eventRepository.findAll();
         try {
             List<EventResponseDto> eventDTOs = events.stream()
-                .map(eventMapper::toEventResponseDtoFromEvent)
+                .map(event-> {
+                    DateDetails formatDate = formatDate(event.getDate());
+                    return eventMapper.toEventResponseDtoFromEvent(event, formatDate);
+                })
                 .toList();
 
             log.info("EventServiceImpl::getEvents - Found {} events", events.size());
@@ -124,5 +130,14 @@ public class EventServiceImpl implements EventService {
     public void scheduledDeletePastEvents() {
         log.info("EventServiceImpl::scheduledDeletePastEvents - Running scheduled task to delete past events");
         deletePastEvents();
+    }
+
+    public DateDetails formatDate(DateDetails date) {
+        if (date == null) {
+            return null;
+        }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM", new Locale("uk"));
+        String dayText = LocalDate.parse(date.day()).format(formatter);
+        return new DateDetails(dayText, date.time());
     }
 }
