@@ -3,6 +3,7 @@ package com.BookMyEvent.service;
 import com.BookMyEvent.entity.User;
 import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.entity.dto.UserUpdateDto;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -19,5 +20,12 @@ public interface UserService {
    UserResponseDto updateFieldsFromAdmin(String userId, UserUpdateDto userUpdateDto);
 
    String delete(String userId);
+
+   Page<User> findAllUsers(int size, int page);
+
+
+   String banned(String email);
+
+   String unban(String email);
 
 }

@@ -28,13 +28,13 @@ public class UserController {
 
   private final UserService userService;
 
-  @GetMapping()
-  @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<List<UserResponseDto>> findAllUserProfiles() {
-    List<UserResponseDto> userList = userService.findAllUserProfiles();
-    log.info("UserController::findAllUserProfiles - /users - Return list of all users.");
-    return ResponseEntity.ok(userList);
-  }
+//  @GetMapping()
+//  @PreAuthorize("hasRole('ADMIN')")
+//  public ResponseEntity<List<UserResponseDto>> findAllUserProfiles() {
+//    List<UserResponseDto> userList = userService.findAllUserProfiles();
+//    log.info("UserController::findAllUserProfiles - /users - Return list of all users.");
+//    return ResponseEntity.ok(userList);
+//  }
 
   @GetMapping("/{userId}")
   public ResponseEntity<UserResponseDto> findUserInfoById(@PathVariable("userId") String userId) {

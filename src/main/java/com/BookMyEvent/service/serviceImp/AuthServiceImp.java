@@ -67,11 +67,11 @@ public class AuthServiceImp implements AuthService {
             log.info("kyivTime "+kyivTime);
             newUser.setCreationDate(timeCreate);
             newUser.setMailConfirmation(false);
-            newUser.setRole(Role.USER);
+            newUser.setRole(Role.VISITOR);
             newUser.setStatus(Status.ACTIVE);
-
             repository.save(newUser);
             String response = "User registered successfully.";
+            mailService.deleteOldEmails(userData.getEmail());
             log.info("AuthServiceImp::userRegistration. Return message ({}).", response);
             return response;
         }
@@ -132,6 +132,7 @@ public class AuthServiceImp implements AuthService {
             .setExpiration(new Date((new Date()).getTime() + 1000 * 60 * 60 * 10))
             .signWith(SignatureAlgorithm.HS512, signingKey)
             .compact();
+        log.info("AuthServiceImp::generateToken. Role JWT to Role ({}).", role);
         log.info("AuthServiceImp::generateToken. Generate JWT to user ({}).", authentication.getName());
         return token;
     }
@@ -178,6 +179,21 @@ public class AuthServiceImp implements AuthService {
 
             throw new GeneralException(String.format("Email (%s) is not registered.", loginData.getEmail()),
                 HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    public String sendLetterToUser(String email) {
+        log.info("Checking if email was previously sent to user: {}", email);
+
+        var containsMessage = mailService.getMessagesFromUser(email);
+
+        if (containsMessage) {
+            log.info("User {} has already received a letter with the required content.", email);
+            return "The user has such a letter in their correspondence.";
+        } else {
+            log.info("User {} has not received the letter. Sending message again.", email);
+            mailService.mailSender(email);
+            return "The message was sent to the user again.";
         }
     }
 }

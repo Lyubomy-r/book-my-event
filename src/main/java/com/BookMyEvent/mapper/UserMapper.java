@@ -27,6 +27,7 @@ public interface UserMapper {
   @Mapping(source = "userSaveDto.name", target = "name")
   @Mapping(source = "userSaveDto.email", target = "email")
   @Mapping(source = "userSaveDto.password", target = "password")
+  @Mapping(source = "userSaveDto.phone", target = "phone")
   User toUserFromUserSaveDto(UserSaveDto userSaveDto);
 
   @Mapping(target = "id", ignore = true)

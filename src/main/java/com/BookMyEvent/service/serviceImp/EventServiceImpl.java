@@ -61,7 +61,8 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventResponseDto> getEventsUA() {
-        log.info("EventServiceImpl::getEvents - Fetching all events");
+        String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
+        log.info("EventServiceImpl::getEventsUA - Fetching all events");
         List<Event> events = eventRepository.findAll();
         try {
             List<EventResponseDto> eventDTOs = events.stream()
@@ -74,7 +75,8 @@ public class EventServiceImpl implements EventService {
             log.info("EventServiceImpl::getEvents - Found {} events", events.size());
             return eventDTOs;
         }catch (Exception e){
-            log.info("EventServiceImpl::getEvents - Exception  {} events", e.getMessage());
+
+            log.info("{}}::{} - Exception  {} events",this.getClass().getSimpleName(), methodName, e.getMessage());
             throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
          }
 

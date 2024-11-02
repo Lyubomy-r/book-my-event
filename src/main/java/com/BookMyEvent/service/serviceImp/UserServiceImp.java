@@ -1,6 +1,7 @@
 package com.BookMyEvent.service.serviceImp;
 
 import com.BookMyEvent.dao.UserRepository;
+import com.BookMyEvent.entity.Enums.Status;
 import com.BookMyEvent.entity.User;
 import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.entity.dto.UserUpdateDto;
@@ -9,6 +10,9 @@ import com.BookMyEvent.mapper.UserMapper;
 import com.BookMyEvent.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -115,5 +119,79 @@ public class UserServiceImp implements UserService {
       log.warn("UserServiceImp::delete. Return error message.");
       throw new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
     }
+  }
+
+  @Override
+  public Page<User> findAllUsers(int size, int page) {
+    log.info("Fetching page of users with page number: {} and size: {}", page, size);
+
+    if (size <= 0) {
+      log.warn("Invalid page size: {}. Setting to default size: 10", size);
+      size = 10;
+    }
+    if (page < 0) {
+      log.warn("Invalid page number: {}. Setting to default page: 0", page);
+      page = 0;
+    }
+
+    Pageable pageable = PageRequest.of(page, size);
+    Page<User> userPage = userRepository.findAll(pageable);
+    log.info("Fetched {} users from page {}", userPage.getNumberOfElements(), page);
+
+    return userPage;
+  }
+
+
+  @Override
+  public String banned(String email) {
+    log.info("Attempting to ban user with email: {}", email);
+
+    var userOptional = userRepository.findUserByEmail(email);
+    if (userOptional.isPresent()) {
+      var user = userOptional.get();
+      log.info("User found: {} with current status: {}", user.getEmail(), user.getStatus());
+
+      if (!user.getStatus().equals(Status.BANNED)) {
+        user.setStatus(Status.BANNED);
+        userRepository.save(user);
+        log.info("User status updated to 'BANNED' for user: {}", user.getEmail());
+        return "User status updated to 'BANNED'";
+      } else {
+        log.warn("User with email: {} is already banned.", email);
+        throw new GeneralException("User is already banned", HttpStatus.BAD_REQUEST);
+      }
+    } else {
+      log.warn("No user found with email: {}", email);
+      throw new GeneralException(
+              String.format("User with such email: (%s) not found", email),
+              HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @Override
+  public String unban(String email) {
+    log.info("Attempting to activate user with email: {}", email);
+
+    var userOptional = userRepository.findUserByEmail(email);
+    if (userOptional.isPresent()) {
+      var user = userOptional.get();
+      log.info("User found: {} with current status: {}", user.getEmail(), user.getStatus());
+
+      if (!user.getStatus().equals(Status.ACTIVE)) {
+        user.setStatus(Status.ACTIVE);
+        userRepository.save(user);
+        log.info("User status successfully updated to 'ACTIVE' for user: {}", user.getEmail());
+        return "User activated successfully";
+      } else {
+        log.warn("User with email: {} is already active.", email);
+        return "User is already active";
+      }
+    } else {
+      log.warn("No user found with email: {}", email);
+      throw new GeneralException(String.format("No user found with email: %s", email),HttpStatus.NOT_FOUND);
+    }
+
+//    log.info("Activation operation for user with email {} completed with result: 'User not found'", email);
+//    return "User not found";
   }
 }

@@ -43,7 +43,7 @@ class UserRepositoryTest {
         .location("Kyiv")
         .mailConfirmation(true)
         .status(Status.ACTIVE)
-        .role(Role.USER)
+        .role(Role.VISITOR)
         .creationDate(LocalDateTime.now())
         .build();
 
@@ -55,7 +55,7 @@ class UserRepositoryTest {
         .location("Kyiv")
         .mailConfirmation(true)
         .status(Status.ACTIVE)
-        .role(Role.USER)
+        .role(Role.VISITOR)
         .creationDate(LocalDateTime.now())
         .build();
   }

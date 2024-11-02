@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -81,7 +80,6 @@ public class UserLikedEventController {
           @ApiResponse(responseCode = "401", description = "Unauthorized")
       }
   )
-  @PreAuthorize("isAuthenticated()")
   @PostMapping
   public ResponseEntity<AppResponse> addLikedEvent(@RequestBody LikedEventDto likedEventDto) {
     log.info("UserLikedEventController::addLikedEvent - Adding liked event for user ID: {} and event ID: {}.",
@@ -132,7 +130,6 @@ public class UserLikedEventController {
           @ApiResponse(responseCode = "401", description = "Unauthorized")
       }
   )
-  @PreAuthorize("isAuthenticated()")
   @DeleteMapping
   public ResponseEntity<AppResponse> removeLikedEvent(@RequestBody LikedEventDto likedEventDto) {
     log.info("Removing liked event for user ID: {} and event ID: {}.", likedEventDto.userId(), likedEventDto.eventId());
@@ -163,14 +160,16 @@ public class UserLikedEventController {
           @ApiResponse(responseCode = "401", description = "Unauthorized")
       }
   )
-  @PreAuthorize("isAuthenticated()")
   @GetMapping("/{userId}")
   public ResponseEntity<LikedEventResponseDto> getLikedEvents(@PathVariable String userId) {
-    log.info("Fetching liked events for user ID: {}.", userId);
+    String methodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    log.info("{}::{}. Fetching liked events for user ID: {}.",
+        this.getClass().getSimpleName(), methodName, userId);
 
     LikedEventResponseDto likedEvents = likedEventService.getLikedEvents(userId);
-
-    log.info("UserLikedEventController::getLikedEvents - Return liked events list found for user ID: {}.", userId);
+    log.info("{}::{} - Return liked events list found for user ID: {}.",
+        this.getClass().getSimpleName(), methodName, userId);
 
     return ResponseEntity.ok(likedEvents);
   }
@@ -190,10 +189,13 @@ public class UserLikedEventController {
           @ApiResponse(responseCode = "401", description = "Unauthorized")
       }
   )
-  @PreAuthorize("isAuthenticated()")
   @GetMapping("/count/{userId}")
   public ResponseEntity<Long> countLikedEvents(@PathVariable String userId) {
-    log.info("Counting liked events for user ID: {}.", userId);
+    String methodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    log.info("{}::{} - Counting liked events for user ID: {}.",
+        this.getClass().getSimpleName(), methodName, userId);
+
     long count = likedEventService.countLikedEvents(userId);
     return ResponseEntity.ok(count);
   }
