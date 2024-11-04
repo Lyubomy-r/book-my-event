@@ -19,11 +19,11 @@ public class PageResponse {
     @JsonProperty("statusСode")
     private Integer statusCode;
 
-    private  Page<UserResponseDto> page;
+    private  List<UserResponseDto> users;
 
-    public PageResponse(Integer statusCode, Page<UserResponseDto> page) {
+    public PageResponse(Integer statusCode, List<UserResponseDto> users) {
         this.timestamp = LocalDateTime.now();
         this.statusCode = statusCode;
-        this.page = page;
+        this.users = users;
     }
 }

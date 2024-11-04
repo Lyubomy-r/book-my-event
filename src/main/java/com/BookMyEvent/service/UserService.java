@@ -21,8 +21,11 @@ public interface UserService {
 
    String delete(String userId);
 
-   Page<UserResponseDto> getUserPage(int size, int page);
+//   Page<UserResponseDto> getUserPage(int size, int page);
+   List<UserResponseDto> getUser();
 
+   String banned(String email);
 
+   String unbanned(String email);
 
 }

@@ -3,7 +3,6 @@ package com.BookMyEvent.controller;
 import com.BookMyEvent.entity.dto.AppResponse;
 import com.BookMyEvent.entity.dto.PageResponse;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
-import com.BookMyEvent.service.AdminService;
 import com.BookMyEvent.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,7 +26,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class AdminController {
 
     private final UserService userService;
-    private final AdminService adminService;
 
     @Operation(
             summary = "Get paginated list of users",
@@ -123,18 +121,26 @@ public class AdminController {
                     )
             }
     )
-    @GetMapping("/users/{size}/{page}")
+    @GetMapping("/users")
     public ResponseEntity<PageResponse> getAllUsers(
-            @PathVariable(value = "size", required = false) Integer size,
-            @PathVariable(value = "page", required = false) Integer page){
-        var pageData = userService.getUserPage(size,page);
-        var checkPages = pageData.getTotalPages() - 1;
-        if(checkPages < 0){
-            checkPages = 0;
-        }
+//            @PathVariable(value = "size", required = false) Integer size,
+//            @PathVariable(value = "page", required = false) Integer page
+    ){
+//        var pageData = userService.getUserPage(size,page);
+//        var checkPages = pageData.getTotalPages() - 1;
+//        if(checkPages < 0){
+//            checkPages = 0;
+//        }
+//        PageResponse response = new PageResponse(HttpStatus.OK.value(), pageData);
+//        log.info("AdminController::getAllUsers - /admin/page/{size}/{page} - Returning paginated user summary.");
+//        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        log.info("Fetching all users without pagination.");
+
+        var pageData = userService.getUser();
         PageResponse response = new PageResponse(HttpStatus.OK.value(), pageData);
-        log.info("AdminController::getAllUsers - /admin/page/{size}/{page} - Returning paginated user summary.");
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
+        log.info("AdminController::getAllUsers - Retrieved {} users.", pageData.size());
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @Operation(
@@ -251,7 +257,7 @@ public class AdminController {
     )
     @PatchMapping("/banned/{email}")
     public ResponseEntity<AppResponse> banned(@PathVariable("email") String email){
-        AppResponse response = new AppResponse(HttpStatus.OK.value(), adminService.banned(email));
+        AppResponse response = new AppResponse(HttpStatus.OK.value(), userService.banned(email));
         log.info("UserController::banned - /users/{userId} - user successfully banned.");
         return ResponseEntity.ok(response);
     }
@@ -288,7 +294,7 @@ public class AdminController {
     )
     @PatchMapping("/unbanned/{email}")
     public ResponseEntity<AppResponse> unbanned(@PathVariable("email") String email) {
-        AppResponse response = new AppResponse(HttpStatus.OK.value(), adminService.unbanned(email));
+        AppResponse response = new AppResponse(HttpStatus.OK.value(), userService.unbanned(email));
         log.info("UserController::unban - /users/{userId} - user successfully unbanned.");
         return ResponseEntity.ok(response);
     }
