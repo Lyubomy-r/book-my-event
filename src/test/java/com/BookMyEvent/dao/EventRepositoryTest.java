@@ -5,11 +5,10 @@ import com.BookMyEvent.entity.DateDetails;
 import com.BookMyEvent.entity.Enums.EventCategory;
 import com.BookMyEvent.entity.Enums.EventType;
 import com.BookMyEvent.entity.Event;
-import com.BookMyEvent.entity.dto.EventResponseDto;
 import com.BookMyEvent.mapper.EventMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
@@ -17,11 +16,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,11 +54,11 @@ class EventRepositoryTest {
     event.setDate(new DateDetails(LocalDate.now().toString(), LocalTime.now().toString()));
 
 
-
   }
 
   @Test
-  public void testFindEventNumberOfTickets() {
+  @DisplayName("Test EventRepository method FindEventNumberOfTickets PositiveScenario")
+  public void testMethodFindEventNumberOfTicketsPositiveScenario() {
     eventRepository.save(event);
     Optional<Event> result = eventRepository.findEventNumberOfTickets(event.getId());
     assertTrue(result.isPresent());
@@ -70,17 +66,20 @@ class EventRepositoryTest {
   }
 
   @Test
-  public void testFindByEventStartDate() {
+  @DisplayName("Test EventRepository method FindByEventStartDate PositiveScenario")
+  public void testMethodFindByEventStartDatePositiveScenario() {
 
     eventRepository.save(event);
     LocalDate now = LocalDate.now();
     List<Event> results = eventRepository.findByDateDay(now.toString());
-    System.out.println("results " +results);
+    System.out.println("results " + results);
     assertThat(results).hasSize(1);
     assertThat(results.get(0).getId()).isEqualTo(event.getId());
   }
+
   @Test
-  public void testFindAll() throws JsonProcessingException {
+  @DisplayName("Test EventRepository method FindAll PositiveScenario")
+  public void testMethodFindAllPositiveScenario() {
 
     eventRepository.save(event);
 
