@@ -16,7 +16,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,17 +42,20 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService service;
+  private final AuthService service;
 
-    @Operation(
-        summary = "User signup",
-        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            content = @Content(
-                mediaType = APPLICATION_JSON_VALUE,
-                schema = @Schema(implementation = UserSaveDto.class),
-                examples = @ExampleObject(
-                    name = "UserSaveDto",
-                    description = """
+  @Value("${front.url}")
+  private String frontUrl;
+
+  @Operation(
+      summary = "User signup",
+      requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+          content = @Content(
+              mediaType = APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = UserSaveDto.class),
+              examples = @ExampleObject(
+                  name = "UserSaveDto",
+                  description = """
                 Example of User Signup:
                 - Name: Must contain 3-40 characters, only alphabetic characters are allowed. Cannot be empty.
                 - Email: Must be a valid email address. Cannot be empty.
@@ -99,7 +104,8 @@ public class AuthController {
       var response = service.emailVerificationCheck(email,password);
       String encodedMessage = URLEncoder.encode(response, StandardCharsets.UTF_8);
       log.info("AuthController::mailConfirmation - /registration - return mail confirmation message with email {}", email);
-      return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("https://sergiy5.github.io/evently_front/?emailConfirmed=true&message=" + encodedMessage + "&email=" + email)).build();
+      return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(frontUrl + "/?emailConfirmed=true&message="
+          + encodedMessage + "&email=" + email)).build();
 
     }
 

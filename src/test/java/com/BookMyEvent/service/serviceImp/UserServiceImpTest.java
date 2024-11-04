@@ -6,6 +6,7 @@ import com.BookMyEvent.entity.Enums.Role;
 import com.BookMyEvent.entity.Enums.Status;
 import com.BookMyEvent.entity.User;
 import com.BookMyEvent.exception.GeneralException;
+import com.BookMyEvent.service.MailService;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +24,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,6 +35,9 @@ class UserServiceImpTest {
 
   @Mock
   private UserRepository userRepository;
+
+  @Mock
+  private MailService mailService;
 
   @InjectMocks
   private UserServiceImp userService;
@@ -91,7 +96,7 @@ class UserServiceImpTest {
     void testMethodBannedPositiveScenario() {
       when(userRepository.findUserByEmail(userOne.getEmail())).thenReturn(Optional.of(userOne));
       when(userRepository.save(userOne)).thenReturn(userOne);
-
+      doNothing().when(mailService).blockingMessage(any());
       String user = userService.banned(userOne.getEmail());
 
       assertEquals("User status updated to 'BANNED'", user);
@@ -144,7 +149,9 @@ class UserServiceImpTest {
       when(userRepository.findUserByEmail(userOne.getEmail())).thenReturn(Optional.of(userOne));
       when(userRepository.save(userOne)).thenReturn(userOne);
 
-      String user = userService.unban(userOne.getEmail());
+      doNothing().when(mailService).unblockingMessage(any());
+
+      String user = userService.unbanned(userOne.getEmail());
 
       assertEquals("User activated successfully", user);
     }
@@ -173,7 +180,7 @@ class UserServiceImpTest {
       userOne.setStatus(Status.ACTIVE);
       when(userRepository.findUserByEmail(userOne.getEmail())).thenReturn(Optional.of(userOne));
 
-      String alreadyActive = userService.unban(userOne.getEmail());
+      String alreadyActive = userService.unbanned(userOne.getEmail());
       assertEquals("User is already active", alreadyActive);
 //      GeneralException errorIfUserNotFound = assertThrows(GeneralException.class,
 //          () -> userService.banned(userOne.getEmail()));

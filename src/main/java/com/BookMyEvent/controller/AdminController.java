@@ -16,13 +16,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 
 import java.util.List;
 
@@ -40,20 +43,6 @@ public class AdminController {
   @Operation(
       summary = "Get  list of users",
       description = "Retrieves a list of users.",
-//      parameters = {
-//          @Parameter(
-//              name = "size",
-//              description = "The number of users per page. Default value is 10 if not specified.",
-//              required = false,
-//              example = "10"
-//          ),
-//          @Parameter(
-//              name = "page",
-//              description = "The page number to retrieve. Default is 0 for the first page.",
-//              required = false,
-//              example = "0"
-//          )
-//      },
       responses = {
           @ApiResponse(
               responseCode = "200",
@@ -62,60 +51,6 @@ public class AdminController {
                   @Content(
                       mediaType = APPLICATION_JSON_VALUE,
                       array = @ArraySchema(schema = @Schema( implementation = UserResponseDto.class))
-//                                            examples = @ExampleObject(
-//                                                    name = "PageResponse",
-//                                                    description = """
-//                        Example of paginated user response:
-//                        - statusСode: Status code of the response.
-//                        - users: List of user objects on this page.
-//                        - totalPages: Total number of pages available.
-//                        - totalElements: Total number of users across all pages.
-//                        """,
-//                         value = """
-//                        {
-//                          "statusСode": 200,
-//                          "timestamp": "2023-10-08 09:32:42AM",
-//                          "users": [
-//                            {
-//                                                 "id": {
-//                                                      "timestamp": 1728405627,
-//                                                      "date": "2024-10-08T16:40:27.000+00:00"
-//                                                  },
-//                                                  "name": "User1",
-//                                                  "email": "email@te1.com",
-//                                                  "password": "password",
-//                                                  "mailConfirmation": false,
-//                                                  "role": "USER",
-//                                                  "creationDate": null,
-//                                                  "phone": null,
-//                                                  "location": null,
-//                                                  "status": "ACTIVE",
-//                                                  "savedEvents": [],
-//                                                  "createdEvents": []
-//                                              },
-//                                              {
-//                                                  "id": {
-//                                                      "timestamp": 1728485823,
-//                                                      "date": "2024-10-09T14:57:03.000+00:00"
-//                                                  },
-//                                                  "name": "User2",
-//                                                  "email": "email@te2.com",
-//                                                  "password": "password",
-//                                                  "mailConfirmation": false,
-//                                                  "role": "USER",
-//                                                  "creationDate": null,
-//                                                  "phone": null,
-//                                                  "location": null,
-//                                                  "status": "ACTIVE",
-//                                                  "savedEvents": [],
-//                                                  "createdEvents": []
-//                                              }
-//                          ],
-//                          "totalPages": 5,
-//                          "totalElements": 50
-//                        }
-//                        """
-//                        ))
                   )}
           ),
           @ApiResponse(
@@ -134,21 +69,6 @@ public class AdminController {
     log.info("{}::findAllUsers - /admin/users - Return list of user.", this.getClass().getSimpleName());
     return ResponseEntity.ok(userList);
   }
-
-//  @GetMapping("/users/{size}/{page}")
-//  public ResponseEntity<PageResponse> findAllUsers(
-//      @PathVariable(value = "size", required = false) Integer size,
-//      @PathVariable(value = "page", required = false) Integer page){
-//    var pageData = userService.findAllUsers(size,page);
-//    var checkPages = pageData.getTotalPages() - 1;
-//    if(checkPages < 0){
-//      checkPages = 0;
-//    }
-
-//    PageResponse response = new PageResponse(HttpStatus.OK.value(), pageData.getContent(),checkPages,pageData.getTotalElements());
-//    log.info("{}::findAllUsers - /admin/users/{size}/{page} - Return list of user.",this.getClass().getSimpleName());
-//    return ResponseEntity.status(HttpStatus.OK).body(response);
-//  }
 
   @Operation(
       summary = "Delete a user by ID",
@@ -265,8 +185,9 @@ public class AdminController {
   )
   @PatchMapping("/users/unban/{email}")
   public ResponseEntity<AppResponse> unbanUser(@PathVariable("email") String email) {
-    AppResponse response = new AppResponse(HttpStatus.OK.value(), userService.unban(email));
+    AppResponse response = new AppResponse(HttpStatus.OK.value(), userService.unbanned(email));
     log.info("{}::unbanUser - /users/unban/{email} - Returned unban user message.", this.getClass().getSimpleName());
     return ResponseEntity.status(HttpStatus.OK).body(response);
   }
+
 }

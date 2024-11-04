@@ -85,13 +85,9 @@ public class JwtAuthentication extends OncePerRequestFilter {
       }
 
       var role = claims.get("role", String.class);
-      if (role == null || (!checkRoleContains(role))) {
-        return false;
-      }
 
-      return true;
-    } catch (SignatureException e) {
-      return false;
+      return role != null && (checkRoleContains(role));
+
     } catch (Exception e) {
 
       return false;

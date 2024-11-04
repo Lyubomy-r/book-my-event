@@ -18,6 +18,7 @@ public class AppResponse {
   private Integer statusCode;
 
   private String message;
+
   public AppResponse(Integer statusCode, String message) {
     this.timestamp = LocalDateTime.now();
     this.statusCode = statusCode;

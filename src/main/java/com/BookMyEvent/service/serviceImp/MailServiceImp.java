@@ -34,6 +34,8 @@ public class MailServiceImp implements MailService {
     @Value("${cloud.server.url}")
     private String serverUrl;
 
+    private final String clasName = this.getClass().getSimpleName();
+
 
     private final TaskScheduler taskScheduler;
 
@@ -81,15 +83,92 @@ public class MailServiceImp implements MailService {
             var passwordEncoder = new BCryptPasswordEncoder();
 
             var hashedPassword = passwordEncoder.encode(password);
-            mailRepository.save(new UserEmailData(emailTo,hashedPassword));
-        } catch (Exception e){
-            log.error("{}::mailSender. Error occurred while retrieving messages({}) for user: {}",this.getClass().getSimpleName(),  e.getMessage(), emailTo);
+            mailRepository.save(new UserEmailData(emailTo, hashedPassword));
+        } catch (Exception e) {
+
+            log.error("{}::mailSender. Error occurred while retrieving messages({}) for user: {}", clasName, e.getMessage(), emailTo);
+            log.error("{}::mailSender. Error occurred while retrieving getStackTrace({})", clasName, e.getStackTrace());
             throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
-//            e.printStackTrace();
         }
     }
 
-    private String randomPasswordGenerator(){
+    public void unblockingMessage(String emailTo) {
+        var from = "bookmyevent037@gmail.com";
+        var host = "smtp.gmail.com";
+        var port = "465";
+
+        var props = new Properties();
+        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.port", port);
+        props.put("mail.smtp.ssl.enable", "true");
+        props.put("mail.smtp.auth", "true");
+
+        var session = Session.getInstance(props, new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(from, emailPassword);
+            }
+        });
+        session.setDebug(true);
+        try {
+            var baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+            log.info("baseUrl : {}", baseUrl);
+            log.info("serverUrl : {}", serverUrl);
+            var message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(from));
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
+            message.setSubject("Інформація про розблокування на сайті BookMyEvent");
+            message.setText("вітаю ви розблоковані");
+            Transport.send(message);
+        } catch (Exception e) {
+            log.error("{}::mailSender. Error occurred while retrieving messages({}) for user: {}",
+                clasName,
+                e.getMessage(),
+                emailTo);
+            log.error("{}::mailSender. Error occurred while retrieving getStackTrace({})", clasName, e.getStackTrace());
+            throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    public void blockingMessage(String emailTo) {
+        var from = "bookmyevent037@gmail.com";
+        var host = "smtp.gmail.com";
+        var port = "465";
+
+        var props = new Properties();
+        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.port", port);
+        props.put("mail.smtp.ssl.enable", "true");
+        props.put("mail.smtp.auth", "true");
+
+        var session = Session.getInstance(props, new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(from, emailPassword);
+            }
+        });
+        session.setDebug(true);
+        try {
+            var baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+            log.info("baseUrl : {}", baseUrl);
+            log.info("serverUrl : {}", serverUrl);
+            var message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(from));
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
+            message.setSubject("Інформація про блокування на сайті BookMyEvent");
+            message.setText("вітаю ви заблоковані");
+            Transport.send(message);
+        } catch (Exception e) {
+            log.error("{}::getMessagesFromUser. Error occurred while retrieving messages({}) for user: {}",
+                clasName,
+                e.getMessage(),
+                emailTo);
+            throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
+
+        }
+    }
+
+    private String randomPasswordGenerator() {
         var UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         var LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
         var DIGITS = "0123456789";
@@ -172,8 +251,13 @@ public class MailServiceImp implements MailService {
             log.info("No matching messages found for user: {}", userEmail);
 
         } catch (Exception e) {
-            log.error("{}::getMessagesFromUser. Error occurred while retrieving messages({}) for user: {}",this.getClass().getSimpleName(),e.getMessage(), userEmail);
+
+            log.error("{}::getMessagesFromUser. Error occurred while retrieving messages({}) for user: {}",
+                clasName,
+                e.getMessage(),
+                userEmail);
             throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
+
         }
 
         return false;

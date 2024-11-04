@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.domain.Page;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,14 +19,11 @@ public class PageResponse {
     @JsonProperty("status")
     private Integer statusCode;
 
-    private List<User> users;
-    private int totalPages;
-    private long totalElements;
-    public PageResponse(Integer statusCode, List<User> users, int totalPages, long totalElements ) {
+    private  List<UserResponseDto> users;
+
+    public PageResponse(Integer statusCode, List<UserResponseDto> users) {
         this.timestamp = LocalDateTime.now();
         this.statusCode = statusCode;
         this.users = users;
-        this.totalPages = totalPages;
-        this.totalElements = totalElements;
     }
 }
