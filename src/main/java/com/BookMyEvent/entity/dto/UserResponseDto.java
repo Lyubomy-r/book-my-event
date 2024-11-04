@@ -12,13 +12,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserResponseDto {
-
     private String id;
     private String name;
     private String email;
     private LocalDateTime creationDate;
     private boolean mailConfirmation;
     private Role role;
+    private Long phone;
     private String location;
     private Status status;
 }

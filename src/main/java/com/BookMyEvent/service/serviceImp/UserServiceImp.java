@@ -27,6 +27,7 @@ public class UserServiceImp implements UserService {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
 
+
   public static final String NOT_FOUND_MESSAGE_ID = "User with ID [%s] not found.";
   public static final String NOT_FOUND_MESSAGE_EMAIL = "User with Email [%s] not found.";
 
@@ -122,7 +123,7 @@ public class UserServiceImp implements UserService {
   }
 
   @Override
-  public Page<User> getPage(int size, int page) {
+  public Page<UserResponseDto> getUserPage(int size, int page) {
     log.info("Fetching page of users with page number: {} and size: {}", page, size);
 
     if (size <= 0) {
@@ -136,60 +137,23 @@ public class UserServiceImp implements UserService {
 
     Pageable pageable = PageRequest.of(page, size);
     Page<User> userPage = userRepository.findAll(pageable);
+
     log.info("Fetched {} users from page {}", userPage.getNumberOfElements(), page);
 
-    return userPage;
+    // Map Page<User> to Page<UserResponseDto>
+    return userPage.map(user -> {
+      UserResponseDto userResponseDto = new UserResponseDto();
+      userResponseDto.setId(user.getId().toHexString());
+      userResponseDto.setName(user.getName());
+      userResponseDto.setEmail(user.getEmail());
+      userResponseDto.setMailConfirmation(user.isMailConfirmation());
+      userResponseDto.setRole(user.getRole());
+      userResponseDto.setCreationDate(user.getCreationDate());
+      userResponseDto.setPhone(user.getPhone());
+      userResponseDto.setLocation(user.getLocation());
+      userResponseDto.setStatus(user.getStatus());
+      return userResponseDto;
+    });
   }
 
-  @Override
-  public String banned(String email) {
-    log.info("Attempting to ban user with email: {}", email);
-
-    var userOptional = userRepository.findUserByEmail(email);
-    if (userOptional.isPresent()) {
-      var user = userOptional.get();
-      log.info("User found: {} with current status: {}", user.getEmail(), user.getStatus());
-
-      if (!user.getStatus().equals(Status.BANNED)) {
-        user.setStatus(Status.BANNED);
-        userRepository.save(user);
-        log.info("User status updated to 'BANNED' for user: {}", user.getEmail());
-        return "User status updated to 'BANNED'";
-      } else {
-        log.warn("User with email: {} is already banned.", email);
-        throw new GeneralException("User is already banned", HttpStatus.BAD_REQUEST);
-      }
-    } else {
-      log.warn("No user found with email: {}", email);
-      throw new GeneralException(
-              String.format("User with such email: (%s) not found", email),
-              HttpStatus.BAD_REQUEST);
-    }
-  }
-
-  @Override
-  public String unban(String email) {
-    log.info("Attempting to activate user with email: {}", email);
-
-    var userOptional = userRepository.findUserByEmail(email);
-    if (userOptional.isPresent()) {
-      var user = userOptional.get();
-      log.info("User found: {} with current status: {}", user.getEmail(), user.getStatus());
-
-      if (!user.getStatus().equals(Status.ACTIVE)) {
-        user.setStatus(Status.ACTIVE);
-        userRepository.save(user);
-        log.info("User status successfully updated to 'ACTIVE' for user: {}", user.getEmail());
-        return "User activated successfully";
-      } else {
-        log.warn("User with email: {} is already active.", email);
-        return "User is already active";
-      }
-    } else {
-      log.warn("No user found with email: {}", email);
-    }
-
-    log.info("Activation operation for user with email {} completed with result: 'User not found'", email);
-    return "User not found";
-  }
 }

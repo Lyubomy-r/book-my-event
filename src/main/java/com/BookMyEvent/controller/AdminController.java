@@ -3,6 +3,7 @@ package com.BookMyEvent.controller;
 import com.BookMyEvent.entity.dto.AppResponse;
 import com.BookMyEvent.entity.dto.PageResponse;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
+import com.BookMyEvent.service.AdminService;
 import com.BookMyEvent.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,12 +14,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -29,6 +27,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class AdminController {
 
     private final UserService userService;
+    private final AdminService adminService;
 
     @Operation(
             summary = "Get paginated list of users",
@@ -53,83 +52,88 @@ public class AdminController {
                             description = "Paginated list of users successfully retrieved",
                             content = {
                                     @Content(
-                                            mediaType = APPLICATION_JSON_VALUE,
+                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                                             schema = @Schema(implementation = PageResponse.class),
                                             examples = @ExampleObject(
                                                     name = "PageResponse",
                                                     description = """
-                        Example of paginated user response:
-                        - statusСode: Status code of the response.
-                        - users: List of user objects on this page.
-                        - totalPages: Total number of pages available.
-                        - totalElements: Total number of users across all pages.
-                        """,
-                         value = """
-                        {
-                          "statusСode": 200,
-                          "timestamp": "2023-10-08 09:32:42AM",
-                          "users": [
+                            Example of paginated user response:
+                            - statusСode: Status code of the response.
+                            - users: List of user objects on this page.
+                            - totalPages: Total number of pages available.
+                            - totalElements: Total number of users across all pages.
+                            """,
+                                                    value = """
                             {
-                                                 "id": {
-                                                      "timestamp": 1728405627,
-                                                      "date": "2024-10-08T16:40:27.000+00:00"
-                                                  },
-                                                  "name": "User1",
-                                                  "email": "email@te1.com",
-                                                  "password": "password",
-                                                  "mailConfirmation": false,
-                                                  "role": "USER",
-                                                  "creationDate": null,
-                                                  "phone": null,
-                                                  "location": null,
-                                                  "status": "ACTIVE",
-                                                  "savedEvents": [],
-                                                  "createdEvents": []
-                                              },
-                                              {
-                                                  "id": {
-                                                      "timestamp": 1728485823,
-                                                      "date": "2024-10-09T14:57:03.000+00:00"
-                                                  },
-                                                  "name": "User2",
-                                                  "email": "email@te2.com",
-                                                  "password": "password",
-                                                  "mailConfirmation": false,
-                                                  "role": "USER",
-                                                  "creationDate": null,
-                                                  "phone": null,
-                                                  "location": null,
-                                                  "status": "ACTIVE",
-                                                  "savedEvents": [],
-                                                  "createdEvents": []
-                                              }
-                          ],
-                          "totalPages": 5,
-                          "totalElements": 50
-                        }
+                              "statusСode": 200,
+                              "timestamp": "2023-10-08T09:32:42",
+                              "users": [
+                                {
+                                  "id": {
+                                    "timestamp": 1728405627,
+                                    "date": "2024-10-08T16:40:27.000+00:00"
+                                  },
+                                  "name": "User1",
+                                  "email": "email@te1.com",
+                                  "password": "password",
+                                  "mailConfirmation": false,
+                                  "role": "USER",
+                                  "creationDate": null,
+                                  "phone": null,
+                                  "location": null,
+                                  "status": "ACTIVE",
+                                  "savedEvents": [],
+                                  "createdEvents": []
+                                },
+                                {
+                                  "id": {
+                                    "timestamp": 1728485823,
+                                    "date": "2024-10-09T14:57:03.000+00:00"
+                                  },
+                                  "name": "User2",
+                                  "email": "email@te2.com",
+                                  "password": "password",
+                                  "mailConfirmation": false,
+                                  "role": "USER",
+                                  "creationDate": null,
+                                  "phone": null,
+                                  "location": null,
+                                  "status": "ACTIVE",
+                                  "savedEvents": [],
+                                  "createdEvents": []
+                                }
+                              ],
+                              "totalPages": 5,
+                              "totalElements": 50
+                            }
                         """
-                        ))}),
+                                            )
+                                    )
+                            }
+                    ),
                     @ApiResponse(
                             responseCode = "400",
                             description = "Invalid page or size parameter",
                             content = {
                                     @Content(
-                                            mediaType = APPLICATION_JSON_VALUE,
+                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
                                             schema = @Schema(implementation = ErrorResponseDto.class)
                                     )
-                            })
-            })
-    @GetMapping("/page/{size}/{page}")
-    public ResponseEntity<PageResponse> page(
+                            }
+                    )
+            }
+    )
+    @GetMapping("/users/{size}/{page}")
+    public ResponseEntity<PageResponse> getAllUsers(
             @PathVariable(value = "size", required = false) Integer size,
             @PathVariable(value = "page", required = false) Integer page){
-        var pageData = userService.getPage(size,page);
+        var pageData = userService.getUserPage(size,page);
         var checkPages = pageData.getTotalPages() - 1;
         if(checkPages < 0){
             checkPages = 0;
         }
-        PageResponse response = new PageResponse(HttpStatus.CREATED.value(), pageData.getContent(),checkPages,pageData.getTotalElements());
-        log.info("AdminController::getPage - /admin/page/{size}/{page} - Return pages message.");
+        PageResponse response = new PageResponse(HttpStatus.OK.value(), pageData);
+        log.info("AdminController::getAllUsers - /admin/page/{size}/{page} - Returning paginated user summary.");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -240,42 +244,16 @@ public class AdminController {
                             description = "User already banned or not found",
                             content = @Content(
                                     mediaType = APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = ErrorResponseDto.class),
-                                    examples = @ExampleObject(
-                                            name = "Error Response",
-                                            value = """
-                    {
-                      "statusCode": 400,
-                      "message": "User is already banned"
-                    }
-                    """
-                                    )
-                            )
-                    ),
-                    @ApiResponse(
-                            responseCode = "400",
-                            description = "User with the specified email not found",
-                            content = @Content(
-                                    mediaType = APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = ErrorResponseDto.class),
-                                    examples = @ExampleObject(
-                                            name = "User Not Found Response",
-                                            value = """
-                    {
-                      "statusCode": 400,
-                      "message": "User with such email: (user@example.com) not found"
-                    }
-                    """
-                                    )
+                                    schema = @Schema(implementation = ErrorResponseDto.class)
                             )
                     )
             }
     )
-    @GetMapping("/banned/{email}")
+    @PatchMapping("/banned/{email}")
     public ResponseEntity<AppResponse> banned(@PathVariable("email") String email){
-        AppResponse response = new AppResponse(HttpStatus.CREATED.value(), userService.banned(email));
-        log.info("UserController::delete - /users/{userId} - Return deletion message.");
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        AppResponse response = new AppResponse(HttpStatus.OK.value(), adminService.banned(email));
+        log.info("UserController::banned - /users/{userId} - user successfully banned.");
+        return ResponseEntity.ok(response);
     }
 
     @Operation(
@@ -291,20 +269,11 @@ public class AdminController {
             },
             responses = {
                     @ApiResponse(
-                            responseCode = "201",
+                            responseCode = "200",
                             description = "User successfully unbanned or already active",
                             content = @Content(
                                     mediaType = APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = AppResponse.class),
-                                    examples = @ExampleObject(
-                                            name = "Success Response",
-                                            value = """
-                    {
-                      "statusCode": 201,
-                      "message": "User activated successfully"
-                    }
-                    """
-                                    )
+                                    schema = @Schema(implementation = AppResponse.class)
                             )
                     ),
                     @ApiResponse(
@@ -312,24 +281,15 @@ public class AdminController {
                             description = "User not found with the specified email",
                             content = @Content(
                                     mediaType = APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = AppResponse.class),
-                                    examples = @ExampleObject(
-                                            name = "User Not Found Response",
-                                            value = """
-                    {
-                      "statusCode": 404,
-                      "message": "User not found"
-                    }
-                    """
-                                    )
+                                    schema = @Schema(implementation = ErrorResponseDto.class)
                             )
                     )
             }
     )
-    @GetMapping("/unban/{email}")
-    public ResponseEntity<AppResponse> unban(@PathVariable("email") String email) {
-        AppResponse response = new AppResponse(HttpStatus.CREATED.value(), userService.unban(email));
-        log.info("UserController::delete - /users/{userId} - Return deletion message.");
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    @PatchMapping("/unbanned/{email}")
+    public ResponseEntity<AppResponse> unbanned(@PathVariable("email") String email) {
+        AppResponse response = new AppResponse(HttpStatus.OK.value(), adminService.unbanned(email));
+        log.info("UserController::unban - /users/{userId} - user successfully unbanned.");
+        return ResponseEntity.ok(response);
     }
 }

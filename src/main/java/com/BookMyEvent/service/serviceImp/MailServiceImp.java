@@ -2,6 +2,7 @@ package com.BookMyEvent.service.serviceImp;
 
 import com.BookMyEvent.dao.MailConfirmationRepository;
 import com.BookMyEvent.entity.UserEmailData;
+import com.BookMyEvent.exception.GeneralException;
 import com.BookMyEvent.service.MailService;
 import jakarta.mail.*;
 import jakarta.mail.internet.InternetAddress;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -81,7 +83,77 @@ public class MailServiceImp implements MailService {
             var hashedPassword = passwordEncoder.encode(password);
             mailRepository.save(new UserEmailData(emailTo,hashedPassword));
         } catch (Exception e){
-            e.printStackTrace();
+            log.error("Failed to send message to user. " + e.getMessage());
+            throw new GeneralException("Failed to send message to user.", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    public void  unblockingMessage(String emailTo){
+        var from = "bookmyevent037@gmail.com";
+        var host = "smtp.gmail.com";
+        var port = "465";
+
+        var props = new Properties();
+        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.port", port);
+        props.put("mail.smtp.ssl.enable", "true");
+        props.put("mail.smtp.auth", "true");
+
+        var session = Session.getInstance(props, new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(from, "fjle xkuc crdq ktiz");
+            }
+        });
+        session.setDebug(true);
+        try {
+            var baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+            log.info("baseUrl : {}", baseUrl);
+            log.info("serverUrl : {}", serverUrl);
+            var message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(from));
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
+            message.setSubject("Інформація про розблокування на сайті BookMyEvent");
+            message.setText("вітаю ви розблоковані");
+            Transport.send(message);
+        }
+        catch (Exception e){
+            log.error("Failed to send message to user. " + e.getMessage());
+            throw new GeneralException("Failed to send message to user.", HttpStatus.BAD_REQUEST);
+        }
+    }
+    public void blockingMessage(String emailTo){
+        var from = "bookmyevent037@gmail.com";
+        var host = "smtp.gmail.com";
+        var port = "465";
+
+        var props = new Properties();
+        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.port", port);
+        props.put("mail.smtp.ssl.enable", "true");
+        props.put("mail.smtp.auth", "true");
+
+        var session = Session.getInstance(props, new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(from, "fjle xkuc crdq ktiz");
+            }
+        });
+        session.setDebug(true);
+        try {
+            var baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+            log.info("baseUrl : {}", baseUrl);
+            log.info("serverUrl : {}", serverUrl);
+            var message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(from));
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
+            message.setSubject("Інформація про блокування на сайті BookMyEvent");
+            message.setText("вітаю ви заблоковані");
+            Transport.send(message);
+        }
+        catch (Exception e){
+            log.error("Failed to send message to user. " + e.getMessage());
+            throw new GeneralException("Failed to send message to user.", HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -169,6 +241,7 @@ public class MailServiceImp implements MailService {
 
         } catch (Exception e) {
             log.error("Error occurred while retrieving messages for user: {}", userEmail, e);
+            throw new GeneralException("Error occurred while retrieving messages for user.", HttpStatus.BAD_REQUEST);
         }
 
         return false;
