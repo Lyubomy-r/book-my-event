@@ -1,5 +1,6 @@
 package com.BookMyEvent.config;
 
+import com.BookMyEvent.entity.Enums.Role;
 import com.BookMyEvent.service.serviceImp.JwtAuthentication;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -52,9 +53,10 @@ public class WebSecurityConfig {
                 .cors(cors -> cors.configurationSource(corsFilterRegistrationBean()))
                 .authorizeHttpRequests((requests) -> requests
                         .requestMatchers("/secured/**").authenticated()
-                        .requestMatchers("/users/**").hasAnyRole("VISITOR", "ADMIN")
-                        .requestMatchers("/organizer/**").hasRole("ORGANIZER")
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/users/**", "/liked-events/**")
+                    .hasAnyRole(Role.VISITOR.toString(), Role.ADMIN.toString(), Role.ORGANIZER.toString() )
+                        .requestMatchers("/organizer/**").hasRole(Role.ORGANIZER.toString())
+                        .requestMatchers("/admin/**").hasRole(Role.ADMIN.toString())
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthentication(), UsernamePasswordAuthenticationFilter.class);
@@ -66,7 +68,7 @@ public class WebSecurityConfig {
     public CorsConfigurationSource corsFilterRegistrationBean() {
 
         CorsConfiguration cors = new CorsConfiguration();
-        cors.setAllowedOrigins(List.of("http://localhost:5173", "https://sergiy5.github.io"));
+        cors.setAllowedOrigins(List.of("http://localhost:5173", "https://sergiy5.github.io","https://mclareni.github.io"));
         cors.setAllowedMethods(
             List.of(GET.name(), POST.name(), DELETE.name(), PATCH.name(), PUT.name(), OPTIONS.name()));
         cors.setAllowedHeaders(List.of(ORIGIN, CONTENT_TYPE, ACCEPT, AUTHORIZATION));

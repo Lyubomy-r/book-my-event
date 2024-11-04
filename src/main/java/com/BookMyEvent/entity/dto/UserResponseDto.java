@@ -5,6 +5,8 @@ import com.BookMyEvent.entity.Enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.time.LocalDateTime;
 
@@ -18,7 +20,7 @@ public class UserResponseDto {
     private LocalDateTime creationDate;
     private boolean mailConfirmation;
     private Role role;
-    private Long phone;
     private String location;
+    private String phone;
     private Status status;
 }

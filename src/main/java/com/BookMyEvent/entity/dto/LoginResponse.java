@@ -2,7 +2,6 @@ package com.BookMyEvent.entity.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,9 +11,9 @@ import java.time.LocalDateTime;
 @Data
 public class LoginResponse {
 
-  @Builder.Default
+//  @Builder.Default
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ssa")
-  private LocalDateTime timestamp = LocalDateTime.now();
+  private LocalDateTime timestamp ;
 
   private String userId;
   private String userName;

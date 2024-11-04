@@ -1,5 +1,6 @@
 package com.BookMyEvent.service.serviceImp;
 
+import com.BookMyEvent.entity.Enums.Role;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureException;
 import jakarta.servlet.FilterChain;
@@ -8,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -27,6 +29,7 @@ import java.util.List;
 @Component
 @NoArgsConstructor
 @AllArgsConstructor
+@Slf4j
 public class JwtAuthentication extends OncePerRequestFilter {
 
   @Value("${jwt.signing.key}")
@@ -37,9 +40,11 @@ public class JwtAuthentication extends OncePerRequestFilter {
                                   HttpServletResponse response,
                                   FilterChain filterChain) throws ServletException, IOException {
     var jwt = extractJwtFromRequest(request);
+    log.info("extractJwtFromRequest " + jwt);
     if (StringUtils.hasText(jwt) && validateToken(jwt)) {
       var username = getUsernameFromToken(jwt);
       var role = getRoleFromToken(jwt);
+      log.info("getRoleFromToken " + role);
 
       List<GrantedAuthority> authorities = new ArrayList<>();
       authorities.add(new SimpleGrantedAuthority(role));
@@ -80,13 +85,9 @@ public class JwtAuthentication extends OncePerRequestFilter {
       }
 
       var role = claims.get("role", String.class);
-      if (role == null || (!role.equals("VISITOR") && !role.equals("ORGANIZER") && !role.equals("ADMIN"))) {
-        return false;
-      }
 
-      return true;
-    } catch (SignatureException e) {
-      return false;
+      return role != null && (checkRoleContains(role));
+
     } catch (Exception e) {
 
       return false;
@@ -95,5 +96,9 @@ public class JwtAuthentication extends OncePerRequestFilter {
 
   private String getUsernameFromToken(String token) {
     return Jwts.parser().setSigningKey(signingKey).parseClaimsJws(token).getBody().getSubject();
+  }
+
+  private boolean checkRoleContains(String role) {
+    return Role.getAllRoles().contains(Role.valueOf(role));
   }
 }

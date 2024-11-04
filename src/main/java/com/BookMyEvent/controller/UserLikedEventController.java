@@ -4,12 +4,14 @@ import com.BookMyEvent.entity.UserLikedEvent;
 import com.BookMyEvent.entity.dto.AppResponse;
 import com.BookMyEvent.entity.dto.LikedEventDto;
 import com.BookMyEvent.entity.dto.LikedEventResponseDto;
+import com.BookMyEvent.exception.model.ErrorResponseDto;
 import com.BookMyEvent.service.UserLikedEventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +26,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 
 @RestController
@@ -55,12 +58,28 @@ public class UserLikedEventController {
           )
       ),
       responses = {
-          @ApiResponse(responseCode = "201", description = "Event successfully added to liked list"),
-          @ApiResponse(responseCode = "400", description = "Invalid input data"),
+          @ApiResponse(responseCode = "201",
+              description = "Event successfully added to liked list",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = AppResponse.class))
+              }),
+          @ApiResponse(responseCode = "400", description = "Invalid input data",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = ErrorResponseDto.class))
+              }),
+          @ApiResponse(responseCode = "409", description = "Event already liked",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = ErrorResponseDto.class))
+              }),
           @ApiResponse(responseCode = "401", description = "Unauthorized")
       }
   )
-  @PreAuthorize("isAuthenticated()")
   @PostMapping
   public ResponseEntity<AppResponse> addLikedEvent(@RequestBody LikedEventDto likedEventDto) {
     log.info("UserLikedEventController::addLikedEvent - Adding liked event for user ID: {} and event ID: {}.",
@@ -79,6 +98,7 @@ public class UserLikedEventController {
   @Operation(
       summary = "Remove a liked event",
       description = "Allows a user to remove an event from their liked list.",
+      security = {@SecurityRequirement(name = "bearerAuth")},
       requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
           content = @Content(
               mediaType = "application/json",
@@ -95,12 +115,21 @@ public class UserLikedEventController {
           )
       ),
       responses = {
-          @ApiResponse(responseCode = "204", description = "Event successfully removed from liked list"),
-          @ApiResponse(responseCode = "400", description = "Invalid input data"),
+          @ApiResponse(responseCode = "200", description = "Event successfully removed from liked list",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = AppResponse.class))
+              }),
+          @ApiResponse(responseCode = "404", description = "Event not found in liked events",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = ErrorResponseDto.class))
+              }),
           @ApiResponse(responseCode = "401", description = "Unauthorized")
       }
   )
-  @PreAuthorize("isAuthenticated()")
   @DeleteMapping
   public ResponseEntity<AppResponse> removeLikedEvent(@RequestBody LikedEventDto likedEventDto) {
     log.info("Removing liked event for user ID: {} and event ID: {}.", likedEventDto.userId(), likedEventDto.eventId());
@@ -118,34 +147,36 @@ public class UserLikedEventController {
 
   @Operation(
       summary = "Get liked events for a user",
-      description = "Fetch all liked events for the specified user ID.",
+      description = "Fetch all liked events for the specified user ID. Example endpoint /liked-events/671516169d404702baa62693",
       responses = {
           @ApiResponse(
               responseCode = "200",
               description = "List of liked events",
               content = @Content(
                   mediaType = "application/json",
-                  schema = @Schema(implementation = UserLikedEvent.class)
+                  schema = @Schema(implementation = LikedEventResponseDto.class)
               )
           ),
           @ApiResponse(responseCode = "401", description = "Unauthorized")
       }
   )
-  @PreAuthorize("isAuthenticated()")
   @GetMapping("/{userId}")
   public ResponseEntity<LikedEventResponseDto> getLikedEvents(@PathVariable String userId) {
-    log.info("Fetching liked events for user ID: {}.", userId);
+    String methodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    log.info("{}::{}. Fetching liked events for user ID: {}.",
+        this.getClass().getSimpleName(), methodName, userId);
 
     LikedEventResponseDto likedEvents = likedEventService.getLikedEvents(userId);
-
-    log.info("UserLikedEventController::getLikedEvents - Return liked events list found for user ID: {}.", userId);
+    log.info("{}::{} - Return liked events list found for user ID: {}.",
+        this.getClass().getSimpleName(), methodName, userId);
 
     return ResponseEntity.ok(likedEvents);
   }
 
   @Operation(
       summary = "Count liked events for a user",
-      description = "Retrieve the total number of liked events for the specified user ID.",
+      description = "Retrieve the total number of liked events for the specified user ID. Example endpoint /liked-events/count/671516169d404702baa62693",
       responses = {
           @ApiResponse(
               responseCode = "200",
@@ -158,10 +189,13 @@ public class UserLikedEventController {
           @ApiResponse(responseCode = "401", description = "Unauthorized")
       }
   )
-  @PreAuthorize("isAuthenticated()")
   @GetMapping("/count/{userId}")
   public ResponseEntity<Long> countLikedEvents(@PathVariable String userId) {
-    log.info("Counting liked events for user ID: {}.", userId);
+    String methodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    log.info("{}::{} - Counting liked events for user ID: {}.",
+        this.getClass().getSimpleName(), methodName, userId);
+
     long count = likedEventService.countLikedEvents(userId);
     return ResponseEntity.ok(count);
   }

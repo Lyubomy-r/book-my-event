@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,18 +28,19 @@ public class UserServiceImp implements UserService {
 
   public static final String NOT_FOUND_MESSAGE_ID = "User with ID [%s] not found.";
   public static final String NOT_FOUND_MESSAGE_EMAIL = "User with Email [%s] not found.";
+  private final String clasName = this.getClass().getSimpleName();
 
   @Override
   public List<UserResponseDto> findAllUserProfiles() {
     List<UserResponseDto> userList = userRepository.findAllUserProfiles();
-    log.info("UserServiceImp::findAllUserProfiles. Return all existing users.");
+    log.info("{}::findAllUserProfiles. Return all existing users." , clasName );
     return userList;
   }
 
   @Override
   public UserResponseDto findUserInfoById(String userId) {
     if (userId == null || userId.isEmpty()) {
-      log.warn("UserServiceImp::findUserInfoById. Return error message.");
+      log.warn("{}::findUserInfoById. Return error message.", clasName);
       throw new GeneralException("User ID cannot be null or empty", HttpStatus.BAD_REQUEST);
     }
     Optional<UserResponseDto> user = userRepository.findUserInfoById(userId);
@@ -122,64 +122,6 @@ public class UserServiceImp implements UserService {
   }
 
   @Override
-  public List<UserResponseDto> getUser() {
-    log.info("Retrieving all users from the database.");
-
-    List<User> userPage = userRepository.findAll();
-
-    log.info("Mapping {} users to UserResponseDto format.", userPage.size());
-    List<UserResponseDto> usersDto = userPage.stream().map(user -> {
-      UserResponseDto userResponseDto = new UserResponseDto();
-      userResponseDto.setId(user.getId().toHexString());
-      userResponseDto.setName(user.getName());
-      userResponseDto.setEmail(user.getEmail());
-      userResponseDto.setMailConfirmation(user.isMailConfirmation());
-      userResponseDto.setRole(user.getRole());
-      userResponseDto.setCreationDate(user.getCreationDate());
-      userResponseDto.setPhone(user.getPhone());
-      userResponseDto.setLocation(user.getLocation());
-      userResponseDto.setStatus(user.getStatus());
-      return userResponseDto;
-    }).collect(Collectors.toList());
-
-    log.info("Completed mapping of users. Returning {} UserResponseDto objects.", usersDto.size());
-    return usersDto;
-  }
-//  @Override
-//  public Page<UserResponseDto> getUserPage(int size, int page) {
-//    log.info("Fetching page of users with page number: {} and size: {}", page, size);
-//
-//    if (size <= 0) {
-//      log.warn("Invalid page size: {}. Setting to default size: 10", size);
-//      size = 10;
-//    }
-//    if (page < 0) {
-//      log.warn("Invalid page number: {}. Setting to default page: 0", page);
-//      page = 0;
-//    }
-//
-//    Pageable pageable = PageRequest.of(page, size);
-//    Page<User> userPage = userRepository.findAll(pageable);
-//
-//    log.info("Fetched {} users from page {}", userPage.getNumberOfElements(), page);
-//
-//    // Map Page<User> to Page<UserResponseDto>
-//    return userPage.map(user -> {
-//      UserResponseDto userResponseDto = new UserResponseDto();
-//      userResponseDto.setId(user.getId().toHexString());
-//      userResponseDto.setName(user.getName());
-//      userResponseDto.setEmail(user.getEmail());
-//      userResponseDto.setMailConfirmation(user.isMailConfirmation());
-//      userResponseDto.setRole(user.getRole());
-//      userResponseDto.setCreationDate(user.getCreationDate());
-//      userResponseDto.setPhone(user.getPhone());
-//      userResponseDto.setLocation(user.getLocation());
-//      userResponseDto.setStatus(user.getStatus());
-//      return userResponseDto;
-//    });
-//  }
-
-  @Override
   public String banned(String email) {
     log.info("Attempting to ban user with email: {}", email);
 
@@ -189,9 +131,9 @@ public class UserServiceImp implements UserService {
       log.info("User found: {} with current status: {}", user.getEmail(), user.getStatus());
 
       if (!user.getStatus().equals(Status.BANNED)) {
-        mailService.blockingMessage(user.getEmail());
         user.setStatus(Status.BANNED);
         userRepository.save(user);
+        mailService.blockingMessage(user.getEmail());
         log.info("User status updated to 'BANNED' for user: {}", user.getEmail());
         return "User status updated to 'BANNED'";
       } else {
@@ -216,10 +158,11 @@ public class UserServiceImp implements UserService {
       log.info("User found: {} with current status: {}", user.getEmail(), user.getStatus());
 
       if (!user.getStatus().equals(Status.ACTIVE)) {
-        mailService.unblockingMessage(user.getEmail());
         user.setStatus(Status.ACTIVE);
         userRepository.save(user);
+        mailService.unblockingMessage(user.getEmail());
         log.info("User status successfully updated to 'ACTIVE' for user: {}", user.getEmail());
+
         return "User activated successfully";
       } else {
         log.warn("User with email: {} is already active.", email);
@@ -227,10 +170,10 @@ public class UserServiceImp implements UserService {
       }
     } else {
       log.warn("No user found with email: {}", email);
+      throw new GeneralException(String.format("No user found with email: %s", email), HttpStatus.NOT_FOUND);
     }
 
-    log.info("Activation operation for user with email {} completed with result: 'User not found'", email);
-    return "User not found";
   }
+
 
 }

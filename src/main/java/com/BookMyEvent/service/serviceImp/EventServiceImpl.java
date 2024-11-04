@@ -1,6 +1,7 @@
 package com.BookMyEvent.service.serviceImp;
 
 import com.BookMyEvent.dao.EventRepository;
+import com.BookMyEvent.entity.DateDetails;
 import com.BookMyEvent.entity.Event;
 import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventResponseDto;
@@ -16,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -24,7 +27,7 @@ import java.util.stream.Collectors;
 public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
-    private   final EventMapper eventMapper;
+    private final EventMapper eventMapper;
 
     @Autowired
     public EventServiceImpl(EventRepository eventRepository, EventMapper eventMapper) {
@@ -57,14 +60,27 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<Event> getEvents() {
-        log.info("EventServiceImpl::getEvents - Fetching all events");
+    public List<EventResponseDto> getEventsUA() {
+        String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
+        log.info("EventServiceImpl::getEventsUA - Fetching all events");
         List<Event> events = eventRepository.findAll();
-//        List<EventResponseDto> eventDTOs = events.stream()
-//                .map(eventMapper::toEventResponseDtoFromEvent)
-//                .collect(Collectors.toList());
-        log.info("EventServiceImpl::getEvents - Found {} events", events.size());
-        return events;
+        try {
+            List<EventResponseDto> eventDTOs = events.stream()
+                .map(event-> {
+                    DateDetails formatDate = formatDate(event.getDate());
+                    return eventMapper.toEventResponseDtoFromEvent(event, formatDate);
+                })
+                .toList();
+
+            log.info("EventServiceImpl::getEvents - Found {} events", events.size());
+            return eventDTOs;
+        }catch (Exception e){
+
+            log.info("{}}::{} - Exception  {} events",this.getClass().getSimpleName(), methodName, e.getMessage());
+            throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
+         }
+
+
     }
 
     @Override
@@ -116,5 +132,14 @@ public class EventServiceImpl implements EventService {
     public void scheduledDeletePastEvents() {
         log.info("EventServiceImpl::scheduledDeletePastEvents - Running scheduled task to delete past events");
         deletePastEvents();
+    }
+
+    public DateDetails formatDate(DateDetails date) {
+        if (date == null) {
+            return null;
+        }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM", new Locale("uk"));
+        String dayText = LocalDate.parse(date.day()).format(formatter);
+        return new DateDetails(dayText, date.time());
     }
 }

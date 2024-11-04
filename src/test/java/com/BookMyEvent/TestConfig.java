@@ -15,6 +15,6 @@ public class TestConfig {
 
   @Bean
   public EventMapperImpl eventMapper() {
-    return new EventMapperImpl();  // Якщо ви використовуєте MapStruct
+    return new EventMapperImpl();
   }
 }

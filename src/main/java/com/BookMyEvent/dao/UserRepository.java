@@ -21,7 +21,7 @@ public interface UserRepository extends MongoRepository<User, String> {
   @Query(value = "{ 'id': ?0 }", fields = "{ 'id': 1, 'name': 1, 'email': 1, 'mailConfirmation': 1,'role': 1, 'creationDate': 1, 'location': 1, 'status': 1 }")
   Optional<UserResponseDto> findUserInfoById(String id);
 
-  @Query(value = "{}", fields = "{  'id': 1, 'name': 1, 'email': 1,'mailConfirmation': 1,'role': 1, 'creationDate': 1, 'location': 1, 'status': 1 }")
+  @Query(value = "{}", fields = "{  'id': 1, 'name': 1, 'email': 1,'mailConfirmation': 1,'role': 1, 'creationDate': 1, 'phone':1, 'location': 1, 'status': 1 }")
   List<UserResponseDto> findAllUserProfiles();
 
   Optional<User> findUserByEmail(String userEmail);

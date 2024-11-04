@@ -32,7 +32,7 @@ public class User {
   private boolean mailConfirmation;
   private Role role;
   private LocalDateTime creationDate;
-  private Long phone;
+  private String phone;
   private String location;
   private Status status;
 

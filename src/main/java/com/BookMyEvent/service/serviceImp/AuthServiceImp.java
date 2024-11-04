@@ -132,6 +132,7 @@ public class AuthServiceImp implements AuthService {
             .setExpiration(new Date((new Date()).getTime() + 1000 * 60 * 60 * 10))
             .signWith(SignatureAlgorithm.HS512, signingKey)
             .compact();
+        log.info("AuthServiceImp::generateToken. Role JWT to Role ({}).", role);
         log.info("AuthServiceImp::generateToken. Generate JWT to user ({}).", authentication.getName());
         return token;
     }
@@ -140,7 +141,7 @@ public class AuthServiceImp implements AuthService {
     public LoginResponse login(LoginDto loginData) {
         var user = repository.findUserByEmail(loginData.getEmail());
         if (user.isPresent()) {
-            if(!user.get().getStatus().equals("BANNED")) {
+            if(!user.get().getStatus().equals(Status.BANNED)) {
                 if (user.get().isMailConfirmation()) {
                     if (passwordEncoder.matches(loginData.getPassword(), user.get().getPassword())) {
                         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -154,11 +155,7 @@ public class AuthServiceImp implements AuthService {
                         return tokenPair;
                     } else {
                         log.warn("AuthServiceImp::login. Return  message: Wrong password");
-//                    return new LoginResponse(user.get().getId().toHexString(),
-//                        user.get().getName(),
-//                        "Wrong password",
-//                        HttpStatus.BAD_REQUEST.value());
-                        throw new GeneralException("Wrong password", HttpStatus.BAD_REQUEST);
+                        throw new GeneralException("Wrong password", HttpStatus.FORBIDDEN);
                     }
                 } else {
                     log.warn("AuthServiceImp::login. Return  message.Confirm your email ({})", loginData.getEmail());
