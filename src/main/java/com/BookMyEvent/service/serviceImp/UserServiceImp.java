@@ -1,11 +1,13 @@
 package com.BookMyEvent.service.serviceImp;
 
 import com.BookMyEvent.dao.UserRepository;
+import com.BookMyEvent.entity.Enums.Status;
 import com.BookMyEvent.entity.User;
 import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.entity.dto.UserUpdateDto;
 import com.BookMyEvent.exception.GeneralException;
 import com.BookMyEvent.mapper.UserMapper;
+import com.BookMyEvent.service.MailService;
 import com.BookMyEvent.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,21 +24,23 @@ public class UserServiceImp implements UserService {
 
   private final UserRepository userRepository;
   private final UserMapper userMapper;
+  private final MailService mailService;
 
   public static final String NOT_FOUND_MESSAGE_ID = "User with ID [%s] not found.";
   public static final String NOT_FOUND_MESSAGE_EMAIL = "User with Email [%s] not found.";
+  private final String clasName = this.getClass().getSimpleName();
 
   @Override
   public List<UserResponseDto> findAllUserProfiles() {
     List<UserResponseDto> userList = userRepository.findAllUserProfiles();
-    log.info("UserServiceImp::findAllUserProfiles. Return all existing users.");
+    log.info("{}::findAllUserProfiles. Return all existing users." , clasName );
     return userList;
   }
 
   @Override
   public UserResponseDto findUserInfoById(String userId) {
     if (userId == null || userId.isEmpty()) {
-      log.warn("UserServiceImp::findUserInfoById. Return error message.");
+      log.warn("{}::findUserInfoById. Return error message.", clasName);
       throw new GeneralException("User ID cannot be null or empty", HttpStatus.BAD_REQUEST);
     }
     Optional<UserResponseDto> user = userRepository.findUserInfoById(userId);
@@ -116,4 +120,60 @@ public class UserServiceImp implements UserService {
       throw new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
     }
   }
+
+  @Override
+  public String banned(String email) {
+    log.info("Attempting to ban user with email: {}", email);
+
+    var userOptional = userRepository.findUserByEmail(email);
+    if (userOptional.isPresent()) {
+      var user = userOptional.get();
+      log.info("User found: {} with current status: {}", user.getEmail(), user.getStatus());
+
+      if (!user.getStatus().equals(Status.BANNED)) {
+        user.setStatus(Status.BANNED);
+        userRepository.save(user);
+        mailService.blockingMessage(user.getEmail());
+        log.info("User status updated to 'BANNED' for user: {}", user.getEmail());
+        return "User status updated to 'BANNED'";
+      } else {
+        log.warn("User with email: {} is already banned.", email);
+        throw new GeneralException("User is already banned", HttpStatus.BAD_REQUEST);
+      }
+    } else {
+      log.warn("No user found with email: {}", email);
+      throw new GeneralException(
+              String.format("User with such email: (%s) not found", email),
+              HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @Override
+  public String unbanned(String email) {
+    log.info("Attempting to activate user with email: {}", email);
+
+    var userOptional = userRepository.findUserByEmail(email);
+    if (userOptional.isPresent()) {
+      var user = userOptional.get();
+      log.info("User found: {} with current status: {}", user.getEmail(), user.getStatus());
+
+      if (!user.getStatus().equals(Status.ACTIVE)) {
+        user.setStatus(Status.ACTIVE);
+        userRepository.save(user);
+        mailService.unblockingMessage(user.getEmail());
+        log.info("User status successfully updated to 'ACTIVE' for user: {}", user.getEmail());
+
+        return "User activated successfully";
+      } else {
+        log.warn("User with email: {} is already active.", email);
+        return "User is already active";
+      }
+    } else {
+      log.warn("No user found with email: {}", email);
+      throw new GeneralException(String.format("No user found with email: %s", email), HttpStatus.NOT_FOUND);
+    }
+
+  }
+
+
 }

@@ -28,4 +28,7 @@ public class UserSaveDto {
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[@$!%*?&]).+$",
             message = "Пароль повинен містити велику літеру, цифру і спеціальний символ")
     private String password;
+
+    @Pattern(regexp = "^\\d{10,15}$", message = "Номер телефону має містити від 10 до 15 цифр")
+    private String phone;
 }

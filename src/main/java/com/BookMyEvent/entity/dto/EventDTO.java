@@ -27,9 +27,9 @@ public class EventDTO {
     private String description;
     private String photoUrl;
 
-    @NotNull(message = "Event start date is mandatory")
-    @Future(message = "Event start date must be in the future")
-    private LocalDateTime eventStartDate;
+//    @NotNull(message = "Event start date is mandatory")
+//    @Future(message = "Event start date must be in the future")
+//    private LocalDateTime eventStartDate;
     private LocalDateTime creationDate;
     private String phoneNumber;
     @NotNull(message = "Number of tickets is mandatory")

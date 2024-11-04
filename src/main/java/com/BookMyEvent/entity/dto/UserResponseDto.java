@@ -5,6 +5,8 @@ import com.BookMyEvent.entity.Enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.time.LocalDateTime;
 
@@ -12,7 +14,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserResponseDto {
-
     private String id;
     private String name;
     private String email;
@@ -20,5 +21,6 @@ public class UserResponseDto {
     private boolean mailConfirmation;
     private Role role;
     private String location;
+    private String phone;
     private Status status;
 }

@@ -1,5 +1,6 @@
 package com.BookMyEvent.mapper;
 
+import com.BookMyEvent.entity.DateDetails;
 import com.BookMyEvent.entity.Event;
 import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventResponseDto;
@@ -48,7 +49,7 @@ public interface EventMapper {
     @Mapping(target = "title", source = "event.title")
     @Mapping(target = "description", source = "event.description")
     @Mapping(target = "photoUrl", source = "event.photoUrl")
-    @Mapping(target = "date", source = "event.date")
+    @Mapping(target = "date", source = "formatDate")
     @Mapping(target = "phoneNumber", source = "event.phoneNumber")
     @Mapping(target = "ticketPrice", source = "event.ticketPrice")
     @Mapping(target = "numberOfTickets", source = "event.numberOfTickets")
@@ -56,6 +57,6 @@ public interface EventMapper {
     @Mapping(target = "location", source = "event.location")
     @Mapping(target = "organizers", source = "event.organizers")
     @Mapping(target = "eventType", expression = "java(event.getEventType() != null ? event.getEventType().getUkrainianName() : null)")
-    @Mapping(target = "eventCategory", expression = "java(event.getEventCategory() != null ? event.getEventCategory().getUkrainianName() : null)")
-    EventResponseDto toEventResponseDtoFromEvent(Event event);
+    @Mapping(target = "eventCategory", expression = "java(event.getEventCategory() != null ? event.getEventCategory().toString(): null)")
+    EventResponseDto toEventResponseDtoFromEvent(Event event,  DateDetails formatDate);
 }

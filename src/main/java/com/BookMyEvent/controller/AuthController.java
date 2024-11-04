@@ -8,6 +8,7 @@ import com.BookMyEvent.entity.dto.UserSaveDto;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
 import com.BookMyEvent.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,7 +16,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,27 +42,32 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService service;
+  private final AuthService service;
 
-    @Operation(
-        summary = "User signup",
-        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            content = @Content(
-                mediaType = APPLICATION_JSON_VALUE,
-                schema = @Schema(implementation = UserSaveDto.class),
-                examples = @ExampleObject(
-                    name = "UserSaveDto",
-                    description = """
+  @Value("${front.url}")
+  private String frontUrl;
+
+  @Operation(
+      summary = "User signup",
+      requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+          content = @Content(
+              mediaType = APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = UserSaveDto.class),
+              examples = @ExampleObject(
+                  name = "UserSaveDto",
+                  description = """
                 Example of User Signup:
                 - Name: Must contain 3-40 characters, only alphabetic characters are allowed. Cannot be empty.
                 - Email: Must be a valid email address. Cannot be empty.
                 - Password: Must be at least 8 characters long and contain an lowercase letter,uppercase letter, a number, and a special character. Cannot be empty.
+                - Phone: Can take from 10 - 15 digits, can store null value.
                 """,
                     value = """
                 {
                   "name": "John Doe",
                   "email": "johndoe@example.com",
-                  "password": "P@ssw0rd"
+                  "password": "P@ssw0rd",
+                  "phone": "0950930994" or "null"
                 }
                 """
                 )
@@ -96,7 +104,8 @@ public class AuthController {
       var response = service.emailVerificationCheck(email,password);
       String encodedMessage = URLEncoder.encode(response, StandardCharsets.UTF_8);
       log.info("AuthController::mailConfirmation - /registration - return mail confirmation message with email {}", email);
-      return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("https://sergiy5.github.io/evently_front/?emailConfirmed=true&message=" + encodedMessage + "&email=" + email)).build();
+      return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(frontUrl + "/?emailConfirmed=true&message="
+          + encodedMessage + "&email=" + email)).build();
 
     }
 
@@ -160,11 +169,75 @@ public class AuthController {
               })
       })
     @GetMapping("/exist/{email}")
-  public ResponseEntity<EmailVerificationResponseDTO> checkExistEmail(@PathVariable String email ){
+    public ResponseEntity<EmailVerificationResponseDTO> checkExistEmail(@PathVariable String email ){
     EmailVerificationResponseDTO response = service.checkExistEmail(email);
     log.info("AuthController::checkExistEmail - /registration - return mail confirmation message with email {}", email);
     return ResponseEntity.ok(response);
   }
 
+    @Operation(
+            summary = "Send Letter to User",
+            description = "Sends a specific letter to a user based on their email address. If a letter with the same content is already present in the user's sent messages, it returns a message indicating so; otherwise, it sends the letter.",
+            parameters = {
+                    @Parameter(
+                            name = "email",
+                            description = "Email address of the user to whom the letter will be sent.",
+                            required = true,
+                            example = "johndoe@example.com"
+                    )
+            },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "201",
+                            description = "Letter successfully sent or a duplicate message found",
+                            content = {
+                                    @Content(
+                                            mediaType = APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = AppResponse.class),
+                                            examples = @ExampleObject(
+                                                    name = "AppResponse",
+                                                    description = """
+                        Example response for sending a letter to a user:
+                        - statusСode: HTTP status code of the response.
+                        - message: Descriptive message about the action's result.
+                        """,
+                         value = """
+                        {
+                          "statusСode": 201,
+                          "message": "The message was sent to the user again."
+                        }
+                        """
+                                            )
+                                    )
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Bad request or email format invalid",
+                            content = {
+                                    @Content(
+                                            mediaType = APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = ErrorResponseDto.class)
+                                    )
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "User with the provided email not found",
+                            content = {
+                                    @Content(
+                                            mediaType = APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = ErrorResponseDto.class)
+                                    )
+                            })
+            })
+    @GetMapping("/sendLetterToUser/{email}")
+    public ResponseEntity<AppResponse> sendLetterToUser(@PathVariable String email) {
+        log.info("Received request to send letter to user with email: {}", email);
 
+        var response = new AppResponse(HttpStatus.CREATED.value(), service.sendLetterToUser(email));
+
+        log.info("Response created with status: {} and message: {}", HttpStatus.CREATED.value(), response.getMessage());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 }

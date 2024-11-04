@@ -3,8 +3,7 @@ package com.BookMyEvent.controller;
 import com.BookMyEvent.entity.DateDetails;
 import com.BookMyEvent.entity.Enums.EventCategory;
 import com.BookMyEvent.entity.Enums.EventType;
-import com.BookMyEvent.entity.Event;
-import com.BookMyEvent.service.AuthService;
+import com.BookMyEvent.entity.dto.EventResponseDto;
 import com.BookMyEvent.service.EventService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
@@ -23,7 +23,6 @@ import java.util.List;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -34,6 +33,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Slf4j
+@TestPropertySource(
+    locations = "classpath:integrationtest.properties")
 class EventControllerTest {
 
   @Autowired
@@ -48,20 +49,20 @@ class EventControllerTest {
 
 
   @Test
-  void getAllEvents() throws Exception {
+  void getAllEventsUA() throws Exception {
 
-    Event event = new Event();
+    EventResponseDto event = new EventResponseDto();
     event.setId("66c648b600179737a3d5c235");
     event.setTitle("Test Event");
     event.setDescription("Test Description");
-    event.setEventType(EventType.SPORTS_EVENTS);
-    event.setEventCategory(EventCategory.TOP_EVENTS);
+    event.setEventType(EventType.SPORTS_EVENTS.getUkrainianName());
+    event.setEventCategory(EventCategory.TOP_EVENTS.toString());
     event.setAvailableTickets(100);
     event.setNumberOfTickets(0);
     event.setDate(new DateDetails(LocalDate.now().toString(), LocalTime.now().toString()));
-    List<Event> results = List.of(event);
+    List<EventResponseDto> results = List.of(event);
 
-    when(eventService.getEvents()).thenReturn(results);
+    when(eventService.getEventsUA()).thenReturn(results);
 
     String responseBody = objectMapper.writeValueAsString(results);
     log.info("results " +results);
@@ -72,6 +73,6 @@ class EventControllerTest {
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$", hasSize(1)))
         .andExpect(jsonPath("$[*].id", containsInAnyOrder(event.getId())))
-        .andExpect(jsonPath("$[0].type").value(event.getEventType().toString()));
+        .andExpect(jsonPath("$[0].type").value(event.getEventType()));
   }
 }

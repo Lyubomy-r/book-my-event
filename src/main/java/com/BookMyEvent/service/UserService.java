@@ -20,4 +20,8 @@ public interface UserService {
 
    String delete(String userId);
 
+   String banned(String email);
+
+   String unbanned(String email);
+
 }
