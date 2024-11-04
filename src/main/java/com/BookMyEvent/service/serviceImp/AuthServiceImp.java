@@ -155,7 +155,7 @@ public class AuthServiceImp implements AuthService {
                         return tokenPair;
                     } else {
                         log.warn("AuthServiceImp::login. Return  message: Wrong password");
-                        throw new GeneralException("Wrong password", HttpStatus.BAD_REQUEST);
+                        throw new GeneralException("Wrong password", HttpStatus.FORBIDDEN);
                     }
                 } else {
                     log.warn("AuthServiceImp::login. Return  message.Confirm your email ({})", loginData.getEmail());

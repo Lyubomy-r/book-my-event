@@ -30,5 +30,5 @@ public class UserSaveDto {
     private String password;
 
     @Pattern(regexp = "^\\d{10,15}$", message = "Номер телефону має містити від 10 до 15 цифр")
-    private Long phone;
+    private String phone;
 }
