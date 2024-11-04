@@ -67,11 +67,11 @@ public class AuthServiceImp implements AuthService {
             log.info("kyivTime "+kyivTime);
             newUser.setCreationDate(timeCreate);
             newUser.setMailConfirmation(false);
-            newUser.setRole(Role.USER);
+            newUser.setRole(Role.VISITOR);
             newUser.setStatus(Status.ACTIVE);
-
             repository.save(newUser);
             String response = "User registered successfully.";
+            mailService.deleteOldEmails(userData.getEmail());
             log.info("AuthServiceImp::userRegistration. Return message ({}).", response);
             return response;
         }
@@ -140,44 +140,55 @@ public class AuthServiceImp implements AuthService {
     public LoginResponse login(LoginDto loginData) {
         var user = repository.findUserByEmail(loginData.getEmail());
         if (user.isPresent()) {
-            if (user.get().isMailConfirmation()) {
-                if (passwordEncoder.matches(loginData.getPassword(), user.get().getPassword())) {
-                    var authentication = SecurityContextHolder.getContext().getAuthentication();
-                    var token = generateToken(authentication, user.get().getRole());
-                    LoginResponse tokenPair = new LoginResponse(user.get().getId().toHexString(),
-                        user.get().getName(), token,
-                        String.format("Email (%s) is confirmed",
-                            loginData.getEmail()),
-                        HttpStatus.OK.value());
-                    log.info("AuthServiceImp::login. Verified and return jwt token to user ({}).", loginData.getEmail());
-                    return tokenPair;
-                } else {
-                    log.warn("AuthServiceImp::login. Return  message: Wrong password");
+            if(!user.get().getStatus().equals("BANNED")) {
+                if (user.get().isMailConfirmation()) {
+                    if (passwordEncoder.matches(loginData.getPassword(), user.get().getPassword())) {
+                        var authentication = SecurityContextHolder.getContext().getAuthentication();
+                        var token = generateToken(authentication, user.get().getRole());
+                        LoginResponse tokenPair = new LoginResponse(user.get().getId().toHexString(),
+                                user.get().getName(), token,
+                                String.format("Email (%s) is confirmed",
+                                        loginData.getEmail()),
+                                HttpStatus.OK.value());
+                        log.info("AuthServiceImp::login. Verified and return jwt token to user ({}).", loginData.getEmail());
+                        return tokenPair;
+                    } else {
+                        log.warn("AuthServiceImp::login. Return  message: Wrong password");
 //                    return new LoginResponse(user.get().getId().toHexString(),
 //                        user.get().getName(),
 //                        "Wrong password",
 //                        HttpStatus.BAD_REQUEST.value());
-                    throw new GeneralException("Wrong password", HttpStatus.BAD_REQUEST);
+                        throw new GeneralException("Wrong password", HttpStatus.BAD_REQUEST);
+                    }
+                } else {
+                    log.warn("AuthServiceImp::login. Return  message.Confirm your email ({})", loginData.getEmail());
+                    throw new GeneralException(String.format("Confirm your email (%s)", loginData.getEmail()),
+                            HttpStatus.UNAUTHORIZED);
                 }
-            } else {
-                log.warn("AuthServiceImp::login. Return  message.Confirm your email ({})", loginData.getEmail());
-//                return new LoginResponse(user.get().getId().toHexString(),
-//                    user.get().getName(),
-//                    String.format("Confirm your email (%s)", loginData.getEmail()),
-//                    HttpStatus.UNAUTHORIZED.value());
-
-                throw new GeneralException(String.format("Confirm your email (%s)", loginData.getEmail()),
-                    HttpStatus.UNAUTHORIZED);
-
+            }
+            else {
+                log.warn("AuthServiceImp::login. Return error message: User banned.");
+                throw new GeneralException("User banned.", HttpStatus.BAD_REQUEST);
             }
         } else {
             log.warn("AuthServiceImp::login. Return error message: Email is not registered");
-//            return new LoginResponse(
-//                String.format("Email (%s) is not registered.", loginData.getEmail()),
-//                HttpStatus.BAD_REQUEST.value());
-
             throw new GeneralException(String.format("Email (%s) is not registered.", loginData.getEmail()),
                 HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    public String sendLetterToUser(String email) {
+        log.info("Checking if email was previously sent to user: {}", email);
+
+        var containsMessage = mailService.getMessagesFromUser(email);
+
+        if (containsMessage) {
+            log.info("User {} has already received a letter with the required content.", email);
+            return "The user has such a letter in their correspondence.";
+        } else {
+            log.info("User {} has not received the letter. Sending message again.", email);
+            mailService.mailSender(email);
+            return "The message was sent to the user again.";
         }
     }
 }

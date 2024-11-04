@@ -80,7 +80,7 @@ public class JwtAuthentication extends OncePerRequestFilter {
       }
 
       var role = claims.get("role", String.class);
-      if (role == null || (!role.equals("USER") && !role.equals("ADMIN"))) {
+      if (role == null || (!role.equals("VISITOR") && !role.equals("ORGANIZER") && !role.equals("ADMIN"))) {
         return false;
       }
 
