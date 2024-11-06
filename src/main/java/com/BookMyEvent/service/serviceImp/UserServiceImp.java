@@ -7,6 +7,7 @@ import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.entity.dto.UserUpdateDto;
 import com.BookMyEvent.exception.GeneralException;
 import com.BookMyEvent.mapper.UserMapper;
+import com.BookMyEvent.service.DeletedUsersService;
 import com.BookMyEvent.service.MailService;
 import com.BookMyEvent.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import java.util.Optional;
 public class UserServiceImp implements UserService {
 
   private final UserRepository userRepository;
+  private final DeletedUsersService deletedUsersService;
   private final UserMapper userMapper;
   private final MailService mailService;
 
@@ -105,6 +107,7 @@ public class UserServiceImp implements UserService {
     return userMapper.toUserResponseDto(updateUser);
   }
 
+  @Override
   public String delete(String userId) {
     if (userId == null || userId.isEmpty()) {
       log.warn("UserServiceImp::delete. Return error message.");
@@ -117,6 +120,25 @@ public class UserServiceImp implements UserService {
       return "User was deleted successfully.";
     } else {
       log.warn("UserServiceImp::delete. Return error message.");
+      throw new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
+    }
+  }
+
+  @Override
+  public String deleteFromAdmin(String userId) {
+    if (userId == null || userId.isEmpty()) {
+      log.warn("UserServiceImp::deleteFromAdmin. Return error message.");
+      throw new GeneralException(String.format("User ID cannot be null or empty. %s ", userId), HttpStatus.BAD_REQUEST);
+    }
+    Optional<User> user=userRepository.findById(userId);
+    if (user.isPresent()) {
+      log.info("UserServiceImp::deleteFromAdmin. Deleted user by ID: {}.", userId);
+
+      deletedUsersService.addUserToDeletedList(user.get().getEmail());
+      userRepository.delete(user.get());
+      return "User was deleted successfully.";
+    } else {
+      log.warn("UserServiceImp::deleteFromAdmin. Return error message.");
       throw new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
     }
   }

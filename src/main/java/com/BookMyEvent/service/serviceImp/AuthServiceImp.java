@@ -12,6 +12,7 @@ import com.BookMyEvent.entity.dto.UserSaveDto;
 import com.BookMyEvent.exception.GeneralException;
 import com.BookMyEvent.mapper.UserMapper;
 import com.BookMyEvent.service.AuthService;
+import com.BookMyEvent.service.DeletedUsersService;
 import com.BookMyEvent.service.MailService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -38,6 +39,7 @@ public class AuthServiceImp implements AuthService {
 
     private final UserMapper userMapper;
     private final UserRepository repository;
+    private final DeletedUsersService deletedUsersService;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
     private final MailConfirmationRepository mailRepository;
@@ -139,6 +141,12 @@ public class AuthServiceImp implements AuthService {
 
     @Override
     public LoginResponse login(LoginDto loginData) {
+        if(deletedUsersService.emailExist(loginData.getEmail())){
+            log.warn("AuthServiceImp::login. Return error message: Email is not registered");
+            throw new GeneralException(String.format("The email (%s)  has been deleted and is no longer accessible.", loginData.getEmail()),
+                HttpStatus.FORBIDDEN);
+        }
+
         var user = repository.findUserByEmail(loginData.getEmail());
         if (user.isPresent()) {
             if(!user.get().getStatus().equals(Status.BANNED)) {

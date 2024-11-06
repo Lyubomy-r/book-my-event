@@ -111,7 +111,7 @@ public class AdminController {
   @DeleteMapping("/users/{userId}")
   public ResponseEntity<AppResponse> deleteUser(@PathVariable("userId") String userId) {
     AppResponse response = new AppResponse(
-        HttpStatus.OK.value(), userService.delete(userId));
+        HttpStatus.OK.value(), userService.deleteFromAdmin(userId));
     log.info("{}::delete - /users/{userId} - Return deletion message.", this.getClass().getSimpleName());
     return ResponseEntity.ok(response);
   }
