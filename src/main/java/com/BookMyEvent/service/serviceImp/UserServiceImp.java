@@ -12,6 +12,7 @@ import com.BookMyEvent.service.MailService;
 import com.BookMyEvent.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,8 @@ public class UserServiceImp implements UserService {
   private final UserMapper userMapper;
   private final MailService mailService;
 
+  @Value("${company.phone}")
+  private String companyPhone;
   public static final String NOT_FOUND_MESSAGE_ID = "User with ID [%s] not found.";
   public static final String NOT_FOUND_MESSAGE_EMAIL = "User with Email [%s] not found.";
   private final String clasName = this.getClass().getSimpleName();
@@ -155,7 +158,14 @@ public class UserServiceImp implements UserService {
       if (!user.getStatus().equals(Status.BANNED)) {
         user.setStatus(Status.BANNED);
         userRepository.save(user);
-        mailService.blockingMessage(user.getEmail());
+//        mailService.blockingMessage(user.getEmail());
+        mailService.sendSimpleHtmlMailMessage4Line(user.getEmail(),
+            "Інформація про блокування на сайті BookMyEvent.",
+            "",
+            "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
+            "Якщо у вас є питання, зателефонуйте на нашу гарячу лінію.",
+            "\uD83D\uDCF2 " + companyPhone,
+            "");
         log.info("User status updated to 'BANNED' for user: {}", user.getEmail());
         return "User status updated to 'BANNED'";
       } else {
@@ -182,7 +192,14 @@ public class UserServiceImp implements UserService {
       if (!user.getStatus().equals(Status.ACTIVE)) {
         user.setStatus(Status.ACTIVE);
         userRepository.save(user);
-        mailService.unblockingMessage(user.getEmail());
+//        mailService.unblockingMessage(user.getEmail());
+        mailService.sendSimpleHtmlMailMessage4Line(user.getEmail(),
+            "Інформація про розблокування на сайті BookMyEvent.",
+            "Вітаємо!",
+            "Ваш акаунт розблоковано, і ви знову можете користуватися всіма можливостями нашого сайту. Насолоджуйтесь!",
+            "",
+            "",
+            "");
         log.info("User status successfully updated to 'ACTIVE' for user: {}", user.getEmail());
 
         return "User activated successfully";

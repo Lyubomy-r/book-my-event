@@ -26,13 +26,32 @@ import java.util.Properties;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class MailServiceImp implements MailService {
+public class MailServiceImp  {
 
     @Value("${spring.mail.password}")
     private String emailPassword;
 
     @Value("${cloud.server.url}")
     private String serverUrl;
+
+    @Value("${company.email}")
+    private String companyEmail;
+
+    @Value("${company.phone}")
+    private String companyPhone;
+
+    @Value("${spring.mail.host}")
+    private String springMailHost;
+
+    @Value("${spring.mail.port}")
+    private String springMailPort;
+
+    @Value("${spring.mail.properties.mail.smtp.auth}")
+    private String mailSmtpAuth;
+
+    @Value("${spring.mail.properties.mail.smtp.starttls.enable}")
+    private String mailSmtpEnable;
+
 
     private final String clasName = this.getClass().getSimpleName();
 
@@ -42,23 +61,22 @@ public class MailServiceImp implements MailService {
     private final MailConfirmationRepository mailRepository;
 
     private final HttpServletRequest request;
+    private String host;
 
-    public void mailSender(String emailTo) {
-        var from = "bookmyevent037@gmail.com";
-//        var to = "willyosho3@gmail.com";
-        var host = "smtp.gmail.com";
-        var port = "465";
+    public void mailSenderAfterRegistration(String emailTo) {
+        var host = springMailHost;
+        var port = springMailPort;
 
         var props = new Properties();
         props.put("mail.smtp.host", host);
         props.put("mail.smtp.port", port);
-        props.put("mail.smtp.ssl.enable", "true");
-        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.ssl.enable", mailSmtpEnable);
+        props.put("mail.smtp.auth", mailSmtpAuth);
 
         var session = Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(from, "fjle xkuc crdq ktiz");
+                return new PasswordAuthentication(companyEmail, emailPassword);
             }
         });
         session.setDebug(true);
@@ -71,7 +89,7 @@ public class MailServiceImp implements MailService {
             var url = serverUrl+"/api/v1/authorize/mail-confirmation/" + emailTo + "/" + password;
             log.info("verify url : {}", url);
             var message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(from));
+            message.setFrom(new InternetAddress(companyEmail));
             message.addRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
             message.setSubject("Реєстрація на сайті BookMyEvent");
             message.setText("Привіт!\uD83C\uDF89\n" +
@@ -93,20 +111,19 @@ public class MailServiceImp implements MailService {
     }
 
     public void unblockingMessage(String emailTo) {
-        var from = "bookmyevent037@gmail.com";
-        var host = "smtp.gmail.com";
-        var port = "465";
+        var host = springMailHost;
+        var port = springMailPort;
 
         var props = new Properties();
         props.put("mail.smtp.host", host);
         props.put("mail.smtp.port", port);
-        props.put("mail.smtp.ssl.enable", "true");
-        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.ssl.enable", mailSmtpEnable);
+        props.put("mail.smtp.auth", mailSmtpAuth);
 
         var session = Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(from, emailPassword);
+                return new PasswordAuthentication(companyEmail, emailPassword);
             }
         });
         session.setDebug(true);
@@ -115,10 +132,13 @@ public class MailServiceImp implements MailService {
             log.info("baseUrl : {}", baseUrl);
             log.info("serverUrl : {}", serverUrl);
             var message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(from));
+            message.setFrom(new InternetAddress(companyEmail));
             message.addRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
             message.setSubject("Інформація про розблокування на сайті BookMyEvent");
-            message.setText("вітаю ви розблоковані");
+            message.setText("Вітаємо!\n " +
+                "Ваш акаунт розблоковано, і ви знову можете користуватися всіма можливостями нашого сайту. " +
+                "Насолоджуйтесь!\n\n" +
+                "З повагою,\n команда BookMyEvent.");
             Transport.send(message);
         } catch (Exception e) {
             log.error("{}::mailSender. Error occurred while retrieving messages({}) for user: {}",
@@ -130,21 +150,25 @@ public class MailServiceImp implements MailService {
         }
     }
 
+//    @Override
+    public void sendHtmlEmailAfterRegistration(String emailTo) {
+
+    }
+
     public void blockingMessage(String emailTo) {
-        var from = "bookmyevent037@gmail.com";
-        var host = "smtp.gmail.com";
-        var port = "465";
+        var host = springMailHost;
+        var port = springMailPort;
 
         var props = new Properties();
         props.put("mail.smtp.host", host);
         props.put("mail.smtp.port", port);
-        props.put("mail.smtp.ssl.enable", "true");
-        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.ssl.enable", mailSmtpEnable);
+        props.put("mail.smtp.auth", mailSmtpAuth);
 
         var session = Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(from, emailPassword);
+                return new PasswordAuthentication(companyEmail, emailPassword);
             }
         });
         session.setDebug(true);
@@ -153,10 +177,13 @@ public class MailServiceImp implements MailService {
             log.info("baseUrl : {}", baseUrl);
             log.info("serverUrl : {}", serverUrl);
             var message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(from));
+            message.setFrom(new InternetAddress(companyEmail));
             message.addRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
-            message.setSubject("Інформація про блокування на сайті BookMyEvent");
-            message.setText("вітаю ви заблоковані");
+            message.setSubject("Інформація про блокування на сайті BookMyEvent.");
+            message.setText(String.format("Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.\n" +
+                " Якщо у вас є питання, зателефонуйте на нашу гарячу лінію %s.\n\n" +
+                "З повагою,\n " +
+                "команда BookMyEvent.", companyPhone));
             Transport.send(message);
         } catch (Exception e) {
             log.error("{}::getMessagesFromUser. Error occurred while retrieving messages({}) for user: {}",
@@ -192,8 +219,8 @@ public class MailServiceImp implements MailService {
     public void deleteOldEmails(String emailTo) {
         taskScheduler.schedule(() -> {
             var emailData = mailRepository.findByEmail(emailTo);
-            if (emailData != null) {
-                mailRepository.delete(emailData);
+            if (emailData.isPresent()) {
+                mailRepository.delete(emailData.get());
                 log.info("Email entry for {} deleted after {} days", emailTo, 5);
             }
         }, Instant.now().plus(5, ChronoUnit.DAYS));
@@ -213,7 +240,7 @@ public class MailServiceImp implements MailService {
 
             Session session = Session.getDefaultInstance(properties, null);
             Store store = session.getStore(mailStoreType);
-            store.connect(host, "bookmyevent037@gmail.com", emailPassword);
+            store.connect(host, companyEmail, emailPassword);
 
             log.info("Connected to email server for user: {}", userEmail);
 
@@ -221,7 +248,7 @@ public class MailServiceImp implements MailService {
             emailFolder.open(Folder.READ_ONLY);
 
             Message[] messages = emailFolder.getMessages();
-            String searchText = "Привіт!🎉\nДякуємо, що приєднався до BookMyEvent! Щоб завершити реєстрацію, просто натисни на цей лінк:";
+            String searchText = "Привіт!🎉\n Дякуємо, що приєднався до BookMyEvent! Щоб завершити реєстрацію, просто натисни на цей лінк:";
 
             log.info("Searching for messages containing text: {}", searchText);
 
@@ -257,7 +284,6 @@ public class MailServiceImp implements MailService {
                 e.getMessage(),
                 userEmail);
             throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
-
         }
 
         return false;

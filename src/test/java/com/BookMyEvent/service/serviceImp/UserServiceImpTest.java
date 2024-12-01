@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -60,33 +61,7 @@ class UserServiceImpTest {
         .build();
   }
 
-  @Test
-  void findAllUserProfiles() {
-  }
 
-  @Test
-  void findUserInfoById() {
-  }
-
-  @Test
-  void findUserInfoByEmail() {
-  }
-
-  @Test
-  void save() {
-  }
-
-  @Test
-  void updateFieldsFromAdmin() {
-  }
-
-  @Test
-  void delete() {
-  }
-
-  @Test
-  void findAllUsers() {
-  }
 
   @Nested
   @DisplayName("Test UserService method Banned")
@@ -96,7 +71,13 @@ class UserServiceImpTest {
     void testMethodBannedPositiveScenario() {
       when(userRepository.findUserByEmail(userOne.getEmail())).thenReturn(Optional.of(userOne));
       when(userRepository.save(userOne)).thenReturn(userOne);
-      doNothing().when(mailService).blockingMessage(any());
+      doNothing().when(mailService).sendSimpleHtmlMailMessage4Line(anyString(),
+          anyString(),
+          anyString(),
+          anyString(),
+          anyString(),
+          anyString(),
+          anyString());
       String user = userService.banned(userOne.getEmail());
 
       assertEquals("User status updated to 'BANNED'", user);
@@ -149,7 +130,13 @@ class UserServiceImpTest {
       when(userRepository.findUserByEmail(userOne.getEmail())).thenReturn(Optional.of(userOne));
       when(userRepository.save(userOne)).thenReturn(userOne);
 
-      doNothing().when(mailService).unblockingMessage(any());
+      doNothing().when(mailService).sendSimpleHtmlMailMessage4Line(anyString(),
+          anyString(),
+          anyString(),
+          anyString(),
+          anyString(),
+          anyString(),
+          anyString());
 
       String user = userService.unbanned(userOne.getEmail());
 

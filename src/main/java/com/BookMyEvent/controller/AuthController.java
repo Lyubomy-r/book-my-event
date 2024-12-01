@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -166,11 +167,19 @@ public class AuthController {
                   @Content(
                       mediaType = APPLICATION_JSON_VALUE,
                       schema = @Schema(implementation = EmailVerificationResponseDTO.class))
+              }),
+          @ApiResponse(
+              responseCode = "403",
+              description = "Email is no longer accessible.",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = ErrorResponseDto.class))
               })
       })
     @GetMapping("/exist/{email}")
-    public ResponseEntity<EmailVerificationResponseDTO> checkExistEmail(@PathVariable String email ){
-    EmailVerificationResponseDTO response = service.checkExistEmail(email);
+    public ResponseEntity<EmailVerificationResponseDTO> checkExistEmailAndIsAccessible(@PathVariable String email ){
+    EmailVerificationResponseDTO response = service.checkExistEmailAndIsAccessible(email);
     log.info("AuthController::checkExistEmail - /registration - return mail confirmation message with email {}", email);
     return ResponseEntity.ok(response);
   }
@@ -193,21 +202,7 @@ public class AuthController {
                             content = {
                                     @Content(
                                             mediaType = APPLICATION_JSON_VALUE,
-                                            schema = @Schema(implementation = AppResponse.class),
-                                            examples = @ExampleObject(
-                                                    name = "AppResponse",
-                                                    description = """
-                        Example response for sending a letter to a user:
-                        - statusСode: HTTP status code of the response.
-                        - message: Descriptive message about the action's result.
-                        """,
-                         value = """
-                        {
-                          "statusСode": 201,
-                          "message": "The message was sent to the user again."
-                        }
-                        """
-                                            )
+                                            schema = @Schema(implementation = AppResponse.class)
                                     )
                             }
                     ),

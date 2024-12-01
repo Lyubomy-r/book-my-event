@@ -2,6 +2,7 @@ package com.BookMyEvent.service.serviceImp;
 
 import com.BookMyEvent.entity.Enums.Role;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,33 +31,48 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Slf4j
-public class JwtAuthentication extends OncePerRequestFilter {
+public class  JwtAuthentication {
 
   @Value("${jwt.signing.key}")
   private  String signingKey;
 
-  @Override
-  protected void doFilterInternal(HttpServletRequest request,
-                                  HttpServletResponse response,
-                                  FilterChain filterChain) throws ServletException, IOException {
-    var jwt = extractJwtFromRequest(request);
-    log.info("extractJwtFromRequest " + jwt);
-    if (StringUtils.hasText(jwt) && validateToken(jwt)) {
-      var username = getUsernameFromToken(jwt);
-      var role = getRoleFromToken(jwt);
-      log.info("getRoleFromToken " + role);
+  private final String className = this.getClass().getSimpleName();
 
-      List<GrantedAuthority> authorities = new ArrayList<>();
-      authorities.add(new SimpleGrantedAuthority(role));
+//  @Override
+//  protected void doFilterInternal(HttpServletRequest request,
+//                                  HttpServletResponse response,
+//                                  FilterChain filterChain) throws ServletException, IOException {
+//    var jwt = extractJwtFromRequest(request);
+//    log.info("extractJwtFromRequest " + jwt);
+//    if (StringUtils.hasText(jwt) && validateToken(jwt)) {
+//      var username = getUsernameFromToken(jwt);
+//      var role = getRoleFromToken(jwt);
+//      log.info("getRoleFromToken " + role);
+//
+//      List<GrantedAuthority> authorities = new ArrayList<>();
+//      authorities.add(new SimpleGrantedAuthority(role));
+//
+//      UsernamePasswordAuthenticationToken authentication =
+//          new UsernamePasswordAuthenticationToken(username, null, authorities);
+//      SecurityContextHolder.getContext().setAuthentication(authentication);
+//    }
+//    filterChain.doFilter(request, response);
+//  }
 
-      UsernamePasswordAuthenticationToken authentication =
-          new UsernamePasswordAuthenticationToken(username, null, authorities);
-      SecurityContextHolder.getContext().setAuthentication(authentication);
-    }
-    filterChain.doFilter(request, response);
+  public String generateToken(String userEmail, Role role) {
+    var token = Jwts.builder()
+        .setSubject(userEmail)
+        .claim("role", role)
+        .setIssuedAt(new Date())
+        .setExpiration(new Date((new Date()).getTime() + 1000 * 60 * 60 * 10))
+        .signWith(SignatureAlgorithm.HS512, signingKey)
+        .compact();
+    log.info("AuthServiceImp::generateToken. Role JWT to Role ({}).", role);
+    log.info("AuthServiceImp::generateToken. Generate JWT to user ({}).", userEmail);
+    return token;
   }
 
-  private String getRoleFromToken(String token) {
+  public String getRoleFromToken(String token) {
     var claims = Jwts.parser()
         .setSigningKey(signingKey)
         .parseClaimsJws(token)
@@ -64,7 +80,7 @@ public class JwtAuthentication extends OncePerRequestFilter {
     return "ROLE_" + claims.get("role", String.class);
   }
 
-  private String extractJwtFromRequest(HttpServletRequest request) {
+  public String extractJwtFromRequest(HttpServletRequest request) {
     var bearerToken = request.getHeader("Authorization");
     if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
       return bearerToken.substring(7);
@@ -72,7 +88,7 @@ public class JwtAuthentication extends OncePerRequestFilter {
     return null;
   }
 
-  private boolean validateToken(String token) {
+  public boolean validateToken(String token) {
     try {
 
       var claims = Jwts.parser()
@@ -86,6 +102,7 @@ public class JwtAuthentication extends OncePerRequestFilter {
 
       var role = claims.get("role", String.class);
 
+
       return role != null && (checkRoleContains(role));
 
     } catch (Exception e) {
@@ -94,11 +111,11 @@ public class JwtAuthentication extends OncePerRequestFilter {
     }
   }
 
-  private String getUsernameFromToken(String token) {
+  public String getUsernameFromToken(String token) {
     return Jwts.parser().setSigningKey(signingKey).parseClaimsJws(token).getBody().getSubject();
   }
 
-  private boolean checkRoleContains(String role) {
+  public boolean checkRoleContains(String role) {
     return Role.getAllRoles().contains(Role.valueOf(role));
   }
 }

@@ -1,7 +1,9 @@
 package com.BookMyEvent.config;
 
 import com.BookMyEvent.entity.Enums.Role;
+import com.BookMyEvent.security.JwtTokenFilter;
 import com.BookMyEvent.service.serviceImp.JwtAuthentication;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,31 +37,33 @@ import static org.springframework.http.HttpMethod.PUT;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig {
+    //
+//    @Value("${jwt.signing.key}")
+//    private  String signingKey;
+//
+//    private final JwtAuthentication jwtAuthentication;
+    @Value("${front.url}")
+    private String frontUrl;
+    private final JwtTokenFilter JwtTokenFilter;
 
-    @Value("${jwt.signing.key}")
-    private  String signingKey;
-
-    @Bean
-    public JwtAuthentication jwtAuthentication() {
-        return new JwtAuthentication(signingKey);
-    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsFilterRegistrationBean()))
-                .authorizeHttpRequests((requests) -> requests
-                        .requestMatchers("/secured/**").authenticated()
-                        .requestMatchers("/users/**", "/liked-events/**")
-                    .hasAnyRole(Role.VISITOR.toString(), Role.ADMIN.toString(), Role.ORGANIZER.toString() )
-                        .requestMatchers("/organizer/**").hasRole(Role.ORGANIZER.toString())
-                        .requestMatchers("/admin/**").hasRole(Role.ADMIN.toString())
-                        .anyRequest().permitAll()
-                )
-                .addFilterBefore(jwtAuthentication(), UsernamePasswordAuthenticationFilter.class);
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsFilterRegistrationBean()))
+            .authorizeHttpRequests((requests) -> requests
+                .requestMatchers("/secured/**").authenticated()
+                .requestMatchers("/users/**", "/liked-events/**")
+                .hasAnyRole(Role.VISITOR.toString(), Role.ADMIN.toString(), Role.ORGANIZER.toString())
+                .requestMatchers("/organizer/**").hasRole(Role.ORGANIZER.toString())
+                .requestMatchers("/admin/**").hasRole(Role.ADMIN.toString())
+                .anyRequest().permitAll()
+            )
+            .addFilterBefore(JwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -68,7 +72,7 @@ public class WebSecurityConfig {
     public CorsConfigurationSource corsFilterRegistrationBean() {
 
         CorsConfiguration cors = new CorsConfiguration();
-        cors.setAllowedOrigins(List.of("http://localhost:5173", "https://sergiy5.github.io","https://mclareni.github.io"));
+        cors.setAllowedOrigins(List.of("http://localhost:5173", frontUrl));
         cors.setAllowedMethods(
             List.of(GET.name(), POST.name(), DELETE.name(), PATCH.name(), PUT.name(), OPTIONS.name()));
         cors.setAllowedHeaders(List.of(ORIGIN, CONTENT_TYPE, ACCEPT, AUTHORIZATION));
