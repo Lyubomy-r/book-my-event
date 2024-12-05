@@ -2,30 +2,18 @@ package com.BookMyEvent.service.serviceImp;
 
 import com.BookMyEvent.dao.PasswordResetTokenRepository;
 import com.BookMyEvent.dao.UserRepository;
-import com.BookMyEvent.entity.PasswordResetToken;
-import com.BookMyEvent.service.EmailService;
 import com.BookMyEvent.service.MailService;
-import com.icegreen.greenmail.util.GreenMail;
-import com.icegreen.greenmail.util.ServerSetup;
-import jakarta.mail.Message;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
