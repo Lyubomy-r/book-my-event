@@ -65,7 +65,7 @@ public class EmailServiceImpl implements EmailService {
             log.info("EmailServiceImpl::sendSimpleMessage - Email sent successfully to: {}", to);
         } catch (Exception e) {
             log.error("EmailServiceImpl::sendSimpleMessage - Error sending email to: {}. Exception: {}", to, e.getMessage());
-            throw new RuntimeException("Failed to send email", e);
+            throw new RuntimeException( e.getMessage());
         }
     }
 

@@ -4,17 +4,14 @@ import com.BookMyEvent.dao.PasswordResetTokenRepository;
 import com.BookMyEvent.dao.UserRepository;
 import com.BookMyEvent.entity.PasswordResetToken;
 import com.BookMyEvent.entity.User;
-import com.BookMyEvent.entity.dto.AppResponse;
 import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.exception.GeneralException;
-import com.BookMyEvent.service.EmailService;
+import com.BookMyEvent.service.MailService;
 import com.BookMyEvent.service.PasswordResetService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,10 +27,12 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
 
-    private final EmailService emailService;
+    private final MailService emailService;
     private final PasswordEncoder passwordEncoder;
     @Value("${password.reset.url}")
     private String passwordResetUrl;
+    @Value("${front.url}")
+    private String frontUrl;
 
     @Override
     public void requestPasswordReset(String email) {
@@ -79,27 +78,25 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         String url = passwordResetUrl
             .replace("{token}", token);
 
-
-//        String message = String.format("""
-//            Привіт!
-//            Ми отримали запит на скидання пароля для вашого облікового запису. Якщо це були ви, будь ласка, дотримуйтесь наведених нижче інструкцій, щоб встановити новий пароль:
-//            \t1.\tНатисніть на це посилання для скидання пароля: %s\s
-//            \t2.\tВи будете перенаправлені на сторінку, де зможете ввести новий пароль.
-//            \t3.\tПісля введення нового пароля підтвердіть його ще раз.
-//            \t4.\tНатисніть "Відновити пароль", щоб оновити пароль.
-//            Якщо ви не запитували скидання пароля, просто проігноруйте цей лист — ваш пароль залишиться незмінним.
-//            З повагою,\u2028Команда підтримки Book My Event.""", url);
-
-        String message = String.format("Привіт!\n\n"
-            + "Ми отримали запит на зміну пароля для вашого облікового запису. Якщо це дійсно ви, виконайте наступні дії:\n"
-            + "\t1.\tНатисніть на: %s\n"
-            + "\t2.\tВведіть новий пароль на сторінці, яка відкриється.\n"
-            + "\t3.\tПідтвердіть пароль і натисніть \"Відновити пароль\".\n\n"
-            +"Важливо! Посилання дійсне лише 60 хвилин.\n"
-            + "Якщо ви не надсилали запит на скидання пароля, просто ігноруйте цей лист — ваш пароль залишиться незмінним.\n\n"
-            + "З повагою,\n"
-            + "Команда підтримки BookMyEvent.",url);
-        emailService.sendSimpleMessage(email, "Відновлення паролю BookMyEvent", message);
+//        String message = String.format("Привіт!\n\n"
+//            + "Ми отримали запит на зміну пароля для вашого облікового запису. Якщо це дійсно ви, виконайте наступні дії:\n"
+//            + "\t1.\tНатисніть на: %s\n"
+//            + "\t2.\tВведіть новий пароль на сторінці, яка відкриється.\n"
+//            + "\t3.\tПідтвердіть пароль і натисніть \"Відновити пароль\".\n\n"
+//            + "Важливо! Посилання дійсне лише 60 хвилин.\n"
+//            + "Якщо ви не надсилали запит на скидання пароля, просто ігноруйте цей лист — ваш пароль залишиться незмінним.\n\n"
+//            + "З повагою,\n"
+//            + "Команда підтримки BookMyEvent.", url);
+        emailService.sendSimpleHtmlMailMessage6Line(email,
+            "Відновлення паролю BookMyEvent",
+            "Привіт!",
+            "Ми отримали запит на зміну пароля для вашого облікового запису. Якщо це дійсно ви, виконайте наступні дії: ",
+            "\t1.\tНатисніть на: " + url,
+            "\t2.\tВведіть новий пароль на сторінці, яка відкриється.",
+            "\t3.\tПідтвердіть пароль і натисніть \"Відновити пароль\".",
+            "Важливо! Посилання дійсне лише 60 хвилин.",
+            "Якщо ви не надсилали запит на скидання пароля, просто ігноруйте цей лист — ваш пароль залишиться незмінним."
+        );
         log.info("PasswordResetServiceImpl::sendPasswordResetEmail - Password reset link sent to email: {}", email);
     }
 
@@ -123,7 +120,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 log.error("PasswordResetServiceImpl::resetPassword - User not found for ID: {}", resetToken.getUserId());
                 return new GeneralException("User not found.", HttpStatus.NOT_FOUND);
             });
-//        var passwordEncoder = new BCryptPasswordEncoder();
 
         if (passwordEncoder.matches(newPassword, user.getPassword())) {
             log.error("PasswordResetServiceImpl::resetPassword - New password must be different from the old password.");
@@ -137,8 +133,17 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
         passwordResetTokenRepository.delete(resetToken);
         log.info("PasswordResetServiceImpl::resetPassword - Password reset token deleted: {}", token);
-
-        emailService.sendPasswordResetConfirmationEmail(user.getEmail());
+        emailService.sendSimpleHtmlMailMessage6Line(user.getEmail(),
+            "Пароль оновлено",
+            "Привіт!",
+            "Ваш пароль було успішно оновлено.",
+            "Тепер ви можете увійти до свого облікового запису за допомогою нового пароля: " + frontUrl,
+            "Якщо ви не запитували зміну пароля, будь ласка, зверніться до нашої служби підтримки.",
+            "",
+            "",
+            ""
+        );
+//        emailService.sendPasswordResetConfirmationEmail(user.getEmail());
     }
 
     public boolean isExpired(LocalDateTime expirationTime) {
