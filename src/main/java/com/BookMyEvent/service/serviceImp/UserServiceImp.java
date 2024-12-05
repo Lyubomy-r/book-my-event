@@ -176,7 +176,7 @@ public class UserServiceImp implements UserService {
       log.warn("No user found with email: {}", email);
       throw new GeneralException(
               String.format("User with such email: (%s) not found", email),
-              HttpStatus.BAD_REQUEST);
+              HttpStatus.NOT_FOUND);
     }
   }
 
@@ -205,8 +205,8 @@ public class UserServiceImp implements UserService {
         return "User activated successfully";
       } else {
         log.warn("User with email: {} is already active.", email);
-//        throw new GeneralException("User is already active", HttpStatus.BAD_REQUEST);
-        return "User is already active";
+        throw new GeneralException("User is already active", HttpStatus.BAD_REQUEST);
+//        return "User is already active";
       }
     } else {
       log.warn("No user found with email: {}", email);
