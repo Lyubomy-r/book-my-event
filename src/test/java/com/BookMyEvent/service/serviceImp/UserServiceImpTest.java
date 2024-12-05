@@ -5,7 +5,11 @@ import com.BookMyEvent.dao.UserRepository;
 import com.BookMyEvent.entity.Enums.Role;
 import com.BookMyEvent.entity.Enums.Status;
 import com.BookMyEvent.entity.User;
+import com.BookMyEvent.entity.dto.UserResponseDto;
+import com.BookMyEvent.entity.dto.UserUpdateDto;
 import com.BookMyEvent.exception.GeneralException;
+import com.BookMyEvent.mapper.UserMapper;
+import com.BookMyEvent.service.DeletedUsersService;
 import com.BookMyEvent.service.MailService;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +24,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,10 +45,18 @@ class UserServiceImpTest {
   @Mock
   private MailService mailService;
 
+  @Mock
+  private DeletedUsersService deletedUsersService;
+
+  @Mock
+  private UserMapper userMapper;
+
   @InjectMocks
   private UserServiceImp userService;
 
   private User userOne;
+
+  private UserResponseDto userResponseDto;
 
   @BeforeEach
   void createUserOne() {
@@ -59,9 +72,203 @@ class UserServiceImpTest {
         .role(Role.VISITOR)
         .creationDate(LocalDateTime.now())
         .build();
+
+    userResponseDto = UserResponseDto.builder()
+        .id(userOne.getId().toHexString())
+        .name(userOne.getName())
+        .email(userOne.getEmail())
+        .location(userOne.getLocation())
+        .mailConfirmation(userOne.isMailConfirmation())
+        .status(userOne.getStatus())
+        .role(userOne.getRole())
+        .creationDate(userOne.getCreationDate())
+        .build();
+
   }
 
+  @Test
+  @DisplayName("Test UserService method FindAllUserProfiles")
+  public void testFindAllUserProfiles() {
+    when(userRepository.findAllUserProfiles()).thenReturn(List.of());
 
+    List<UserResponseDto> resultEmptyList = userService.findAllUserProfiles();
+
+    assertTrue(resultEmptyList.isEmpty());
+
+    when(userRepository.findAllUserProfiles()).thenReturn(List.of(userResponseDto));
+
+    List<UserResponseDto> result = userService.findAllUserProfiles();
+    assertAll(
+        () -> assertFalse(result.isEmpty()),
+        () -> assertEquals(1, result.size()),
+        () -> assertTrue(result.contains(userResponseDto))
+    );
+
+    verify(userRepository, times(2)).findAllUserProfiles();
+  }
+
+  @Nested
+  @DisplayName("Test UserService method FindUserInfoById.")
+  class FindUserInfoById {
+    @Test
+    @DisplayName("Test UserService method FindUserInfoById. Positive Scenario User is Find by id.")
+    public void testFindUserInfoByIdPositiveScenarioFindUser() {
+      when(userRepository.findUserInfoById(userOne.getId().toHexString())).thenReturn(Optional.of(userResponseDto));
+
+      UserResponseDto responseDto = userService.findUserInfoById(userOne.getId().toHexString());
+      assertAll(
+          () -> assertEquals(userOne.getId().toHexString(), responseDto.getId()),
+          () -> assertEquals(userOne.getEmail(), responseDto.getEmail()),
+          () -> assertEquals(userOne.getRole(), responseDto.getRole())
+      );
+
+      verify(userRepository, times(1)).findUserInfoById(userOne.getId().toHexString());
+    }
+
+    @Test
+    @DisplayName("Test UserService method FindUserInfoById. Negative Scenario User id is null or empty.")
+    public void testFindUserInfoByIdNegativeScenarioUserIdIsNull() {
+
+      GeneralException errorIfUserIdNull = assertThrows(GeneralException.class,
+          () -> userService.findUserInfoById(null));
+
+      assertEquals(HttpStatus.BAD_REQUEST, errorIfUserIdNull.getHttpStatus());
+      assertEquals("User ID cannot be null or empty",
+          errorIfUserIdNull.getMessage());
+
+      verify(userRepository, times(0)).findUserInfoById(userOne.getId().toHexString());
+    }
+
+    @Test
+    @DisplayName("Test UserService method FindUserInfoById. Negative Scenario User Not Found.")
+    public void testFindUserInfoByIdNegativeScenarioUserNotFound() {
+      when(userRepository.findUserInfoById(userOne.getId().toHexString())).thenReturn(Optional.empty());
+
+      GeneralException errorIfUserNotFound = assertThrows(GeneralException.class,
+          () -> userService.findUserInfoById(userOne.getId().toHexString()));
+
+      assertEquals(HttpStatus.NOT_FOUND, errorIfUserNotFound.getHttpStatus());
+      assertEquals(String.format("User with ID [%s] not found.", userOne.getId().toHexString()),
+          errorIfUserNotFound.getMessage());
+
+      verify(userRepository, times(1)).findUserInfoById(userOne.getId().toHexString());
+    }
+  }
+
+  @Nested
+  @DisplayName("Test UserService method findUserInfoByEmail.")
+  class FindUserInfoByEmail {
+    @Test
+    @DisplayName("Test UserService method findUserInfoByEmail. Positive Scenario User is Find by Email.")
+    public void testFindUserInfoByEmailPositiveScenarioFindUser() {
+      when(userRepository.findUserInfoByEmail(userOne.getEmail())).thenReturn(Optional.of(userResponseDto));
+
+      UserResponseDto responseDto = userService.findUserInfoByEmail(userOne.getEmail());
+      assertAll(
+          () -> assertEquals(userOne.getId().toHexString(), responseDto.getId()),
+          () -> assertEquals(userOne.getEmail(), responseDto.getEmail()),
+          () -> assertEquals(userOne.getRole(), responseDto.getRole())
+      );
+
+      verify(userRepository, times(1)).findUserInfoByEmail(userOne.getEmail());
+    }
+
+    @Test
+    @DisplayName("Test UserService method findUserInfoByEmail. Negative Scenario User Email is null or empty.")
+    public void testFindUserInfoByEmailNegativeScenarioUserEmailIsNull() {
+
+      GeneralException errorIfUserIdNull = assertThrows(GeneralException.class,
+          () -> userService.findUserInfoByEmail(null));
+
+      assertEquals(HttpStatus.BAD_REQUEST, errorIfUserIdNull.getHttpStatus());
+      assertEquals("User Email cannot be null or empty",
+          errorIfUserIdNull.getMessage());
+
+      verify(userRepository, times(0)).findUserInfoByEmail(userOne.getEmail());
+    }
+
+    @Test
+    @DisplayName("Test UserService method findUserInfoByEmail. Negative Scenario User Not Found.")
+    public void testFindUserInfoByEmailNegativeScenarioUserNotFound() {
+      when(userRepository.findUserInfoByEmail(userOne.getEmail())).thenReturn(Optional.empty());
+
+      GeneralException errorIfUserNotFound = assertThrows(GeneralException.class,
+          () -> userService.findUserInfoByEmail(userOne.getEmail()));
+
+      assertEquals(HttpStatus.NOT_FOUND, errorIfUserNotFound.getHttpStatus());
+      assertEquals(String.format("User with Email [%s] not found.", userOne.getEmail()),
+          errorIfUserNotFound.getMessage());
+
+      verify(userRepository, times(1)).findUserInfoByEmail(userOne.getEmail());
+    }
+  }
+
+  @Test
+  void save() {
+  }
+
+  @Nested
+  @DisplayName("Test UserService method updateFieldsFromAdmin")
+  class UpdateFieldsFromAdmin {
+    @Test
+    @DisplayName("Test UserService method updateFieldsFromAdmin. Positive Scenario User is Updated.")
+    void testUpdateFieldsFromAdminPositiveScenarioUpdatedUser() {
+
+    }
+  }
+
+  @Test
+  void delete() {
+  }
+
+  @Nested
+  @DisplayName("Test UserService method DeleteFromAdmin")
+  class DeleteFromAdmin {
+    @Test
+    @DisplayName("Test UserService method deleteFromAdmin. Positive Scenario User was Deleted.")
+    void testDeleteFromAdminPositiveScenarioUserDeleted() {
+      when(userRepository.findById(userOne.getId().toHexString())).thenReturn(Optional.of(userOne));
+      doNothing().when(deletedUsersService).addUserToDeletedList(userOne.getEmail());
+      doNothing().when(userRepository).delete(userOne);
+
+      String responseMessage = userService.deleteFromAdmin(userOne.getId().toHexString());
+      assertAll(
+          () -> assertFalse(responseMessage.isEmpty()),
+          () -> assertEquals("User was deleted successfully.", responseMessage)
+      );
+
+      verify(userRepository, times(1)).findById(userOne.getId().toHexString());
+    }
+
+    @Test
+    @DisplayName("Test UserService method deleteFromAdmin. Negative Scenario User id is null or empty.")
+    public void testDeleteFromAdminNegativeScenarioUserIdIsNull() {
+
+      GeneralException errorIfUserIdNull = assertThrows(GeneralException.class,
+          () -> userService.deleteFromAdmin(null));
+
+      assertEquals(HttpStatus.BAD_REQUEST, errorIfUserIdNull.getHttpStatus());
+      assertEquals(String.format("User ID cannot be null or empty. %s ", null),
+          errorIfUserIdNull.getMessage());
+
+      verify(userRepository, times(0)).findUserInfoByEmail(userOne.getEmail());
+    }
+
+    @Test
+    @DisplayName("Test UserService method deleteFromAdmin. Negative Scenario User Not Found.")
+    public void testDeleteFromAdminNegativeScenarioUserNotFound() {
+      when(userRepository.findById(userOne.getId().toHexString())).thenReturn(Optional.empty());
+
+      GeneralException errorIfUserNotFound = assertThrows(GeneralException.class,
+          () -> userService.deleteFromAdmin(userOne.getId().toHexString()));
+
+      assertEquals(HttpStatus.NOT_FOUND, errorIfUserNotFound.getHttpStatus());
+      assertEquals(String.format("User with ID [%s] not found.", userOne.getId().toHexString()),
+          errorIfUserNotFound.getMessage());
+
+      verify(userRepository, times(1)).findById(userOne.getId().toHexString());
+    }
+  }
 
   @Nested
   @DisplayName("Test UserService method Banned")
@@ -81,6 +288,9 @@ class UserServiceImpTest {
       String user = userService.banned(userOne.getEmail());
 
       assertEquals("User status updated to 'BANNED'", user);
+
+      verify(userRepository, times(1)).findUserByEmail(userOne.getEmail());
+      verify(userRepository, times(1)).save(userOne);
     }
 
     @Test

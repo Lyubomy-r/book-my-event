@@ -1,5 +1,7 @@
 package com.BookMyEvent;
 
+import com.BookMyEvent.converter.LocalTimeToStringConverter;
+import com.BookMyEvent.converter.StringToLocalTimeConverter;
 import com.BookMyEvent.mapper.EventMapperImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +17,16 @@ public class TestConfig {
   @Bean
   public ObjectMapper objectMapper() {
     return new ObjectMapper();
+  }
+
+  @Bean
+  public LocalTimeToStringConverter localTimeToStringConverter(){
+    return  new LocalTimeToStringConverter();
+  }
+
+  @Bean
+  public StringToLocalTimeConverter stringToLocalTimeConverter(){
+    return  new StringToLocalTimeConverter();
   }
 
   @Bean

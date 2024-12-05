@@ -142,7 +142,6 @@ class AuthControllerTest {
       String successMessage = "User registered successfully.";
       String requestBody = objectMapper.writeValueAsString(userSaveDto);
 
-//      when(authService.userRegistration(userSaveDto)).thenReturn(successMessage);
       when(deletedUsersService.emailExist(email)).thenReturn(false);
       when(repository.findUserByEmail(email)).thenReturn(Optional.empty());
       doNothing().when(mailService).sendHtmlEmailAfterRegistration(email);
@@ -166,8 +165,6 @@ class AuthControllerTest {
 
       when(deletedUsersService.emailExist(userSaveDto.getEmail())).thenReturn(true);
 
-//      when(authService.userRegistration(userSaveDto)).thenThrow(new GeneralException(message, HttpStatus.FORBIDDEN));
-
       mockMvc.perform(post("/authorize/registration")
               .contentType(MediaType.APPLICATION_JSON)
               .content(requestBody))
@@ -185,7 +182,6 @@ class AuthControllerTest {
       String requestBody = objectMapper.writeValueAsString(userSaveDto);
       when(deletedUsersService.emailExist(userSaveDto.getEmail())).thenReturn(false);
       when(repository.findUserByEmail(userSaveDto.getEmail())).thenReturn(Optional.of(userOne));
-//      when(authService.userRegistration(userSaveDto)).thenThrow(new GeneralException(message, HttpStatus.BAD_REQUEST));
 
       mockMvc.perform(post("/authorize/registration")
               .contentType(MediaType.APPLICATION_JSON)
@@ -207,8 +203,6 @@ class AuthControllerTest {
       log.info("userOne {}", userOne);
       when(deletedUsersService.emailExist(userSaveDto.getEmail())).thenReturn(false);
       when(repository.findUserByEmail(userSaveDto.getEmail())).thenReturn(Optional.of(userOne));
-
-//      when(authService.userRegistration(userSaveDto)).thenThrow(new GeneralException(message, HttpStatus.BAD_REQUEST));
 
       mockMvc.perform(post("/authorize/registration")
               .contentType(MediaType.APPLICATION_JSON)
@@ -240,8 +234,6 @@ class AuthControllerTest {
       when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
       when(repository.save(any(User.class))).thenReturn(mockUser);
       doNothing().when(mailRepository).delete(any(UserEmailData.class));
-
-//    when(authService.emailVerificationCheck(email, "password")).thenReturn(message);
 
       mockMvc.perform(get("/authorize/mail-confirmation/{email}/{password}", email, "password")
           )
@@ -278,7 +270,6 @@ class AuthControllerTest {
       when(mailRepository.findByEmail(userSaveDto.getEmail())).thenReturn(Optional.of(userEmailData));
       when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
-//    when(authService.emailVerificationCheck(email, "password")).thenReturn(message);
       log.info("testMethodEmailVerificationCheckNegativeScenarioWrongPassword - redirectUrl: " + redirectUrl);
 
       mockMvc.perform(get("/authorize/mail-confirmation/{email}/{password}", email, "password")
@@ -296,10 +287,8 @@ class AuthControllerTest {
       String encodedMessage = URLEncoder.encode(message, StandardCharsets.UTF_8);
       String redirectUrl = frontUrl + "/?emailConfirmed=true&message=" + encodedMessage + "&email=" + email;
       when(repository.findUserByEmail(userSaveDto.getEmail())).thenReturn(Optional.of(userOne));
-      when(mailRepository.findByEmail(userSaveDto.getEmail())).thenReturn(null);
+      when(mailRepository.findByEmail(userSaveDto.getEmail())).thenReturn(Optional.empty());
 
-
-//    when(authService.emailVerificationCheck(email, "password")).thenReturn(message);
       log.info("testMethodEmailVerificationCheckNegativeScenarioWrongPassword - redirectUrl: " + redirectUrl);
 
       mockMvc.perform(get("/authorize/mail-confirmation/{email}/{password}", email, "password")
@@ -327,8 +316,6 @@ class AuthControllerTest {
       );
       String requestBody = objectMapper.writeValueAsString(loginDto);
 
-//      when(authService.login(loginDto)).thenReturn(loginResponse);
-
       when(deletedUsersService.emailExist(email)).thenReturn(false);
       when(repository.findUserByEmail(email)).thenReturn(Optional.of(userOne));
       when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
@@ -346,8 +333,6 @@ class AuthControllerTest {
     void testLoginNegativeScenarioIsOnDeletedList() throws Exception {
       String message = String.format("The email (%s) has been deleted and is no longer accessible.", email);
       String requestBody = objectMapper.writeValueAsString(loginDto);
-
-//      when(authService.login(loginDto)).thenThrow(new GeneralException(message, HttpStatus.FORBIDDEN));
 
       when(deletedUsersService.emailExist(email)).thenReturn(true);
 
@@ -385,7 +370,6 @@ class AuthControllerTest {
       String requestBody = objectMapper.writeValueAsString(loginDto);
       userOne.setMailConfirmation(false);
 
-//      when(authService.login(loginDto)).thenThrow(new GeneralException(message, HttpStatus.UNAUTHORIZED));
       when(deletedUsersService.emailExist(email)).thenReturn(false);
       when(repository.findUserByEmail(email)).thenReturn(Optional.of(userOne));
 
@@ -406,7 +390,6 @@ class AuthControllerTest {
 
       String requestBody = objectMapper.writeValueAsString(loginDto);
 
-//      when(authService.login(loginDto)).thenThrow(new GeneralException(message, HttpStatus.FORBIDDEN));
       userOne.setStatus(Status.BANNED);
 
       when(deletedUsersService.emailExist(email)).thenReturn(false);
@@ -428,7 +411,6 @@ class AuthControllerTest {
 
       String requestBody = objectMapper.writeValueAsString(loginDto);
 
-//      when(authService.login(loginDto)).thenThrow(new GeneralException(message, HttpStatus.FORBIDDEN));
       when(deletedUsersService.emailExist(email)).thenReturn(false);
       when(repository.findUserByEmail(email)).thenReturn(Optional.of(userOne));
       when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
@@ -499,7 +481,7 @@ class AuthControllerTest {
 
       LoginDto invalidLoginDto = LoginDto.builder()
           .email(email)
-//          .password("Password1")
+
           .build();
       String requestBody = objectMapper.writeValueAsString(invalidLoginDto);
 
@@ -561,8 +543,6 @@ class AuthControllerTest {
       when(deletedUsersService.emailExist(email)).thenReturn(false);
       when(repository.existsByEmail(email)).thenReturn(true);
 
-//      when(authService.checkExistEmailAndIsAccessible(email)).thenReturn(response);
-
       mockMvc.perform(get("/authorize/exist/" + email))
           .andExpect(status().isOk())
           .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -577,7 +557,6 @@ class AuthControllerTest {
       String message = String.format("The email (%s) has been deleted and is no longer accessible.", email);
 
       when(deletedUsersService.emailExist(email)).thenReturn(true);
-//      when(authService.checkExistEmailAndIsAccessible(email)).thenThrow(new GeneralException(message, HttpStatus.FORBIDDEN));
 
       mockMvc.perform(get("/authorize/exist/sewewt@code.com"))
           .andExpect(status().isOk())
