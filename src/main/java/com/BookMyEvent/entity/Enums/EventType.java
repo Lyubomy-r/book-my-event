@@ -3,8 +3,8 @@ package com.BookMyEvent.entity.Enums;
 public enum EventType {
     STAND_UP("Stand-up"),
     UNDER_HOUSE("Під домом"),
-    CONCERTS("Концерт"),
-    MASTER_CLASS("Майстер клас"),
+    CONCERTS("Концерти"),
+    MASTER_CLASS("Майстер класи"),
     BUSINESS_NETWORKING("Бізнес та нетворкінг"),
     SPORTS_EVENTS("Спортивні заходи"),
     OTHER("Інше");

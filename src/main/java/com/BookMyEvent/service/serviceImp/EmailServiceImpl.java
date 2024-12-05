@@ -4,6 +4,7 @@ import com.BookMyEvent.entity.Ticket;
 import com.BookMyEvent.service.EmailService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,9 @@ import org.springframework.stereotype.Service;
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender javaMailSender;
+
+    @Value("${front.url}")
+    private String frontUrl;
 
 
     @Autowired
@@ -26,7 +30,6 @@ public class EmailServiceImpl implements EmailService {
         log.info("EmailServiceImpl::sendPasswordResetEmail - Sending password reset email to: {}", email);
         try {
             String messageBody = buildPasswordResetEmailBody(token);
-
 
             sendSimpleMessage(email, "Password Reset Request", messageBody);
             log.info("EmailServiceImpl::sendPasswordResetEmail - Email sent successfully to: {}", email);
@@ -41,7 +44,6 @@ public class EmailServiceImpl implements EmailService {
         log.info("EmailServiceImpl::sendBookingConfirmation - Sending booking confirmation email to: {}", to);
         try {
             String emailBody = buildEmailBody(ticket);
-
 
             sendSimpleMessage(to, "Booking Confirmation - Your Ticket", emailBody);
             log.info("EmailServiceImpl::sendBookingConfirmation - Email sent successfully to: {}", to);
@@ -63,20 +65,19 @@ public class EmailServiceImpl implements EmailService {
             log.info("EmailServiceImpl::sendSimpleMessage - Email sent successfully to: {}", to);
         } catch (Exception e) {
             log.error("EmailServiceImpl::sendSimpleMessage - Error sending email to: {}. Exception: {}", to, e.getMessage());
-            throw new RuntimeException("Failed to send email", e);
+            throw new RuntimeException( e.getMessage());
         }
     }
 
     @Override
     public void sendPasswordResetConfirmationEmail(String email) {
-        String url = "https://sergiy5.github.io/evently_front/";
         log.info("EmailServiceImpl::sendPasswordResetConfirmationEmail - Sending password reset confirmation email to: {}", email);
         String message = String.format("Привіт!\n\n" +
             "Ваш пароль було успішно оновлено.\n" +
             "Тепер ви можете увійти до свого облікового запису за допомогою нового пароля: (%s).\n\n" +
             "Якщо ви не запитували зміну пароля, будь ласка, зверніться до нашої служби підтримки.\n\n" +
             "З повагою,\n"
-            + "Команда підтримки BookMyEvent.", url);
+            + "Команда підтримки BookMyEvent.", frontUrl);
 
 
         sendSimpleMessage(email, "Пароль оновлено", message);

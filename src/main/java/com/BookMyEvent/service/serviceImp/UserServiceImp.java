@@ -7,10 +7,12 @@ import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.entity.dto.UserUpdateDto;
 import com.BookMyEvent.exception.GeneralException;
 import com.BookMyEvent.mapper.UserMapper;
+import com.BookMyEvent.service.DeletedUsersService;
 import com.BookMyEvent.service.MailService;
 import com.BookMyEvent.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -23,9 +25,12 @@ import java.util.Optional;
 public class UserServiceImp implements UserService {
 
   private final UserRepository userRepository;
+  private final DeletedUsersService deletedUsersService;
   private final UserMapper userMapper;
   private final MailService mailService;
 
+  @Value("${company.phone}")
+  private String companyPhone;
   public static final String NOT_FOUND_MESSAGE_ID = "User with ID [%s] not found.";
   public static final String NOT_FOUND_MESSAGE_EMAIL = "User with Email [%s] not found.";
   private final String clasName = this.getClass().getSimpleName();
@@ -105,6 +110,7 @@ public class UserServiceImp implements UserService {
     return userMapper.toUserResponseDto(updateUser);
   }
 
+  @Override
   public String delete(String userId) {
     if (userId == null || userId.isEmpty()) {
       log.warn("UserServiceImp::delete. Return error message.");
@@ -122,6 +128,25 @@ public class UserServiceImp implements UserService {
   }
 
   @Override
+  public String deleteFromAdmin(String userId) {
+    if (userId == null || userId.isEmpty()) {
+      log.warn("UserServiceImp::deleteFromAdmin. Return error message.");
+      throw new GeneralException(String.format("User ID cannot be null or empty. %s ", userId), HttpStatus.BAD_REQUEST);
+    }
+    Optional<User> user=userRepository.findById(userId);
+    if (user.isPresent()) {
+      log.info("UserServiceImp::deleteFromAdmin. Deleted user by ID: {}.", userId);
+
+      deletedUsersService.addUserToDeletedList(user.get().getEmail());
+      userRepository.delete(user.get());
+      return "User was deleted successfully.";
+    } else {
+      log.warn("UserServiceImp::deleteFromAdmin. Return error message.");
+      throw new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
+    }
+  }
+
+  @Override
   public String banned(String email) {
     log.info("Attempting to ban user with email: {}", email);
 
@@ -133,7 +158,14 @@ public class UserServiceImp implements UserService {
       if (!user.getStatus().equals(Status.BANNED)) {
         user.setStatus(Status.BANNED);
         userRepository.save(user);
-        mailService.blockingMessage(user.getEmail());
+//        mailService.blockingMessage(user.getEmail());
+        mailService.sendSimpleHtmlMailMessage4Line(user.getEmail(),
+            "Інформація про блокування на сайті BookMyEvent.",
+            "",
+            "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
+            "Якщо у вас є питання, зателефонуйте на нашу гарячу лінію.",
+            "\uD83D\uDCF2 " + companyPhone,
+            "");
         log.info("User status updated to 'BANNED' for user: {}", user.getEmail());
         return "User status updated to 'BANNED'";
       } else {
@@ -160,19 +192,26 @@ public class UserServiceImp implements UserService {
       if (!user.getStatus().equals(Status.ACTIVE)) {
         user.setStatus(Status.ACTIVE);
         userRepository.save(user);
-        mailService.unblockingMessage(user.getEmail());
+//        mailService.unblockingMessage(user.getEmail());
+        mailService.sendSimpleHtmlMailMessage4Line(user.getEmail(),
+            "Інформація про розблокування на сайті BookMyEvent.",
+            "Вітаємо!",
+            "Ваш акаунт розблоковано, і ви знову можете користуватися всіма можливостями нашого сайту. Насолоджуйтесь!",
+            "",
+            "",
+            "");
         log.info("User status successfully updated to 'ACTIVE' for user: {}", user.getEmail());
 
         return "User activated successfully";
       } else {
         log.warn("User with email: {} is already active.", email);
+//        throw new GeneralException("User is already active", HttpStatus.BAD_REQUEST);
         return "User is already active";
       }
     } else {
       log.warn("No user found with email: {}", email);
-      throw new GeneralException(String.format("No user found with email: %s", email), HttpStatus.NOT_FOUND);
+      throw new GeneralException(String.format("User with such email: (%s) not found", email), HttpStatus.NOT_FOUND);
     }
-
   }
 
 
