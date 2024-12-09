@@ -17,4 +17,5 @@ public interface EventService {
     List<EventDTO> getAllEvents();
     EventDTO updateEventStatus(String id, EventStatus status);
     List<Event> getEventsByStatus(EventStatus status);
+    EventDTO approveEvent(String id);
 }

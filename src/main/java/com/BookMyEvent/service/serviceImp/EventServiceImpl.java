@@ -39,14 +39,31 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventDTO createEvent(EventDTO eventDTO) {
-        log.info("EventServiceImpl::createEvent - Creating new event: {}", eventDTO);
+        log.info("EventServiceImpl::createEvent - Creating new event with pending status: {}", eventDTO);
         Event event = eventMapper.toEvent(eventDTO);
         event.setCreationDate(LocalDateTime.now());
         event.setEventStatus(EventStatus.PENDING);
         event.setAvailableTickets(event.getNumberOfTickets());
+
         Event savedEvent = eventRepository.save(event);
         log.info("EventServiceImpl::createEvent - Event created successfully: {}", savedEvent);
         return eventMapper.toEventDTO(savedEvent);
+    }
+
+    @Override
+    @Transactional
+    public EventDTO approveEvent(String id) {
+        log.info("EventServiceImpl::approveEvent - Approving event with ID: {}", id);
+
+        Event existingEvent = eventRepository.findById(id)
+                .orElseThrow(() -> new GeneralException("Event not found with ID " + id, HttpStatus.NOT_FOUND));
+
+        existingEvent.setEventStatus(EventStatus.APPROVED);
+
+        Event approvedEvent = eventRepository.save(existingEvent);
+
+        log.info("EventServiceImpl::approveEvent - Event approved successfully: {}", approvedEvent);
+        return eventMapper.toEventDTO(approvedEvent);
     }
 
     @Override

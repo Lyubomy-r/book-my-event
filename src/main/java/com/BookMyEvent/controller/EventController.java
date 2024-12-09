@@ -133,4 +133,10 @@ public class EventController {
         }
         return ResponseEntity.ok(events);
     }
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<EventDTO> approveEvent(@PathVariable String id) {
+        log.info("Class: {}, Method: approveEvent - Approving event with ID: {}", this.getClass().getSimpleName(), id);
+        EventDTO approvedEvent = eventService.approveEvent(id);
+        return ResponseEntity.ok(approvedEvent);
+    }
 }
