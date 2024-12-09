@@ -18,4 +18,5 @@ public interface EventService {
     EventDTO updateEventStatus(String id, EventStatus status);
     List<Event> getEventsByStatus(EventStatus status);
     EventDTO approveEvent(String id);
+    EventDTO cancelEvent(String id);
 }

@@ -77,7 +77,21 @@ public class EventServiceImpl implements EventService {
         log.info("EventServiceImpl::updateEvent - Event updated successfully: {}", updatedEvent);
         return eventMapper.toEventDTO(updatedEvent);
     }
+    @Override
+    @Transactional
+        public EventDTO cancelEvent(String id) {
+        log.info("EventServiceImpl::cancelEvent - Cancelling event with ID: {}", id);
 
+        Event existingEvent = eventRepository.findById(id)
+                .orElseThrow(() -> new GeneralException("Event not found with ID " + id, HttpStatus.NOT_FOUND));
+
+        existingEvent.setEventStatus(EventStatus.CANCELLED);
+
+        Event cancelledEvent = eventRepository.save(existingEvent);
+
+        log.info("EventServiceImpl::cancelEvent - Event cancelled successfully: {}", cancelledEvent);
+        return eventMapper.toEventDTO(cancelledEvent);
+    }
     @Override
     public List<EventResponseDto> getEventsUA() {
         String methodName = new Object() {}.getClass().getEnclosingMethod().getName();

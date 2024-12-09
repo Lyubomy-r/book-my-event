@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -133,10 +134,18 @@ public class EventController {
         }
         return ResponseEntity.ok(events);
     }
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/approve")
     public ResponseEntity<EventDTO> approveEvent(@PathVariable String id) {
         log.info("Class: {}, Method: approveEvent - Approving event with ID: {}", this.getClass().getSimpleName(), id);
         EventDTO approvedEvent = eventService.approveEvent(id);
         return ResponseEntity.ok(approvedEvent);
+    }
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping
+    public ResponseEntity<?> getAllEvents() {
+        log.info("Class: {}, Method: getAllEvents - Fetching all approved events.", this.getClass().getSimpleName());
+        List<Event> events = eventService.getEventsByStatus(EventStatus.APPROVED);
+        return ResponseEntity.ok(events);
     }
 }
