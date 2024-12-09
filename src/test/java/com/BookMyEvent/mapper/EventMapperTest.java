@@ -30,13 +30,13 @@ class EventMapperTest {
     event.setTicketPrice(1000L);
     event.setNumberOfTickets(100);
     event.setAvailableTickets(50);
-    event.setLocation(new Location("city", "street", "venu"));
+    event.setLocation(new Location("city", "street", "venue"));
     event.setOrganizers(List.of());
     event.setEventType(EventType.SPORTS_EVENTS);
     event.setEventCategory(EventCategory.TOP_EVENTS);
 
-
-    EventResponseDto eventResponseDto = eventMapper.toEventResponseDtoFromEvent(event,new DateDetails("21 жовтня", LocalTime.now().toString()));
+    DateDetails dateDetails = new DateDetails("21 жовтня", LocalTime.now().toString());
+    EventResponseDto eventResponseDto = eventMapper.toEventResponseDtoFromEvent(event, dateDetails);
     log.info("eventResponseDto : {}", eventResponseDto);
 
     assertEquals(event.getId(), eventResponseDto.getId());

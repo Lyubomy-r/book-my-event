@@ -4,8 +4,10 @@ import com.BookMyEvent.TestConfig;
 import com.BookMyEvent.dao.EventRepository;
 import com.BookMyEvent.entity.DateDetails;
 import com.BookMyEvent.entity.Enums.EventCategory;
+import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Enums.EventType;
 import com.BookMyEvent.entity.Event;
+import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventResponseDto;
 import com.BookMyEvent.mapper.EventMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +22,7 @@ import org.springframework.context.annotation.Import;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.times;
@@ -78,5 +81,24 @@ class EventServiceImplTest {
     );
 
     verify(eventRepository, times(1)).findAll();
+  }
+
+  @Test
+  void testUpdateEventStatus() {
+    String eventId = "66c648b600179737a3d5c235";
+    EventStatus status = EventStatus.APPROVED;
+
+    EventDTO updatedEventDTO = new EventDTO();
+    updatedEventDTO.setId(eventId);
+    updatedEventDTO.setEventStatus(status);
+
+    when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+    when(eventRepository.save(event)).thenReturn(event);
+    when(eventMapper.toEventDTO(event)).thenReturn(updatedEventDTO);
+
+    EventDTO result = eventService.updateEventStatus(eventId, status);
+
+    assertEquals(status, result.getEventStatus());
+    verify(eventRepository, times(1)).save(event);
   }
 }
