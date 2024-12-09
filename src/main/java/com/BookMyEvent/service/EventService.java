@@ -1,5 +1,7 @@
 package com.BookMyEvent.service;
 
+import com.BookMyEvent.entity.Enums.EventStatus;
+import com.BookMyEvent.entity.Event;
 import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventResponseDto;
 
@@ -13,4 +15,6 @@ public interface EventService {
     EventDTO getEventById(String id);
     void deletePastEvents();
     List<EventDTO> getAllEvents();
+    EventDTO updateEventStatus(String id, EventStatus status);
+    List<Event> getEventsByStatus(EventStatus status);
 }

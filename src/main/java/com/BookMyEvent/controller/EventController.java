@@ -1,10 +1,13 @@
 package com.BookMyEvent.controller;
 
+import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Event;
 import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventResponseDto;
+import com.BookMyEvent.exception.model.ErrorResponseDto;
 import com.BookMyEvent.service.EventService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -14,14 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -85,5 +81,56 @@ public class EventController {
         log.info("Class: {}, Method: clearPastEvents - Clearing past events.", this.getClass().getSimpleName());
         eventService.deletePastEvents();
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+    @Operation(
+            summary = "Update Event Status",
+            description = "Updates the status of the event to one of the predefined values: PENDING, APPROVED, or CANCELLED.",
+            parameters = {
+                    @Parameter(
+                            name = "id",
+                            description = "The unique identifier of the event to update",
+                            required = true,
+                            example = "event123"
+                    ),
+                    @Parameter(
+                            name = "status",
+                            description = "The new status of the event",
+                            required = true,
+                            example = "APPROVED"
+                    )
+            },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Event status updated successfully",
+                            content = @Content(
+                                    mediaType = APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = EventDTO.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Event not found",
+                            content = @Content(
+                                    mediaType = APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponseDto.class)
+                            )
+                    )
+            }
+    )
+    @PutMapping("/{id}/status")
+    public ResponseEntity<EventDTO> updateEventStatus(@PathVariable String id, @RequestParam EventStatus status) {
+        log.info("Class: {}, Method: updateEventStatus - Updating status of event ID: {} to {}", this.getClass().getSimpleName(), id, status);
+        EventDTO updatedEvent = eventService.updateEventStatus(id, status);
+        return ResponseEntity.ok(updatedEvent);
+    }
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<Event>> getEventsByStatus(@PathVariable("status") EventStatus status) {
+        log.info("Class: {}, Method: getEventsByStatus - Fetching events with status: {}", this.getClass().getSimpleName(), status);
+        List<Event> events = eventService.getEventsByStatus(status);
+        if (events.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(events);
     }
 }

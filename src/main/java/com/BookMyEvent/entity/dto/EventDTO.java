@@ -1,5 +1,6 @@
 package com.BookMyEvent.entity.dto;
 
+import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Location;
 import com.BookMyEvent.entity.User;
 import jakarta.validation.constraints.Future;
@@ -42,4 +43,7 @@ public class EventDTO {
     @NotBlank(message = "Location is mandatory")
     private Location location;
     private List<User> organizers;
-    private boolean isDeleted = false;}
+    private boolean isDeleted = false;
+    private String eventUrl;
+    private EventStatus eventStatus;
+}

@@ -1,6 +1,7 @@
 package com.BookMyEvent.entity.dto;
 
 import com.BookMyEvent.entity.DateDetails;
+import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Location;
 import com.BookMyEvent.entity.User;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -36,4 +37,6 @@ public class EventResponseDto {
   private String eventType;
   @JsonProperty("category")
   private String eventCategory;
+  private String eventUrl;
+  private EventStatus eventStatus;
 }

@@ -1,6 +1,7 @@
 package com.BookMyEvent.entity;
 
 import com.BookMyEvent.entity.Enums.EventCategory;
+import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Enums.EventType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,6 +47,11 @@ public class Event {
 
   @DBRef
   private User createdBy;
+  private String eventUrl;
 
-  
+  private EventStatus eventStatus=EventStatus.PENDING;
+
+  public void updateStatus(EventStatus status) {
+    this.eventStatus = status;
+  }
 }

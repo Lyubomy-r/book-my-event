@@ -1,5 +1,5 @@
 package com.BookMyEvent.entity;
 
-public record DateDetails(String day, String time) {
+    public record DateDetails(String day, String time) {
 
-}
+    }

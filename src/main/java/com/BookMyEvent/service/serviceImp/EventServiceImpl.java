@@ -2,6 +2,7 @@ package com.BookMyEvent.service.serviceImp;
 
 import com.BookMyEvent.dao.EventRepository;
 import com.BookMyEvent.entity.DateDetails;
+import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Event;
 import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventResponseDto;
@@ -41,6 +42,7 @@ public class EventServiceImpl implements EventService {
         log.info("EventServiceImpl::createEvent - Creating new event: {}", eventDTO);
         Event event = eventMapper.toEvent(eventDTO);
         event.setCreationDate(LocalDateTime.now());
+        event.setEventStatus(EventStatus.PENDING);
         event.setAvailableTickets(event.getNumberOfTickets());
         Event savedEvent = eventRepository.save(event);
         log.info("EventServiceImpl::createEvent - Event created successfully: {}", savedEvent);
@@ -142,4 +144,27 @@ public class EventServiceImpl implements EventService {
         String dayText = LocalDate.parse(date.day()).format(formatter);
         return new DateDetails(dayText, date.time());
     }
+    @Override
+    @Transactional
+    public EventDTO updateEventStatus(String id, EventStatus status) {
+        log.info("EventServiceImpl::updateEventStatus - Updating event ID: {} with new status: {}", id, status);
+
+        Event existingEvent = eventRepository.findById(id)
+                .orElseThrow(() -> new GeneralException("Event not found with ID " + id, HttpStatus.NOT_FOUND));
+
+        existingEvent.setEventStatus(status);
+
+        Event updatedEvent = eventRepository.save(existingEvent);
+
+        log.info("EventServiceImpl::updateEventStatus - Event status updated successfully: {}", updatedEvent);
+        return eventMapper.toEventDTO(updatedEvent);
+    }
+
+    @Override
+    public List<Event> getEventsByStatus(EventStatus status) {
+        log.info("Fetching events with status: {}", status);
+        return eventRepository.findByEventStatus(status);
+    }
+
+
 }

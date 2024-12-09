@@ -1,5 +1,6 @@
 package com.BookMyEvent.dao;
 
+import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Event;
 
 import com.BookMyEvent.entity.dto.EventResponseDto;
@@ -23,4 +24,5 @@ public interface EventRepository extends MongoRepository<Event, String> {
 
   @Query("{ 'date.day' : ?0 }")
   List<Event> findByEventStartDate(String day);
+  List<Event> findByEventStatus(EventStatus status);
 }
