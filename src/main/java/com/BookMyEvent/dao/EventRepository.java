@@ -3,14 +3,10 @@ package com.BookMyEvent.dao;
 import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Event;
 
-import com.BookMyEvent.entity.dto.EventResponseDto;
-import com.BookMyEvent.entity.dto.UserResponseDto;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,5 +20,6 @@ public interface EventRepository extends MongoRepository<Event, String> {
 
   @Query("{ 'date.day' : ?0 }")
   List<Event> findByEventStartDate(String day);
-  List<Event> findByEventStatus(EventStatus status);
+  List<Event> findEventByEventStatus(EventStatus eventStatus);
+
 }

@@ -86,11 +86,11 @@ class EventServiceImplTest {
   @Test
   void testUpdateEventStatus() {
     String eventId = "66c648b600179737a3d5c235";
-    EventStatus status = EventStatus.APPROVED;
-
+    String status = EventStatus.APPROVED.toString();
+EventStatus eventStatus=EventStatus.valueOf(status);
     EventDTO updatedEventDTO = new EventDTO();
     updatedEventDTO.setId(eventId);
-    updatedEventDTO.setEventStatus(status);
+    updatedEventDTO.setEventStatus(eventStatus);
 
     when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
     when(eventRepository.save(event)).thenReturn(event);

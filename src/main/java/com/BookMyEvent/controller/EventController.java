@@ -119,33 +119,26 @@ public class EventController {
                     )
             }
     )
-    @PutMapping("/{id}/status")
-    public ResponseEntity<EventDTO> updateEventStatus(@PathVariable String id, @RequestParam EventStatus status) {
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<EventDTO> updateEventStatus(@PathVariable String id, @RequestParam String status) {
         log.info("Class: {}, Method: updateEventStatus - Updating status of event ID: {} to {}", this.getClass().getSimpleName(), id, status);
         EventDTO updatedEvent = eventService.updateEventStatus(id, status);
         return ResponseEntity.ok(updatedEvent);
     }
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<Event>> getEventsByStatus(@PathVariable("status") EventStatus status) {
+    public ResponseEntity<List<Event>> getEventsByStatus(@PathVariable("status") String status) {
         log.info("Class: {}, Method: getEventsByStatus - Fetching events with status: {}", this.getClass().getSimpleName(), status);
         List<Event> events = eventService.getEventsByStatus(status);
-        if (events.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
+
         return ResponseEntity.ok(events);
     }
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{id}/approve")
-    public ResponseEntity<EventDTO> approveEvent(@PathVariable String id) {
-        log.info("Class: {}, Method: approveEvent - Approving event with ID: {}", this.getClass().getSimpleName(), id);
-        EventDTO approvedEvent = eventService.approveEvent(id);
-        return ResponseEntity.ok(approvedEvent);
-    }
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    @GetMapping
-    public ResponseEntity<?> getAllEvents() {
-        log.info("Class: {}, Method: getAllEvents - Fetching all approved events.", this.getClass().getSimpleName());
-        List<Event> events = eventService.getEventsByStatus(EventStatus.APPROVED);
-        return ResponseEntity.ok(events);
+
+
+    @GetMapping("/count/{status}")
+    public ResponseEntity<Long> getCountByStatus(@PathVariable("status") String status) {
+        log.info("Class: {}, Method: getCountByStatus - Counting events with status: {}", this.getClass().getSimpleName(), status);
+        long count = eventService.countByStatus(status);
+        log.info("Events count for status {}: {}", status, count);
+        return ResponseEntity.ok(count);
     }
 }

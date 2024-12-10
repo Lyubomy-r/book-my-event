@@ -51,7 +51,5 @@ public class Event {
 
   private EventStatus eventStatus=EventStatus.PENDING;
 
-  public void updateStatus(EventStatus status) {
-    this.eventStatus = status;
-  }
+
 }

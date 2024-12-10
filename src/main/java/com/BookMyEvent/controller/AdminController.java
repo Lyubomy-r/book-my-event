@@ -1,8 +1,10 @@
 package com.BookMyEvent.controller;
 
 import com.BookMyEvent.entity.dto.AppResponse;
+import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
+import com.BookMyEvent.service.EventService;
 import com.BookMyEvent.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,12 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 
 import java.util.List;
@@ -36,7 +34,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class AdminController {
 
   private final UserService userService;
-
+private final EventService eventService;
   @Operation(
       summary = "Get  list of users",
       description = "Retrieves a list of users.",
@@ -67,6 +65,12 @@ public class AdminController {
     return ResponseEntity.ok(userList);
   }
 
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<EventDTO> approveEvent(@PathVariable String id) {
+        log.info("Class: {}, Method: approveEvent - Approving event with ID: {}", this.getClass().getSimpleName(), id);
+        EventDTO approvedEvent = eventService.approveEvent(id);
+        return ResponseEntity.ok(approvedEvent);
+    }
   @Operation(
       summary = "Delete a user by ID",
       description = "Deletes a user from the system using their unique user ID. If the user ID is not provided, invalid, or not found, an error is returned.",

@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -42,7 +41,7 @@ public class EventServiceImpl implements EventService {
         log.info("EventServiceImpl::createEvent - Creating new event with pending status: {}", eventDTO);
         Event event = eventMapper.toEvent(eventDTO);
         event.setCreationDate(LocalDateTime.now());
-        event.setEventStatus(EventStatus.PENDING);
+
         event.setAvailableTickets(event.getNumberOfTickets());
 
         Event savedEvent = eventRepository.save(event);
@@ -117,6 +116,26 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public Integer countByStatus(String status) {
+        log.info("EventServiceImpl::countByStatus - Start counting events for status: {}", status);
+
+        EventStatus eventStatus = parseEventStatus(status);
+
+        int statusCount = eventRepository.findEventByEventStatus(eventStatus).size();
+        log.info("EventServiceImpl::countByStatus - Found {} events with status: {}", statusCount, eventStatus);
+        return statusCount;
+    }
+
+    private EventStatus parseEventStatus(String status) {
+        try {
+            return EventStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid status value: {}", status, e);
+            throw new GeneralException("Invalid status value or such status doesn't exist: " + status, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Override
     @Transactional
     public void deleteEvent(String id) {
         log.info("EventServiceImpl::deleteEvent - Deleting event ID: {}", id);
@@ -177,14 +196,20 @@ public class EventServiceImpl implements EventService {
     }
     @Override
     @Transactional
-    public EventDTO updateEventStatus(String id, EventStatus status) {
+    public EventDTO updateEventStatus(String id, String status) {
         log.info("EventServiceImpl::updateEventStatus - Updating event ID: {} with new status: {}", id, status);
 
         Event existingEvent = eventRepository.findById(id)
                 .orElseThrow(() -> new GeneralException("Event not found with ID " + id, HttpStatus.NOT_FOUND));
 
-        existingEvent.setEventStatus(status);
+        EventStatus newStatus = parseEventStatus(status);
 
+        if (existingEvent.getEventStatus() == EventStatus.CANCELLED) {
+            log.error("Cannot update status for cancelled event: {}", id);
+            throw new GeneralException("Cannot update status for cancelled event", HttpStatus.BAD_REQUEST);
+        }
+
+        existingEvent.setEventStatus(newStatus);
         Event updatedEvent = eventRepository.save(existingEvent);
 
         log.info("EventServiceImpl::updateEventStatus - Event status updated successfully: {}", updatedEvent);
@@ -192,9 +217,15 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<Event> getEventsByStatus(EventStatus status) {
+    public List<Event> getEventsByStatus(String status) {
         log.info("Fetching events with status: {}", status);
-        return eventRepository.findByEventStatus(status);
+        EventStatus eventStatus;
+        try {
+            eventStatus = EventStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new GeneralException("Invalid status value or such status doesn't exist: " + status, HttpStatus.BAD_REQUEST);
+        }
+        return eventRepository.findEventByEventStatus(eventStatus);
     }
 
 
