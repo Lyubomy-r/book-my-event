@@ -6,6 +6,7 @@ import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventResponseDto;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface EventService {
@@ -16,9 +17,9 @@ public interface EventService {
     EventDTO getEventById(String id);
     void deletePastEvents();
     List<EventDTO> getAllEvents();
-    EventDTO updateEventStatus(String id, String status);
-    List<Event> getEventsByStatus(String status);
-    EventDTO approveEvent(String id);
+    EventResponseDto updateEventStatus(String id, String status);
+    List<EventResponseDto> getEventsByStatus(String status);
+    EventResponseDto approveEvent(String id);
     EventDTO cancelEvent(String id);
-    Integer countByStatus(String status);
+    Map<EventStatus,Integer> countByStatus();
 }

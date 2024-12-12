@@ -2,6 +2,7 @@ package com.BookMyEvent.controller;
 
 import com.BookMyEvent.entity.dto.AppResponse;
 import com.BookMyEvent.entity.dto.EventDTO;
+import com.BookMyEvent.entity.dto.EventResponseDto;
 import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
 import com.BookMyEvent.service.EventService;
@@ -65,10 +66,10 @@ private final EventService eventService;
     return ResponseEntity.ok(userList);
   }
 
-    @PutMapping("/{id}/approve")
-    public ResponseEntity<EventDTO> approveEvent(@PathVariable String id) {
+    @PatchMapping("/{id}/approve")
+    public ResponseEntity<EventResponseDto> approveEvent(@PathVariable String id) {
         log.info("Class: {}, Method: approveEvent - Approving event with ID: {}", this.getClass().getSimpleName(), id);
-        EventDTO approvedEvent = eventService.approveEvent(id);
+        EventResponseDto approvedEvent = eventService.approveEvent(id);
         return ResponseEntity.ok(approvedEvent);
     }
   @Operation(

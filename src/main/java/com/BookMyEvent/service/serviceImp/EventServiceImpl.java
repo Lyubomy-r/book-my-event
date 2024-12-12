@@ -18,9 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -51,7 +52,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public EventDTO approveEvent(String id) {
+    public EventResponseDto approveEvent(String id) {
         log.info("EventServiceImpl::approveEvent - Approving event with ID: {}", id);
 
         Event existingEvent = eventRepository.findById(id)
@@ -62,7 +63,15 @@ public class EventServiceImpl implements EventService {
         Event approvedEvent = eventRepository.save(existingEvent);
 
         log.info("EventServiceImpl::approveEvent - Event approved successfully: {}", approvedEvent);
-        return eventMapper.toEventDTO(approvedEvent);
+
+
+        return eventMapper.toEventResponseDtoFromEvent(approvedEvent, createDateDetails(approvedEvent));
+    }
+
+
+    private DateDetails createDateDetails(Event event) {
+
+        return new DateDetails(event.getDate().day(), event.getDate().time(), event.getDate().endTime());
     }
 
     @Override
@@ -116,15 +125,19 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Integer countByStatus(String status) {
-        log.info("EventServiceImpl::countByStatus - Start counting events for status: {}", status);
+    public Map<EventStatus, Integer> countByStatus() {
+        log.info("EventServiceImpl::countByStatus - Start counting events for all statuses");
 
-        EventStatus eventStatus = parseEventStatus(status);
+        Map<EventStatus, Integer> statusCountMap = Arrays.stream(EventStatus.values())
+                .collect(Collectors.toMap(
+                        status -> status,
+                        status -> eventRepository.findEventByEventStatus(status).size()
+                ));
 
-        int statusCount = eventRepository.findEventByEventStatus(eventStatus).size();
-        log.info("EventServiceImpl::countByStatus - Found {} events with status: {}", statusCount, eventStatus);
-        return statusCount;
+        log.info("EventServiceImpl::countByStatus - Events count by status: {}", statusCountMap);
+        return statusCountMap;
     }
+
 
     private EventStatus parseEventStatus(String status) {
         try {
@@ -186,17 +199,26 @@ public class EventServiceImpl implements EventService {
         deletePastEvents();
     }
 
+
     public DateDetails formatDate(DateDetails date) {
         if (date == null) {
             return null;
         }
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM", new Locale("uk"));
-        String dayText = LocalDate.parse(date.day()).format(formatter);
-        return new DateDetails(dayText, date.time());
+
+        DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("d MMMM", new Locale("uk"));
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH);
+
+        String formattedDay = LocalDate.parse(date.day()).format(dayFormatter);
+        String formattedTime = date.time() != null ? LocalTime.parse(date.time()).format(timeFormatter) : null;
+        String formattedEndTime = date.endTime() != null ? LocalTime.parse(date.endTime()).format(timeFormatter) : null;
+
+        return new DateDetails(formattedDay, formattedTime, formattedEndTime);
     }
+
+
     @Override
     @Transactional
-    public EventDTO updateEventStatus(String id, String status) {
+    public EventResponseDto updateEventStatus(String id, String status) {
         log.info("EventServiceImpl::updateEventStatus - Updating event ID: {} with new status: {}", id, status);
 
         Event existingEvent = eventRepository.findById(id)
@@ -206,27 +228,35 @@ public class EventServiceImpl implements EventService {
 
         if (existingEvent.getEventStatus() == EventStatus.CANCELLED) {
             log.error("Cannot update status for cancelled event: {}", id);
-            throw new GeneralException("Cannot update status for cancelled event", HttpStatus.BAD_REQUEST);
+            throw new GeneralException("Cannot update status for a cancelled event", HttpStatus.BAD_REQUEST);
         }
 
         existingEvent.setEventStatus(newStatus);
         Event updatedEvent = eventRepository.save(existingEvent);
 
         log.info("EventServiceImpl::updateEventStatus - Event status updated successfully: {}", updatedEvent);
-        return eventMapper.toEventDTO(updatedEvent);
+
+        DateDetails formattedDateDetails = formatDate(updatedEvent.getDate());
+        return eventMapper.toEventResponseDtoFromEvent(updatedEvent, formattedDateDetails);
     }
 
     @Override
-    public List<Event> getEventsByStatus(String status) {
+    public List<EventResponseDto> getEventsByStatus(String status) {
         log.info("Fetching events with status: {}", status);
+
         EventStatus eventStatus;
         try {
             eventStatus = EventStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new GeneralException("Invalid status value or such status doesn't exist: " + status, HttpStatus.BAD_REQUEST);
         }
-        return eventRepository.findEventByEventStatus(eventStatus);
+
+        List<Event> events = eventRepository.findEventByEventStatus(eventStatus);
+        return events.stream()
+                .map(event -> eventMapper.toEventResponseDtoFromEvent(event, createDateDetails(event)))
+                .collect(Collectors.toList());
     }
+
 
 
 }

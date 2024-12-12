@@ -120,25 +120,27 @@ public class EventController {
             }
     )
     @PatchMapping("/{id}/status")
-    public ResponseEntity<EventDTO> updateEventStatus(@PathVariable String id, @RequestParam String status) {
+    public ResponseEntity<EventResponseDto> updateEventStatus(@PathVariable String id, @RequestParam String status) {
         log.info("Class: {}, Method: updateEventStatus - Updating status of event ID: {} to {}", this.getClass().getSimpleName(), id, status);
-        EventDTO updatedEvent = eventService.updateEventStatus(id, status);
+        EventResponseDto updatedEvent = eventService.updateEventStatus(id, status);
         return ResponseEntity.ok(updatedEvent);
     }
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<Event>> getEventsByStatus(@PathVariable("status") String status) {
+    public ResponseEntity<List<EventResponseDto>> getEventsByStatus(@PathVariable("status") String status) {
         log.info("Class: {}, Method: getEventsByStatus - Fetching events with status: {}", this.getClass().getSimpleName(), status);
-        List<Event> events = eventService.getEventsByStatus(status);
+        List<EventResponseDto> events = eventService.getEventsByStatus(status);
 
         return ResponseEntity.ok(events);
     }
 
 
-    @GetMapping("/count/{status}")
-    public ResponseEntity<Long> getCountByStatus(@PathVariable("status") String status) {
-        log.info("Class: {}, Method: getCountByStatus - Counting events with status: {}", this.getClass().getSimpleName(), status);
-        long count = eventService.countByStatus(status);
-        log.info("Events count for status {}: {}", status, count);
-        return ResponseEntity.ok(count);
+    @GetMapping("/countAllEventsByStatus")
+    public ResponseEntity<Map<EventStatus, Integer>> getCountByStatus() {
+        log.info("Class: {}, Method: getCountByStatus - Counting events for all statuses", this.getClass().getSimpleName());
+
+        Map<EventStatus, Integer> statusCountMap = eventService.countByStatus();
+
+        log.info("Events count by status: {}", statusCountMap);
+        return ResponseEntity.ok(statusCountMap);
     }
 }

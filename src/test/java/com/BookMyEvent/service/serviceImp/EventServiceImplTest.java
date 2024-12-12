@@ -86,19 +86,18 @@ class EventServiceImplTest {
   @Test
   void testUpdateEventStatus() {
     String eventId = "66c648b600179737a3d5c235";
-    String status = EventStatus.APPROVED.toString();
-EventStatus eventStatus=EventStatus.valueOf(status);
+
     EventDTO updatedEventDTO = new EventDTO();
     updatedEventDTO.setId(eventId);
-    updatedEventDTO.setEventStatus(eventStatus);
+    updatedEventDTO.setEventStatus(EventStatus.APPROVED);
 
     when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
     when(eventRepository.save(event)).thenReturn(event);
     when(eventMapper.toEventDTO(event)).thenReturn(updatedEventDTO);
 
-    EventDTO result = eventService.updateEventStatus(eventId, status);
+    EventResponseDto result = eventService.updateEventStatus(eventId, EventStatus.APPROVED.toString());
 
-    assertEquals(status, result.getEventStatus());
+    assertEquals( EventStatus.APPROVED.toString(), result.getEventStatus());
     verify(eventRepository, times(1)).save(event);
   }
 }
