@@ -6,6 +6,7 @@ import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventResponseDto;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
 import com.BookMyEvent.service.EventService;
+import com.BookMyEvent.service.MediaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,9 +17,11 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -35,10 +38,12 @@ public class EventController {
     @Autowired
     private EventService eventService;
 
-    @PostMapping
-    public ResponseEntity<EventDTO> createEvent(@Valid @RequestBody EventDTO eventDTO) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<EventDTO> createEvent(
+            @RequestPart("event") @Valid @RequestBody EventDTO eventDTO,
+            @RequestPart("image") MultipartFile image)  {
         log.info("Class: {}, Method: createEvent - Creating new event", this.getClass().getSimpleName());
-        EventDTO createdEvent = eventService.createEvent(eventDTO);
+        EventDTO createdEvent = eventService.createEvent(eventDTO,image);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
     }
 
@@ -134,7 +139,7 @@ public class EventController {
     }
 
 
-    @GetMapping("/countAllEventsByStatus")
+    @GetMapping("/count/status")
     public ResponseEntity<Map<EventStatus, Integer>> getCountByStatus() {
         log.info("Class: {}, Method: getCountByStatus - Counting events for all statuses", this.getClass().getSimpleName());
 

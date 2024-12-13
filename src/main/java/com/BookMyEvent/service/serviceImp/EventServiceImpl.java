@@ -9,13 +9,16 @@ import com.BookMyEvent.entity.dto.EventResponseDto;
 import com.BookMyEvent.exception.GeneralException;
 import com.BookMyEvent.mapper.EventMapper;
 import com.BookMyEvent.service.EventService;
+import com.BookMyEvent.service.MediaService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -29,24 +32,40 @@ public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
     private final EventMapper eventMapper;
-
+    private final MediaService mediaService;
     @Autowired
-    public EventServiceImpl(EventRepository eventRepository, EventMapper eventMapper) {
+    public EventServiceImpl(EventRepository eventRepository, EventMapper eventMapper, MediaService mediaService) {
         this.eventRepository = eventRepository;
         this.eventMapper = eventMapper;
+        this.mediaService = mediaService;
     }
+
+
+
 
     @Override
     @Transactional
-    public EventDTO createEvent(EventDTO eventDTO) {
+    public EventDTO createEvent(EventDTO eventDTO, MultipartFile image) {
         log.info("EventServiceImpl::createEvent - Creating new event with pending status: {}", eventDTO);
-        Event event = eventMapper.toEvent(eventDTO);
-        event.setCreationDate(LocalDateTime.now());
 
+        try {
+            byte[] imageBytes = mediaService.getSingleImageBytes(image);
+            String imageBytesAsBase64 = Base64.getEncoder().encodeToString(imageBytes);
+            eventDTO.setPhotoUrl(imageBytesAsBase64);
+        } catch (IOException e) {
+            log.error("EventServiceImpl::createEvent - Error processing image: {}", e.getMessage());
+            throw new RuntimeException("Error processing image: " + e.getMessage());
+        }
+
+        Event event = eventMapper.toEvent(eventDTO);
+
+        event.setCreationDate(LocalDateTime.now());
         event.setAvailableTickets(event.getNumberOfTickets());
 
         Event savedEvent = eventRepository.save(event);
         log.info("EventServiceImpl::createEvent - Event created successfully: {}", savedEvent);
+
+
         return eventMapper.toEventDTO(savedEvent);
     }
 

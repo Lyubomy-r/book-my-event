@@ -21,6 +21,10 @@ import org.springframework.context.annotation.Import;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,7 +58,7 @@ class EventServiceImplTest {
     event.setEventCategory(EventCategory.TOP_EVENTS);
     event.setAvailableTickets(100);
     event.setNumberOfTickets(100);
-    event.setDate(new DateDetails(LocalDate.of(2025, 10, 21).toString(), LocalTime.now().toString()));
+    event.setDate(new DateDetails(LocalDate.of(2025, 10, 21).toString(), LocalTime.now().toString(),LocalTime.now().plus(5, ChronoUnit.HOURS).toString()));
   }
 
   @Test
@@ -68,7 +72,7 @@ class EventServiceImplTest {
     eventResponseDto.setEventCategory(EventCategory.TOP_EVENTS.toString());
     eventResponseDto.setAvailableTickets(100);
     eventResponseDto.setNumberOfTickets(100);
-    DateDetails dateDetails = new DateDetails("21 жовтня", event.getDate().time());
+    DateDetails dateDetails = new DateDetails("21 жовтня", event.getDate().time(),event.getDate().endTime());
     eventResponseDto.setDate(dateDetails);
 
     when(eventRepository.findAll()).thenReturn(List.of(event));
