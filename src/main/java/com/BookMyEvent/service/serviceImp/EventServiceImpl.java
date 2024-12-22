@@ -43,15 +43,18 @@ public class EventServiceImpl implements EventService {
 
 
 
+
     @Override
     @Transactional
     public EventDTO createEvent(EventDTO eventDTO, MultipartFile image) {
         log.info("EventServiceImpl::createEvent - Creating new event with pending status: {}", eventDTO);
 
         try {
-            byte[] imageBytes = mediaService.getSingleImageBytes(image);
-            String imageBytesAsBase64 = Base64.getEncoder().encodeToString(imageBytes);
-            eventDTO.setPhotoUrl(imageBytesAsBase64);
+            List<byte[]> imageBytesList = mediaService.getImageBytes(new MultipartFile[]{image});
+            if (!imageBytesList.isEmpty()) {
+                String imageBytesAsBase64 = Base64.getEncoder().encodeToString(imageBytesList.get(0));
+                eventDTO.setPhotoUrl(imageBytesAsBase64);
+            }
         } catch (IOException e) {
             log.error("EventServiceImpl::createEvent - Error processing image: {}", e.getMessage());
             throw new RuntimeException("Error processing image: " + e.getMessage());
@@ -65,9 +68,9 @@ public class EventServiceImpl implements EventService {
         Event savedEvent = eventRepository.save(event);
         log.info("EventServiceImpl::createEvent - Event created successfully: {}", savedEvent);
 
-
         return eventMapper.toEventDTO(savedEvent);
     }
+
 
     @Override
     @Transactional
