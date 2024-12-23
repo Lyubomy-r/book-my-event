@@ -1,5 +1,6 @@
 package com.BookMyEvent.entity.dto;
 
+import com.BookMyEvent.entity.DateDetails;
 import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Location;
 import com.BookMyEvent.entity.User;
@@ -32,6 +33,7 @@ public class EventDTO {
 //    @NotNull(message = "Event start date is mandatory")
 //    @Future(message = "Event start date must be in the future")
 //    private LocalDateTime eventStartDate;
+    private DateDetails dateDetails;
     private LocalDateTime creationDate;
     private String phoneNumber;
     @NotNull(message = "Number of tickets is mandatory")
