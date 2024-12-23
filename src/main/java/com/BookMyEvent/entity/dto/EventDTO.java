@@ -2,6 +2,7 @@ package com.BookMyEvent.entity.dto;
 
 import com.BookMyEvent.entity.DateDetails;
 import com.BookMyEvent.entity.Enums.EventStatus;
+import com.BookMyEvent.entity.Enums.EventType;
 import com.BookMyEvent.entity.Location;
 import com.BookMyEvent.entity.User;
 import jakarta.validation.Valid;
@@ -39,6 +40,7 @@ public class EventDTO {
     @NotNull(message = "Number of tickets is mandatory")
     @Min(value = 0, message = "Ticket price must be a positive number")
     private Long ticketPrice;
+    private EventType eventType;
     @NotNull(message = "Number of tickets is mandatory")
     @Min(value = 1, message = "Number of tickets must be at least 1")
     private Integer numberOfTickets;
