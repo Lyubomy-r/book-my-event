@@ -21,7 +21,14 @@ import org.springframework.context.annotation.Import;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+
 import java.time.format.DateTimeFormatter;
+
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalUnit;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -64,6 +71,7 @@ class EventServiceImplTest {
     event.setEventStatus(EventStatus.PENDING);
     event.setAvailableTickets(100);
     event.setNumberOfTickets(100);
+
     event.setDate(new DateDetails(LocalDate.of(2025, 10, 21).toString(),
         localTime.toString(),
         localTime.plusHours(2L).toString()));
@@ -72,6 +80,9 @@ class EventServiceImplTest {
         event.getDate().day()).format(dayFormatter),
         LocalTime.parse(event.getDate().time()).format(timeFormatter),
         LocalTime.parse(event.getDate().endTime()).format(timeFormatter));
+
+//    event.setDate(new DateDetails(LocalDate.of(2025, 10, 21).toString(), LocalTime.now().toString(),LocalTime.now().plus(5, ChronoUnit.HOURS).toString()));
+
   }
 
   @Test
@@ -85,10 +96,14 @@ class EventServiceImplTest {
     eventResponseDto.setEventCategory(EventCategory.TOP_EVENTS.toString());
     eventResponseDto.setAvailableTickets(100);
     eventResponseDto.setNumberOfTickets(100);
+
 //    DateDetails dateDetails = new DateDetails(LocalDate.parse(
 //        event.getDate().day()).format(dayFormatter),
 //        LocalTime.parse(event.getDate().time()).format(timeFormatter),
 //        LocalTime.parse(event.getDate().endTime()).format(timeFormatter));
+
+//    DateDetails dateDetails = new DateDetails("21 жовтня", event.getDate().time(),event.getDate().endTime());
+
     eventResponseDto.setDate(dateDetails);
 
     when(eventRepository.findEventByEventStatus(EventStatus.APPROVED)).thenReturn(List.of(event));

@@ -237,7 +237,7 @@ public class AdminController {
       description = "Updates the status of the event to one of the predefined values: PENDING, APPROVED, or CANCELLED.",
       parameters = {
           @Parameter(
-              name = "id",
+              name = "eventsId",
               description = "The unique identifier of the event to update",
               required = true,
               example = "event123"

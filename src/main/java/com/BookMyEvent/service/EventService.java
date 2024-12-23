@@ -4,13 +4,14 @@ import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Event;
 import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventResponseDto;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public interface EventService {
-    EventDTO createEvent(EventDTO eventDTO);
+    public EventDTO createEvent(EventDTO eventDTO, MultipartFile image);
     EventDTO updateEvent(String eventId,EventDTO eventDTO);
     List<EventResponseDto> getEventsUA();
     void deleteEvent(String id);

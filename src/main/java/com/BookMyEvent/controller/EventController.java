@@ -4,6 +4,7 @@ import com.BookMyEvent.entity.Event;
 import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventResponseDto;
 import com.BookMyEvent.service.EventService;
+import com.BookMyEvent.service.MediaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -13,8 +14,10 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,10 +34,12 @@ public class EventController {
     @Autowired
     private EventService eventService;
 
-    @PostMapping
-    public ResponseEntity<EventDTO> createEvent(@Valid @RequestBody EventDTO eventDTO) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<EventDTO> createEvent(
+            @RequestPart("event") @Valid EventDTO eventDTO,
+            @RequestPart("image") MultipartFile image)  {
         log.info("Class: {}, Method: createEvent - Creating new event", this.getClass().getSimpleName());
-        EventDTO createdEvent = eventService.createEvent(eventDTO);
+        EventDTO createdEvent = eventService.createEvent(eventDTO,image);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
     }
 

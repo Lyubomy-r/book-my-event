@@ -40,7 +40,7 @@ public class EventDTO {
     @Min(value = 1, message = "Number of tickets must be at least 1")
     private Integer numberOfTickets;
     private Integer availableTickets;
-    @NotBlank(message = "Location is mandatory")
+    @NotNull(message = "Location is mandatory")
     private Location location;
     private List<User> organizers;
     private boolean isDeleted = false;
