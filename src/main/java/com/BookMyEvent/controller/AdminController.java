@@ -1,8 +1,12 @@
 package com.BookMyEvent.controller;
 
+import com.BookMyEvent.entity.Event;
 import com.BookMyEvent.entity.dto.AppResponse;
+import com.BookMyEvent.entity.dto.EventDTO;
+import com.BookMyEvent.entity.dto.EventResponseDto;
 import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
+import com.BookMyEvent.service.EventService;
 import com.BookMyEvent.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,15 +20,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 
 import java.util.List;
+import java.util.Map;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -36,7 +37,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class AdminController {
 
   private final UserService userService;
-
+  private final EventService eventService;
   @Operation(
       summary = "Get  list of users",
       description = "Retrieves a list of users.",
@@ -65,6 +66,32 @@ public class AdminController {
     List<UserResponseDto> userList = userService.findAllUserProfiles();
     log.info("{}::findAllUsers - /admin/users - Return list of user.", this.getClass().getSimpleName());
     return ResponseEntity.ok(userList);
+  }
+
+  @Operation(
+      summary = "Get All Events",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Get All Events to admin. Sorted by TOP_EVENTS and CreationDate.",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = Event.class))
+              })
+      })
+  @GetMapping("/events")
+  public ResponseEntity<List<EventResponseDto>> getAllEvents() {
+    log.info("Class: {}, Method: getAllEvents - Fetching all events.", this.getClass().getSimpleName());
+    List<EventResponseDto> events = eventService.getAllEvents();
+    return ResponseEntity.ok(events);
+  }
+
+  @PatchMapping("/{id}/approve")
+  public ResponseEntity<EventResponseDto> approveEvent(@PathVariable String id) {
+    log.info("Class: {}, Method: approveEvent - Approving event with ID: {}", this.getClass().getSimpleName(), id);
+    EventResponseDto approvedEvent = eventService.approveEvent(id);
+    return ResponseEntity.ok(approvedEvent);
   }
 
   @Operation(
@@ -185,6 +212,67 @@ public class AdminController {
     AppResponse response = new AppResponse(HttpStatus.OK.value(), userService.unbanned(email));
     log.info("{}::unbanUser - /users/unban/{email} - Returned unban user message.", this.getClass().getSimpleName());
     return ResponseEntity.status(HttpStatus.OK).body(response);
+  }
+
+  @GetMapping("/events/count/status")
+  public ResponseEntity<Map<String, Integer>> getCountByStatus() {
+    log.info("Class: {}, Method: getCountByStatus - Counting events for all statuses", this.getClass().getSimpleName());
+
+    Map<String, Integer> statusCountMap = eventService.countByStatus();
+
+    log.info("Events count by status: {}", statusCountMap);
+    return ResponseEntity.ok(statusCountMap);
+  }
+
+  @GetMapping("/events/status/{status}")
+  public ResponseEntity<List<EventResponseDto>> getEventsByStatus(@PathVariable("status") String status) {
+    log.info("Class: {}, Method: getEventsByStatus - Fetching events with status: {}", this.getClass().getSimpleName(), status);
+    List<EventResponseDto> events = eventService.getEventsByStatus(status.toUpperCase());
+
+    return ResponseEntity.ok(events);
+  }
+
+  @Operation(
+      summary = "Update Event Status",
+      description = "Updates the status of the event to one of the predefined values: PENDING, APPROVED, or CANCELLED.",
+      parameters = {
+          @Parameter(
+              name = "id",
+              description = "The unique identifier of the event to update",
+              required = true,
+              example = "event123"
+          ),
+          @Parameter(
+              name = "status",
+              description = "The new status of the event",
+              required = true,
+              example = "APPROVED"
+          )
+      },
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Event status updated successfully",
+              content = @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(implementation = EventDTO.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "404",
+              description = "Event not found",
+              content = @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(implementation = ErrorResponseDto.class)
+              )
+          )
+      }
+  )
+  @PatchMapping("/events/{eventsId}/status")
+  public ResponseEntity<EventResponseDto> updateEventStatus(@PathVariable String eventsId, @RequestParam String status) {
+    log.info("Class: {}, Method: updateEventStatus - Updating status of event ID: {} to {}", this.getClass().getSimpleName(), eventsId, status);
+    EventResponseDto updatedEvent = eventService.updateEventStatus(eventsId, status);
+    return ResponseEntity.ok(updatedEvent);
   }
 
 }

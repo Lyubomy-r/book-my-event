@@ -44,7 +44,7 @@ class UserRepositoryTest {
         .mailConfirmation(true)
         .status(Status.ACTIVE)
         .role(Role.VISITOR)
-        .phone("+380992343215")
+        .phoneNumber("+380992343215")
         .creationDate(LocalDateTime.now())
         .build();
 
@@ -57,7 +57,7 @@ class UserRepositoryTest {
         .mailConfirmation(true)
         .status(Status.ACTIVE)
         .role(Role.VISITOR)
-        .phone("+380992343342")
+        .phoneNumber("+380992343342")
         .creationDate(LocalDateTime.now())
         .build();
   }

@@ -14,14 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -62,11 +55,11 @@ public class EventController {
     }
 
     @Operation(
-        summary = "Get All Events",
+        summary = "Get All APPROVED Events",
         responses = {
             @ApiResponse(
                 responseCode = "200",
-                description = "Get All Events",
+                description = "Get All APPROVED Events.",
                 content = {
                     @Content(
                         mediaType = APPLICATION_JSON_VALUE,
@@ -74,8 +67,8 @@ public class EventController {
                 })
         })
     @GetMapping
-    public ResponseEntity<List<EventResponseDto>> getAllEventsUA() {
-        log.info("Class: {}, Method: getAllEvents - Fetching all events.", this.getClass().getSimpleName());
+    public ResponseEntity<List<EventResponseDto>> getAllApprovedEvents() {
+        log.info("Class: {}, Method: getAllEventsUA - Fetching all APPROVED events.", this.getClass().getSimpleName());
         List<EventResponseDto> events = eventService.getEventsUA();
         return ResponseEntity.ok(events);
     }

@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -30,13 +31,15 @@ class EventMapperTest {
     event.setTicketPrice(1000L);
     event.setNumberOfTickets(100);
     event.setAvailableTickets(50);
-    event.setLocation(new Location("city", "street", "venu"));
+    event.setLocation(new Location("city", "street", "venue", "24,344", "64,323"));
     event.setOrganizers(List.of());
     event.setEventType(EventType.SPORTS_EVENTS);
     event.setEventCategory(EventCategory.TOP_EVENTS);
-
-
-    EventResponseDto eventResponseDto = eventMapper.toEventResponseDtoFromEvent(event,new DateDetails("21 жовтня", LocalTime.now().toString()));
+    LocalTime  localTime =  LocalTime.now();
+    DateDetails dateDetails = new DateDetails(LocalDate.of(2025, 10, 21).toString(),
+        localTime.toString(),
+        localTime.plusHours(2L).toString());
+    EventResponseDto eventResponseDto = eventMapper.toEventResponseDtoFromEvent(event, dateDetails);
     log.info("eventResponseDto : {}", eventResponseDto);
 
     assertEquals(event.getId(), eventResponseDto.getId());

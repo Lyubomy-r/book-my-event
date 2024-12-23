@@ -227,7 +227,7 @@ class AuthServiceImpTest {
       when(deletedUsersService.emailExist(email)).thenReturn(false);
       when(repository.findUserByEmail(email)).thenReturn(Optional.of(userOne));
       when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-      when(jwtAuthentication.generateToken(anyString(), any(Role.class))).thenReturn(getAccessToken);
+      when(jwtAuthentication.generateToken(anyString(), anyString(), any(Role.class))).thenReturn(getAccessToken);
 
       LoginResponse tokenPair = authService.login(loginDto);
 

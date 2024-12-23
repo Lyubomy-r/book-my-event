@@ -12,6 +12,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,13 +28,16 @@ public class User {
   @Id
   private ObjectId id;
   private String name;
+  private String surname;
   @Indexed(unique = true)
   private String email;
   private String password;
   private boolean mailConfirmation;
   private Role role;
+  private LocalDate birthdayDate;
   private LocalDateTime creationDate;
-  private String phone;
+  private String phoneNumber;
+  private String avatarUrl;
   private String location;
   private Status status;
 

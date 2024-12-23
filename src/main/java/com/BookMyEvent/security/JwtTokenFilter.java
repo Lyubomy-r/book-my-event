@@ -19,7 +19,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 
@@ -39,13 +41,18 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     if (StringUtils.hasText(jwt) && jwtAuthentication.validateToken(jwt)) {
       var username = jwtAuthentication.getUsernameFromToken(jwt);
       var role = jwtAuthentication.getRoleFromToken(jwt);
+      var userId = jwtAuthentication.getUserIdFromToken(jwt);
       log.info("{}::doFilterInternal.  getRoleFromToken {}", className, role);
 
       List<GrantedAuthority> authorities = new ArrayList<>();
       authorities.add(new SimpleGrantedAuthority(role));
 
+      Map<String, Object> principal = new HashMap<>();
+      principal.put("username", username);
+      principal.put("id", userId);
+
       UsernamePasswordAuthenticationToken authentication =
-          new UsernamePasswordAuthenticationToken(username, null, authorities);
+          new UsernamePasswordAuthenticationToken(principal, null, authorities);
       SecurityContextHolder.getContext().setAuthentication(authentication);
     }
     filterChain.doFilter(request, response);

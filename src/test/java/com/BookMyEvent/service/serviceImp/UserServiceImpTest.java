@@ -302,7 +302,7 @@ class UserServiceImpTest {
       GeneralException errorIfUserNotFound = assertThrows(GeneralException.class,
           () -> userService.banned(notExistEmail));
 
-      assertEquals(HttpStatus.BAD_REQUEST, errorIfUserNotFound.getHttpStatus());
+      assertEquals(HttpStatus.NOT_FOUND, errorIfUserNotFound.getHttpStatus());
       assertEquals(String.format("User with such email: (%s) not found", notExistEmail),
           errorIfUserNotFound.getMessage());
 
@@ -362,7 +362,7 @@ class UserServiceImpTest {
       GeneralException errorIfUserNotFound = assertThrows(GeneralException.class,
           () -> userService.banned(notExistEmail));
 
-      assertEquals(HttpStatus.BAD_REQUEST, errorIfUserNotFound.getHttpStatus());
+      assertEquals(HttpStatus.NOT_FOUND, errorIfUserNotFound.getHttpStatus());
       assertEquals(String.format("User with such email: (%s) not found", notExistEmail),
           errorIfUserNotFound.getMessage());
 
@@ -377,13 +377,13 @@ class UserServiceImpTest {
       userOne.setStatus(Status.ACTIVE);
       when(userRepository.findUserByEmail(userOne.getEmail())).thenReturn(Optional.of(userOne));
 
-      String alreadyActive = userService.unbanned(userOne.getEmail());
-      assertEquals("User is already active", alreadyActive);
-//      GeneralException errorIfUserNotFound = assertThrows(GeneralException.class,
-//          () -> userService.banned(userOne.getEmail()));
+//      String alreadyActive = userService.unbanned(userOne.getEmail());
+//      assertEquals("User is already active", alreadyActive);
+      GeneralException errorIfUserNotFound = assertThrows(GeneralException.class,
+          () -> userService.unbanned(userOne.getEmail()));
 
-//      assertEquals(HttpStatus.BAD_REQUEST, errorIfUserNotFound.getHttpStatus());
-//      assertEquals("User is already banned", errorIfUserNotFound.getMessage());
+      assertEquals(HttpStatus.BAD_REQUEST, errorIfUserNotFound.getHttpStatus());
+      assertEquals("User is already active", errorIfUserNotFound.getMessage());
 
       verify(userRepository, times(1)).findUserByEmail(userOne.getEmail());
       verify(userRepository, times(0)).save(any());

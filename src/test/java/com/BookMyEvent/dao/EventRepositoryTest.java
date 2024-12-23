@@ -43,6 +43,7 @@ class EventRepositoryTest {
   @BeforeEach
   void setUp() {
     eventRepository.deleteAll();
+    LocalTime  localTime =  LocalTime.now();
     event = new Event();
     event.setId("66c648b600179737a3d5c235");
     event.setTitle("Test Event");
@@ -51,7 +52,9 @@ class EventRepositoryTest {
     event.setEventCategory(EventCategory.TOP_EVENTS);
     event.setAvailableTickets(100);
     event.setNumberOfTickets(100);
-    event.setDate(new DateDetails(LocalDate.now().toString(), LocalTime.now().toString()));
+    event.setDate(new DateDetails(LocalDate.of(2025, 10, 21).toString(),
+        localTime.toString(),
+        localTime.plusHours(2L).toString()));
 
 
   }
@@ -71,7 +74,7 @@ class EventRepositoryTest {
 
     eventRepository.save(event);
     LocalDate now = LocalDate.now();
-    List<Event> results = eventRepository.findByDateDay(now.toString());
+    List<Event> results = eventRepository.findByEventStartDate(event.getDate().day());
     System.out.println("results " + results);
     assertThat(results).hasSize(1);
     assertThat(results.get(0).getId()).isEqualTo(event.getId());

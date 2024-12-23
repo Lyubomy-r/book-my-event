@@ -17,7 +17,7 @@ public interface UserService {
    UserResponseDto save(User user);
 
    UserResponseDto updateFieldsFromAdmin(String userId, UserUpdateDto userUpdateDto);
-
+   UserResponseDto updateUserFields(String userId, UserUpdateDto userUpdateDto);
    String delete(String userId);
 
    String deleteFromAdmin(String userId);

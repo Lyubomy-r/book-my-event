@@ -17,17 +17,17 @@ import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 public interface UserMapper {
 
   @Mapping(target = "id", expression = "java(user.getId() != null ? user.getId().toHexString() : null)")
-  @Mapping(source = "user.name", target = "name")
-  @Mapping(source = "user.email", target = "email")
-  @Mapping(source = "user.creationDate", target = "creationDate")
-  @Mapping(source = "user.location", target = "location")
-  @Mapping(source = "user.status", target = "status")
+//  @Mapping(source = "user.name", target = "name")
+//  @Mapping(source = "user.email", target = "email")
+//  @Mapping(source = "user.creationDate", target = "creationDate")
+//  @Mapping(source = "user.location", target = "location")
+//  @Mapping(source = "user.status", target = "status")
   UserResponseDto toUserResponseDto(User user);
 
-  @Mapping(source = "userSaveDto.name", target = "name")
-  @Mapping(source = "userSaveDto.email", target = "email")
-  @Mapping(source = "userSaveDto.password", target = "password")
-  @Mapping(source = "userSaveDto.phone", target = "phone")
+//  @Mapping(source = "userSaveDto.name", target = "name")
+//  @Mapping(source = "userSaveDto.email", target = "email")
+//  @Mapping(source = "userSaveDto.password", target = "password")
+//  @Mapping(source = "userSaveDto.phone", target = "phone")
   User toUserFromUserSaveDto(UserSaveDto userSaveDto);
 
   @Mapping(target = "id", ignore = true)

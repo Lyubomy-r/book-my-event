@@ -1,12 +1,18 @@
 package com.BookMyEvent.controller;
 
 import com.BookMyEvent.dao.UserRepository;
+import com.BookMyEvent.entity.DateDetails;
+import com.BookMyEvent.entity.Enums.EventCategory;
+import com.BookMyEvent.entity.Enums.EventStatus;
+import com.BookMyEvent.entity.Enums.EventType;
 import com.BookMyEvent.entity.Enums.Role;
 import com.BookMyEvent.entity.Enums.Status;
 import com.BookMyEvent.entity.User;
+import com.BookMyEvent.entity.dto.EventResponseDto;
 import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.mapper.UserMapper;
 import com.BookMyEvent.service.DeletedUsersService;
+import com.BookMyEvent.service.EventService;
 import com.BookMyEvent.service.MailService;
 import com.BookMyEvent.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,11 +35,16 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.security.test.context.support.WithMockUser;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -61,6 +72,8 @@ class AdminControllerTest {
 
   @Mock
   private UserService userService;
+  @MockBean
+  private EventService eventService;
 
   @MockBean
   private UserRepository userRepository;
@@ -188,7 +201,7 @@ class AdminControllerTest {
       mockMvc.perform(patch("/admin/users/ban/{email}", userResponseDto.getEmail()))
           .andExpect(status().isOk())
           .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-          .andExpect(jsonPath("$.status", is(HttpStatus.BAD_REQUEST.value())))
+          .andExpect(jsonPath("$.status", is(HttpStatus.NOT_FOUND.value())))
           .andExpect(jsonPath("$.message", is(errorMessage)));
     }
 
@@ -264,6 +277,87 @@ class AdminControllerTest {
 //          .andExpect(jsonPath("$.status", is(HttpStatus.BAD_REQUEST.value())))
           .andExpect(jsonPath("$.message", is(errorMessage)));
     }
+  }
+
+  @Test
+  @WithMockUser(username = "admin", roles = {"ADMIN"})
+  void getCountByStatus() throws Exception {
+    Map<String, Integer> countByStatus = new HashMap<>();
+    countByStatus.put(EventStatus.CANCELLED.toString(),0);
+    countByStatus.put(EventStatus.PENDING.toString(),1);
+    countByStatus.put(EventStatus.APPROVED.toString(),2);
+
+    when(eventService.countByStatus()).thenReturn(countByStatus);
+
+    mockMvc.perform(get("/admin/events/count/status"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.CANCELLED").value(0))
+        .andExpect(jsonPath("$.APPROVED").value(2))
+        .andExpect(jsonPath("$.PENDING").value(1));
+  }
+
+  @Test
+  @WithMockUser(username = "admin", roles = {"ADMIN"})
+  void getEventsByStatusPENDING() throws Exception {
+    LocalTime localTime =  LocalTime.now();
+    EventResponseDto event = new EventResponseDto();
+    event.setId("66c648b600179737a3d5c235");
+    event.setTitle("Test Event");
+    event.setDescription("Test Description");
+    event.setEventType(EventType.SPORTS_EVENTS.getUkrainianName());
+    event.setEventCategory(EventCategory.TOP_EVENTS.toString());
+    event.setEventStatus(EventStatus.PENDING);
+    event.setAvailableTickets(100);
+    event.setNumberOfTickets(0);
+    event.setDate(new DateDetails(LocalDate.of(2025, 10, 21).toString(),
+        localTime.toString(),
+        localTime.plusHours(2L).toString()));
+    List<EventResponseDto> results = List.of(event);
+
+    when(eventService.getEventsByStatus(EventStatus.PENDING.toString())).thenReturn(results);
+
+    String responseBody = objectMapper.writeValueAsString(results);
+    log.info("results " +results);
+    log.info("results " +responseBody);
+
+    mockMvc.perform(get("/admin/events/status/{status}",EventStatus.PENDING.toString()))
+        .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$", hasSize(1)))
+        .andExpect(jsonPath("$[*].id", containsInAnyOrder(event.getId())))
+        .andExpect(jsonPath("$[0].eventStatus").value(event.getEventStatus().toString()));
+  }
+
+  @Test
+  @WithMockUser(username = "admin", roles = {"ADMIN"})
+  void getEventsByStatusAPPROVED() throws Exception {
+    LocalTime  localTime =  LocalTime.now();
+    EventResponseDto event = new EventResponseDto();
+    event.setId("66c648b600179737a3d5c235");
+    event.setTitle("Test Event");
+    event.setDescription("Test Description");
+    event.setEventType(EventType.SPORTS_EVENTS.getUkrainianName());
+    event.setEventCategory(EventCategory.TOP_EVENTS.toString());
+    event.setEventStatus(EventStatus.APPROVED);
+    event.setAvailableTickets(100);
+    event.setNumberOfTickets(0);
+    event.setDate(new DateDetails(LocalDate.of(2025, 10, 21).toString(),
+        localTime.toString(),
+        localTime.plusHours(2L).toString()));
+    List<EventResponseDto> results = List.of(event);
+
+    when(eventService.getEventsByStatus(EventStatus.APPROVED.toString())).thenReturn(results);
+
+    String responseBody = objectMapper.writeValueAsString(results);
+    log.info("results " +results);
+    log.info("results " +responseBody);
+
+    mockMvc.perform(get("/admin/events/status/{status}",EventStatus.APPROVED.toString()))
+        .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$", hasSize(1)))
+        .andExpect(jsonPath("$[*].id", containsInAnyOrder(event.getId())))
+        .andExpect(jsonPath("$[0].eventStatus").value(event.getEventStatus().toString()));
   }
 
 }

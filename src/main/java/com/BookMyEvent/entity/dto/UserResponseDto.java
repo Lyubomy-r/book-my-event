@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.index.Indexed;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -19,11 +20,14 @@ import java.time.LocalDateTime;
 public class UserResponseDto {
     private String id;
     private String name;
+    private String surname;
     private String email;
+    private LocalDate birthdayDate;
     private LocalDateTime creationDate;
     private boolean mailConfirmation;
     private Role role;
     private String location;
-    private String phone;
+    private String avatarUrl;
+    private String phoneNumber;
     private Status status;
 }

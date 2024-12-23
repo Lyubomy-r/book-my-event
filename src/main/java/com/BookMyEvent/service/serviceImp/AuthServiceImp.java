@@ -189,7 +189,7 @@ public class AuthServiceImp implements AuthService {
                 if (user.get().isMailConfirmation()) {
                     if (passwordEncoder.matches(loginData.getPassword(), user.get().getPassword())) {
 //                        var authentication = SecurityContextHolder.getContext().getAuthentication();
-                        var token = jwtAuthentication.generateToken(user.get().getEmail(), user.get().getRole());
+                        var token = jwtAuthentication.generateToken(user.get().getId().toHexString(),user.get().getEmail(), user.get().getRole());
                         LoginResponse tokenPair = new LoginResponse(user.get().getId().toHexString(),
                                 user.get().getName(), token,
                                 String.format("Email (%s) is confirmed",

@@ -111,6 +111,23 @@ public class UserServiceImp implements UserService {
   }
 
   @Override
+  public UserResponseDto updateUserFields(String userId, UserUpdateDto userUpdateDto) {
+    if (userUpdateDto == null || (userId == null || userId.isEmpty())) {
+      log.warn("UserServiceImp::updateFields. Return error message.");
+      throw new GeneralException("Can't make changes fields is null or empty.", HttpStatus.BAD_REQUEST);
+    }
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> {
+          log.warn("UserServiceImp::updateFields. Return error message.");
+          return new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
+        });
+    userMapper.mapUserUpdateToUser(userUpdateDto, user);
+    User updateUser = userRepository.save(user);
+
+    return userMapper.toUserResponseDto(updateUser);
+  }
+
+  @Override
   public String delete(String userId) {
     if (userId == null || userId.isEmpty()) {
       log.warn("UserServiceImp::delete. Return error message.");

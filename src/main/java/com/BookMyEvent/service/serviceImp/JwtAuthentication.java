@@ -59,10 +59,11 @@ public class  JwtAuthentication {
 //    filterChain.doFilter(request, response);
 //  }
 
-  public String generateToken(String userEmail, Role role) {
+  public String generateToken(String userId,String userEmail, Role role) {
     var token = Jwts.builder()
         .setSubject(userEmail)
         .claim("role", role)
+        .claim("userId", userId)
         .setIssuedAt(new Date())
         .setExpiration(new Date((new Date()).getTime() + 1000 * 60 * 60 * 10))
         .signWith(SignatureAlgorithm.HS512, signingKey)
@@ -78,6 +79,14 @@ public class  JwtAuthentication {
         .parseClaimsJws(token)
         .getBody();
     return "ROLE_" + claims.get("role", String.class);
+  }
+
+  public String getUserIdFromToken(String token) {
+    var claims = Jwts.parser()
+        .setSigningKey(signingKey)
+        .parseClaimsJws(token)
+        .getBody();
+    return claims.get("userId", String.class);
   }
 
   public String extractJwtFromRequest(HttpServletRequest request) {
