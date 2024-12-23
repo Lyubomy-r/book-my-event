@@ -45,11 +45,13 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public EventDTO createEvent(EventDTO eventDTO, MultipartFile image) {
         log.info("EventServiceImpl::createEvent - Creating new event with pending status: {}", eventDTO);
-
+        List<String> listImage=new ArrayList<>();
         try {
             if (image != null && !image.isEmpty()) {
-                byte[] imageBytes = image.getBytes();
-                String imageBytesAsBase64 = Base64.getEncoder().encodeToString(imageBytes);
+                List<byte[]> imageBytes = mediaService.getImageBytes(new MultipartFile[]{image,image,image});
+                 listImage =imageBytes.stream().map(bytes-> Base64.getEncoder().encodeToString(bytes))
+                    .toList();
+                String imageBytesAsBase64 = Base64.getEncoder().encodeToString(imageBytes.get(0));
                 eventDTO.setPhotoUrl(imageBytesAsBase64);
             }
         } catch (IOException e) {
@@ -61,6 +63,7 @@ public class EventServiceImpl implements EventService {
 
         event.setCreationDate(LocalDateTime.now());
         event.setAvailableTickets(event.getNumberOfTickets());
+        event.setImages(listImage);
 
         Event savedEvent = eventRepository.save(event);
         log.info("EventServiceImpl::createEvent - Event created successfully: {}", savedEvent);

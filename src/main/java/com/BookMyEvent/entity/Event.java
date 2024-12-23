@@ -27,6 +27,7 @@ public class Event {
   private String title;
   private String description;
   private String photoUrl;
+  private List<String> images;
   @JsonProperty("date")
   private DateDetails date;
   private LocalDateTime creationDate;
