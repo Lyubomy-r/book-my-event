@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -43,12 +44,15 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public EventDTO createEvent(EventDTO eventDTO, MultipartFile image) {
+    public EventDTO createEvent(EventDTO eventDTO,
+                                MultipartFile firstImage,
+                                MultipartFile secondImage,
+                                MultipartFile thirdImage) {
         log.info("EventServiceImpl::createEvent - Creating new event with pending status: {}", eventDTO);
         List<String> listImage=new ArrayList<>();
         try {
-            if (image != null && !image.isEmpty()) {
-                List<byte[]> imageBytes = mediaService.getImageBytes(new MultipartFile[]{image,image,image});
+            if (firstImage != null && !firstImage.isEmpty()) {
+                List<byte[]> imageBytes = mediaService.getImageBytes(new MultipartFile[]{firstImage,secondImage,thirdImage});
                  listImage =imageBytes.stream().map(bytes-> Base64.getEncoder().encodeToString(bytes))
                     .toList();
                 String imageBytesAsBase64 = Base64.getEncoder().encodeToString(imageBytes.get(0));

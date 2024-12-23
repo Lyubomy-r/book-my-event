@@ -36,10 +36,12 @@ public class EventController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<EventDTO> createEvent(
-            @RequestPart("event") @Valid EventDTO eventDTO,
-            @RequestPart("image") MultipartFile image)  {
+        @RequestPart("event") @Valid EventDTO eventDTO,
+        @RequestPart("firstImage") MultipartFile firstImage,
+        @RequestPart("secondImage") MultipartFile secondImage,
+        @RequestPart("thirdImage") MultipartFile thirdImage) {
         log.info("Class: {}, Method: createEvent - Creating new event", this.getClass().getSimpleName());
-        EventDTO createdEvent = eventService.createEvent(eventDTO, image);
+        EventDTO createdEvent = eventService.createEvent(eventDTO, firstImage, secondImage, thirdImage);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
     }
 
