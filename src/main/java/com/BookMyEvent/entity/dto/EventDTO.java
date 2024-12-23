@@ -3,6 +3,7 @@ package com.BookMyEvent.entity.dto;
 import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Location;
 import com.BookMyEvent.entity.User;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -40,7 +41,8 @@ public class EventDTO {
     @Min(value = 1, message = "Number of tickets must be at least 1")
     private Integer numberOfTickets;
     private Integer availableTickets;
-    @NotBlank(message = "Location is mandatory")
+    @Valid
+    @NotNull
     private Location location;
     private List<User> organizers;
     private boolean isDeleted = false;

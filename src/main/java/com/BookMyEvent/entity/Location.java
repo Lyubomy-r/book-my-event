@@ -1,4 +1,6 @@
 package com.BookMyEvent.entity;
 
-public record Location( String city, String street, String venue,String latitude,String longitude) {
+import jakarta.validation.constraints.NotBlank;
+
+public record Location(@NotBlank String city,   @NotBlank String street, String venue, String latitude, String longitude) {
 }
