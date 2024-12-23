@@ -39,7 +39,7 @@ public class EventController {
             @RequestPart("event") @Valid EventDTO eventDTO,
             @RequestPart("image") MultipartFile image)  {
         log.info("Class: {}, Method: createEvent - Creating new event", this.getClass().getSimpleName());
-        EventDTO createdEvent = eventService.createEvent(eventDTO,image);
+        EventDTO createdEvent = eventService.createEvent(eventDTO, image);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
     }
 
