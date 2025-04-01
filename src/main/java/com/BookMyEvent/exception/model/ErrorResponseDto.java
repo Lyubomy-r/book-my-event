@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -23,7 +24,7 @@ public class ErrorResponseDto {
   private String message;
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  private List<String> details;
+  private Map<String, String> details;
 
   public ErrorResponseDto(Integer statusCode, String message){
     this.timestamp=LocalDateTime.now();
@@ -32,11 +33,11 @@ public class ErrorResponseDto {
     this.details=null;
   }
 
-  public ErrorResponseDto(Integer statusCode, String message, List<String> details){
-    this.timestamp=LocalDateTime.now();
-    this.statusCode=statusCode;
-    this.message=message;
-    this.details=details;
+  public ErrorResponseDto(Integer statusCode, String message, Map<String, String> details) {
+    this.timestamp = LocalDateTime.now();
+    this.statusCode = statusCode;
+    this.message = message;
+    this.details = details;
   }
 
 }

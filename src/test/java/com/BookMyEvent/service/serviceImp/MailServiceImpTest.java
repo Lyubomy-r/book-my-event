@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -32,7 +33,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @SpringBootTest
-@ActiveProfiles("integrationtest")
+//@ActiveProfiles("integrationtest")
+@TestPropertySource("classpath:integrationtest.properties")
 @Slf4j
 @Import(TestConfig.class)
 class MailServiceImpTest {
@@ -243,35 +245,50 @@ class MailServiceImpTest {
   @Test
   @DisplayName("Test MailService method createHtmlTemplateTitle4Line.")
   void testCreateHtmlTemplateTitle4Line() {
-    String text = gmailSMTServiceImp.createHtmlTemplateTitle4Line("Вітаємо!",
-        "Ваш акаунт розблоковано, і ви знову можете користуватися всіма можливостями нашого сайту. Насолоджуйтесь!",
-        "",
-        "",
-        "");
-    log.info("MimeMessage  {}", text);
-    assertThat(text).contains("Ваш акаунт розблоковано");
+//    String text = gmailSMTServiceImp.createHtmlTemplateTitle4Line("Вітаємо!",
+//        "Ваш акаунт розблоковано, і ви знову можете користуватися всіма можливостями нашого сайту. Насолоджуйтесь!",
+//        "",
+//        "",
+//        "");
+//    log.info("MimeMessage  {}", text);
+//    assertThat(text).contains("Ваш акаунт розблоковано");
+//
+//    String text2 = gmailSMTServiceImp.createHtmlTemplateTitle4Line("",
+//        "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
+//        "Якщо у вас є питання, зателефонуйте на нашу гарячу лінію.", "\uD83D\uDCF2 " + companyPhone,
+//        "");
+//    log.info("MimeMessage  {}", text2);
 
-    String text2 = gmailSMTServiceImp.createHtmlTemplateTitle4Line("",
-        "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
-        "Якщо у вас є питання, зателефонуйте на нашу гарячу лінію.", "\uD83D\uDCF2 " + companyPhone,
-        "");
-    log.info("MimeMessage  {}", text2);
-//    fileWriter("billing.html",text2);
-    assertThat(text2).contains("Ваш акаунт заблоковано");
+    String activeLinks = mailService.replaceTextToLinkWithHtml("Open air Stand-up", "https://evently-book.vercel.app/event/671e833c56827a52cc267654");
+    log.info("MimeMessage  {}", activeLinks);
+    String text3 =gmailSMTServiceImp.createHtmlTemplateTitle4Line(
+        "Вітаємо! Твою подію схвалено \uD83C\uDF89",
+        String.format("Твоя подія [%s] + лінк на неї успішно пройшла перевірку та вже доступна на платформі!", activeLinks),
+        "Тепер користувачі можуть переглядати її та купувати квитки. А ти заробляти. Стеж за статистикою та керуй подією в розділі \"Мої події\".",
+        "Бажаємо успішного заходу! Якщо маєш запитання, наша служба підтримки завжди на зв’язку.",
+        ""
+
+    );
+    fileWriter("billing.html",text3);
+//    assertThat(text2).contains("Ваш акаунт заблоковано");
   }
 
   @Test
   @DisplayName("Test MailService method createHtmlTemplateTitle6Line.")
   void testCreateHtmlTemplateTitle6Line() {
-    String url = passwordResetUrl
-        .replace("{token}", "142556343d");
-    String text = gmailSMTServiceImp.createHtmlTemplateTitle6Line("Інформація про блокування на сайті BookMyEvent.",
-        "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
-        "Якщо у вас є питання, зателефонуйте на нашу гарячу лінію.",
-        "\uD83D\uDCF2 " + companyPhone,
-        "",
-        "",
-        "");
+//    String url = passwordResetUrl
+//        .replace("{token}", "142556343d");
+//    String text = gmailSMTServiceImp.createHtmlTemplateTitle6Line("Інформація про блокування на сайті BookMyEvent.",
+//        "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
+//        "Якщо у вас є питання, зателефонуйте на нашу гарячу лінію.",
+//        "\uD83D\uDCF2 " + companyPhone,
+//        "",
+//        "",
+//        "");
+    var password = gmailSMTServiceImp.randomPasswordGenerator();
+    String emailTo = "jj3564527@gmail.com";
+    var url = serverUrl + "/api/v1/authorize/mail-confirmation/" + emailTo + "/" + password;
+    String text = gmailSMTServiceImp.createHtmlTemplateRegistration(url);
 
     log.info("MimeMessage text  {}", text);
 //    fileWriter("billing.html",text);

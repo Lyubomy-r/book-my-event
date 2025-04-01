@@ -10,6 +10,7 @@ import com.BookMyEvent.service.MailService;
 import com.BookMyEvent.service.PasswordResetService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,13 +38,16 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Override
     public void requestPasswordReset(String email) {
         log.info("PasswordResetServiceImpl::requestPasswordReset - Requesting password reset for email: {}", email);
-
-        UserResponseDto user = userRepository.findUserInfoByEmail(email)
-            .orElseThrow(() -> {
-                log.error("PasswordResetServiceImpl::requestPasswordReset - User with such email not found: {}", email);
-                return new GeneralException("User with such email not found.", HttpStatus.NOT_FOUND);
-            });
-        if (!user.isMailConfirmation()) {
+        User user2= userRepository.findUserByEmail(email).orElseThrow(() -> {
+            log.error("PasswordResetServiceImpl::requestPasswordReset - User with such email not found: {}", email);
+            return new GeneralException("User with such email not found.", HttpStatus.NOT_FOUND);
+        });;
+//        UserResponseDto user = userRepository.findUserInfoByEmail(email)
+//            .orElseThrow(() -> {
+//                log.error("PasswordResetServiceImpl::requestPasswordReset - User with such email not found: {}", email);
+//                return new GeneralException("User with such email not found.", HttpStatus.NOT_FOUND);
+//            });
+        if (!user2.isMailConfirmation()) {
             log.error("PasswordResetServiceImpl::requestPasswordReset - User with such email not found: {}", email);
             throw new GeneralException(
                 String.format("This email address (%s) needs confirmation.", email),
@@ -52,7 +56,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
         String uniqueToken = generateUniqueToken();
 
-        PasswordResetToken token = new PasswordResetToken(user.getId());
+        PasswordResetToken token = new PasswordResetToken(user2.getId().toHexString());
         token.setToken(uniqueToken);
         passwordResetTokenRepository.save(token);
         log.info("PasswordResetServiceImpl::requestPasswordReset - Generated password reset token: {}", token.getToken());
@@ -88,14 +92,14 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 //            + "З повагою,\n"
 //            + "Команда підтримки BookMyEvent.", url);
         emailService.sendSimpleHtmlMailMessage6Line(email,
-            "Відновлення паролю BookMyEvent",
+            "Запит на відновлення пароля BookMyEvent",
             "Привіт!",
-            "Ми отримали запит на зміну пароля для вашого облікового запису. Якщо це дійсно ви, виконайте наступні дії: ",
-            "\t1.\tНатисніть на: " + url,
-            "\t2.\tВведіть новий пароль на сторінці, яка відкриється.",
-            "\t3.\tПідтвердіть пароль і натисніть \"Відновити пароль\".",
+            "Ми отримали запит на зміну пароля для твого облікового запису. Якщо це дійсно ти, виконайте наступні дії: ",
+            "\t1.\tНатисни на: " + url,
+            "\t2.\tВведи новий пароль на сторінці, яка відкриється.",
+            "\t3.\tПідтвердь пароль і натисни \"Відновити пароль\".",
             "Важливо! Посилання дійсне лише 60 хвилин.",
-            "Якщо ви не надсилали запит на скидання пароля, просто ігноруйте цей лист — ваш пароль залишиться незмінним."
+            "Якщо ти не надсилав запит на скидання пароля, просто ігноруйте цей лист — твій пароль залишиться незмінним."
         );
         log.info("PasswordResetServiceImpl::sendPasswordResetEmail - Password reset link sent to email: {}", email);
     }
@@ -115,7 +119,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             throw new GeneralException("Token has expired.", HttpStatus.BAD_REQUEST);
         }
 
-        User user = userRepository.findById(resetToken.getUserId())
+        User user = userRepository.findById(new ObjectId(resetToken.getUserId()))
             .orElseThrow(() -> {
                 log.error("PasswordResetServiceImpl::resetPassword - User not found for ID: {}", resetToken.getUserId());
                 return new GeneralException("User not found.", HttpStatus.NOT_FOUND);
@@ -134,11 +138,11 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         passwordResetTokenRepository.delete(resetToken);
         log.info("PasswordResetServiceImpl::resetPassword - Password reset token deleted: {}", token);
         emailService.sendSimpleHtmlMailMessage6Line(user.getEmail(),
-            "Пароль оновлено",
+            "Твій пароль успішно оновлено BookMyEvent",
             "Привіт!",
-            "Ваш пароль було успішно оновлено.",
-            "Тепер ви можете увійти до свого облікового запису за допомогою нового пароля: " + frontUrl,
-            "Якщо ви не запитували зміну пароля, будь ласка, зверніться до нашої служби підтримки.",
+            "Твій пароль було успішно оновлено.",
+            "Тепер ти можете увійти до свого облікового запису за допомогою нового пароля: " + frontUrl,
+            "Якщо ти не запитував зміну пароля, будь ласка, зверніться до нашої служби підтримки.",
             "",
             "",
             ""

@@ -26,4 +26,6 @@ public interface MailService {
                                         String messageText4,
                                         String messageText5,
                                         String messageText6);
+
+    String replaceTextToLinkWithHtml(String text, String urlToEvent);
 }

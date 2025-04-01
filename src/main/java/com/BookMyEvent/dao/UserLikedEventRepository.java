@@ -14,4 +14,7 @@ public interface UserLikedEventRepository extends MongoRepository<UserLikedEvent
     void deleteByUserIdAndEventId(String userId, String eventId);
     long countByUserId(String userId);
     Optional<UserLikedEvent> findByUserIdAndEventId(String userId, String eventId);
+    Long countByEventId(String eventId);
+    void deleteByEventId(String eventId);
+    void deleteByUserId(String userId);
 }

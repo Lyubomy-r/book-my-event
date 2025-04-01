@@ -7,6 +7,7 @@ import com.BookMyEvent.entity.Enums.EventType;
 import com.BookMyEvent.entity.Event;
 import com.BookMyEvent.mapper.EventMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ class EventRepositoryTest {
     eventRepository.deleteAll();
     LocalTime  localTime =  LocalTime.now();
     event = new Event();
-    event.setId("66c648b600179737a3d5c235");
+    event.setId(new ObjectId("66c648b600179737a3d5c235"));
     event.setTitle("Test Event");
     event.setDescription("Test Description");
     event.setEventType(EventType.SPORTS_EVENTS);
@@ -63,7 +64,7 @@ class EventRepositoryTest {
   @DisplayName("Test EventRepository method FindEventNumberOfTickets PositiveScenario")
   public void testMethodFindEventNumberOfTicketsPositiveScenario() {
     eventRepository.save(event);
-    Optional<Event> result = eventRepository.findEventNumberOfTickets(event.getId());
+    Optional<Event> result = eventRepository.findEventNumberOfTickets(event.getId().toHexString());
     assertTrue(result.isPresent());
     assertEquals(100, result.get().getNumberOfTickets());
   }

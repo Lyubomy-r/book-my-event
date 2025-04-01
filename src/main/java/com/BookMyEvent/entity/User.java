@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import lombok.ToString;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -23,6 +24,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class User {
 
   @Id
@@ -37,11 +39,15 @@ public class User {
   private LocalDate birthdayDate;
   private LocalDateTime creationDate;
   private String phoneNumber;
-  private String avatarUrl;
+  @DBRef
+  private Image avatarImage;
   private String location;
   private Status status;
-
-
+  @ToString.Exclude
   @DBRef
   private List<Event> createdEvents = new ArrayList<>();
+
+  public void linkImageWithUser(Image image) {
+    this.setAvatarImage(image);
+  }
 }

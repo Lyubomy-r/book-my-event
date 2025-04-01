@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - #20 - Flight Ticket</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
+  <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=IM+Fell+French+Canon:400i|Montserrat:300,400,500'>
+  <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
+  <link rel='stylesheet' href='https://s3-us-west-2.amazonaws.com/s.cdpn.io/584938/icomoon.css'><link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<div class="container-fluid">
+  <div class="col-xs-6 text-left hidden-xs">
+    <div class="ticket dark">
+      <div class="ticket-head text-center" style="background-image: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/584938/bg_15.png)">
+        <div class="layer"></div>
+        <div class="from-to">AMS <span class="icon icon-airplane"></span> JFK</div>
+      </div>
+      <div class="ticket-body">
+        <div class="passenger">
+          <p>Passenger</p>
+          <h4 th:text="${passengerName}">Michelle Doe</h4>
+        </div>
+        <div class="flight-info row">
+          <div class="col-xs-6">
+            <p>Flight</p>
+            <h4 th:text="${flightNumber}">NY341</h4>
+          </div>
+          <div class="col-xs-6">
+            <p>Seat</p>
+            <h4 th:text="${seatNumber}">14A</h4>
+          </div>
+        </div>
+        <div class="flight-date" th:text="${flightDate}">Jun-28-2024 at 08:30 AM</div>
+
+        <!-- QR-код -->
+        <div class="barcode">
+          <img th:src="'data:image/png;base64,' + ${qrCode}" alt="QR Code">
+        </div>
+
+      </div>
+      <div class="footer">
+        <div class="disclaimer">Disclaimer: Lorem ipsum dolor sit amet, consectetur adipisicing elit. Cupiditate debitis doloremque in inventore eum</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

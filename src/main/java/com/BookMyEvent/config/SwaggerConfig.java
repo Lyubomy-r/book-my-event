@@ -20,8 +20,7 @@ import org.springframework.context.annotation.Configuration;
         ),
     servers = {
         @Server(url = "http://localhost:8080/api/v1", description = "Local dev ENV"),
-        @Server(url = "https://rendereventapp.onrender.com/api/v1", description = "Prod ENV")
-
+        @Server(url = "https://adjacent-lethia-sergiomail-580b8292.koyeb.app/api/v1", description = "Prod ENV")
     },
     security = {@SecurityRequirement(name = "bearerAuth")})
 @SecuritySchemes(
@@ -36,5 +35,147 @@ import org.springframework.context.annotation.Configuration;
     })
 public class SwaggerConfig {
 
+
+    public static final String CREATED_EVENT_PAYLOAD_SCHEMA =
+        """
+                 This endpoint allows the creation of a new event.
+                        The event details are provided as a JSON object, and up to three images can be uploaded.
+                        Each image must not exceed 1MB in size.
+                
+                        **Validation Descriptions:**
+                
+                        **Organizers:**
+                        - **id**: NotNull → Organizer ID is mandatory.
+                
+                        **Title:**
+                        - NotBlank → The title is mandatory, cannot be null or empty.
+                        - Size(max = 100) → The title must not exceed 100 characters.
+                
+                        **Description:**
+                        - NotBlank → The description is mandatory, cannot be null or empty.
+                        - Size(max = 500) → The description must not exceed 500 characters.
+                
+                        **TicketPrice:**
+                        - NotNull → The ticket price is mandatory, cannot be null.
+                        - Min(value = 0) → The ticket price must be a positive number (or 0).
+                
+                        **NumberOfTickets:**
+                        - NotNull → The number of tickets is mandatory, cannot be null.
+                        - Min(value = 1) → There must be at least 1 ticket available.
+                
+                        **Schema EventDTO:**
+                        You can find the JSON example in the response section.
+                {
+                    "id": "event-123",
+                      "title": "string",
+                      "description": "string",
+                      "date": {
+                          "day": "2025-06-01",
+                          "time": "19:00:00",
+                          "endTime": "22:00:00"
+                      },
+                       "creationDate": "2025-02-01T12:00:00",
+                      "phoneNumber": "+1234567890",
+                      "ticketPrice": 50,
+                      "eventType": "string",
+                      "numberOfTickets": 200,
+                      "availableTickets": 150,
+                       "unlimitedTickets": false,
+                      "eventFormat": "string",
+                       "eventUrl": "string",
+                      "eventStatus": "string",
+                      "location": {
+                        "city": "string",
+                        "street": "string",
+                       "venue": "string",
+                        "latitude": 12.345678,
+                        "longitude": 98.765432
+                      },
+                      "aboutOrganizer": "string",
+                     "organizers": {
+                            "id": "456",
+                            "name": "string",
+                            "surname": "string",
+                            "email": "string",
+                            "birthdayDate": "1990-05-20",
+                            "creationDate": "2020-01-15T10:30:00",
+                            "mailConfirmation": true,
+                            "role": "ADMIN",
+                            "location": "USA",
+                            "avatarUrl": "https://example.com/avatar.jpg",
+                            "phoneNumber": "+9876543210",
+                            "status": "ACTIVE"
+                          },
+                      "images": [
+                          {
+                            "id": "12213sad3",
+                            "photoInBytes": "null",
+                            "url": "string",
+                            "creationDate": "2025-01-31T15:00:00",
+                            "isMain": true
+                          },
+                          {
+                            "id": "12323sade5",
+                            "photoInBytes": "null",
+                            "creationDate": "2025-01-31T15:05:00",
+                            "isMain": false
+                          }
+                        ]
+                }
+            """;
+
+    public static final String PAGE_EVENT_RESPONSEDTO_PAYLOAD_SCHEMA ="""
+            {
+              "content": [
+                {
+                  "id": "67a8ffc02a319061566a5578",
+                  "title": "string",
+                  "description": "string",
+                  "creationDate": "2025-02-09T21:19:28.776",
+                  "availableTickets": 10000,
+                  "unlimitedTickets": false,
+                  "phoneNumber": "+380123456789",
+                  "numberOfTickets": 10000,
+                  "location": {
+                    "city": "string",
+                    "street": "string",
+                    "venue": "string",
+                    "latitude": "50.388996",
+                    "longitude": "30.459957"
+                  },
+                  "organizers": null,
+                  "aboutOrganizer": "string",
+                  "rating": 0.0,
+                  "eventFormat": "string",
+                  "eventUrl": "string",
+                  "eventStatus": "string",
+                  "images": [
+                    {
+                      "id": "67a70aec723bf90c65e97949",
+                      "name": "string",
+                      "photoInBytes": null,
+                      "url": "string",
+                      "creationDate": "2025-02-08T09:42:36.345",
+                      "main": true
+                    }
+                  ],
+                  "date": {
+                    "day": "2025-02-25",
+                    "time": "05:00",
+                    "endTime": "06:00"
+                  },
+                  "price": 800,
+                  "type": "string",
+                  "category": "string"
+                }
+              ],
+              "page": {
+                "size": 6,
+                "number": 0,
+                "totalElements": 2,
+                "totalPages": 1
+              }
+            }
+        """;
 
 }

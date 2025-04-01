@@ -6,6 +6,7 @@ import com.BookMyEvent.entity.dto.AppResponse;
 import com.BookMyEvent.entity.dto.BookingRequestDTO;
 import com.BookMyEvent.exception.GeneralException;
 import com.BookMyEvent.service.BookingService;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/booking")
 @RequiredArgsConstructor
+@Hidden
 public class BookingController {
 
     private final BookingService bookingService;

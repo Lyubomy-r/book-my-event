@@ -21,6 +21,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
@@ -89,22 +93,26 @@ class UserServiceImpTest {
   @Test
   @DisplayName("Test UserService method FindAllUserProfiles")
   public void testFindAllUserProfiles() {
-    when(userRepository.findAllUserProfiles()).thenReturn(List.of());
+//    when(userRepository.findAllUserProfiles()).thenReturn(List.of());
 
-    List<UserResponseDto> resultEmptyList = userService.findAllUserProfiles();
+    Pageable pageable = PageRequest.of(0,6);
+    when(userRepository.findAll(pageable)).thenReturn(Page.empty());;
+    Page<UserResponseDto> resultEmptyList = userService.findAllUserProfiles(pageable);
 
-    assertTrue(resultEmptyList.isEmpty());
+    assertTrue(resultEmptyList.getContent().isEmpty());
 
-    when(userRepository.findAllUserProfiles()).thenReturn(List.of(userResponseDto));
+    when(userRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(userOne),pageable, 1));
+    when(userMapper.toUserResponseDtoWithoutAvatarAndEvents(userOne)).thenReturn(userResponseDto);
+//    when(userRepository.findAllUserProfiles()).thenReturn(List.of(userResponseDto));
 
-    List<UserResponseDto> result = userService.findAllUserProfiles();
+    Page<UserResponseDto> result = userService.findAllUserProfiles(pageable);
     assertAll(
         () -> assertFalse(result.isEmpty()),
-        () -> assertEquals(1, result.size()),
-        () -> assertTrue(result.contains(userResponseDto))
+        () -> assertEquals(1, result.getContent().size()),
+        () -> assertTrue(result.getContent().contains(userResponseDto))
     );
 
-    verify(userRepository, times(2)).findAllUserProfiles();
+    verify(userRepository, times(2)).findAll(pageable);
   }
 
   @Nested
@@ -113,8 +121,8 @@ class UserServiceImpTest {
     @Test
     @DisplayName("Test UserService method FindUserInfoById. Positive Scenario User is Find by id.")
     public void testFindUserInfoByIdPositiveScenarioFindUser() {
-      when(userRepository.findUserInfoById(userOne.getId().toHexString())).thenReturn(Optional.of(userResponseDto));
-
+      when(userRepository.findUserInfoWithoutEventsById(userOne.getId())).thenReturn(Optional.of(userOne));
+      when(userMapper.toUserResponseDtoWithoutEvents(userOne)).thenReturn(userResponseDto);
       UserResponseDto responseDto = userService.findUserInfoById(userOne.getId().toHexString());
       assertAll(
           () -> assertEquals(userOne.getId().toHexString(), responseDto.getId()),
@@ -122,13 +130,12 @@ class UserServiceImpTest {
           () -> assertEquals(userOne.getRole(), responseDto.getRole())
       );
 
-      verify(userRepository, times(1)).findUserInfoById(userOne.getId().toHexString());
+      verify(userRepository, times(1)).findUserInfoWithoutEventsById(userOne.getId());
     }
 
     @Test
     @DisplayName("Test UserService method FindUserInfoById. Negative Scenario User id is null or empty.")
     public void testFindUserInfoByIdNegativeScenarioUserIdIsNull() {
-
       GeneralException errorIfUserIdNull = assertThrows(GeneralException.class,
           () -> userService.findUserInfoById(null));
 
@@ -142,7 +149,7 @@ class UserServiceImpTest {
     @Test
     @DisplayName("Test UserService method FindUserInfoById. Negative Scenario User Not Found.")
     public void testFindUserInfoByIdNegativeScenarioUserNotFound() {
-      when(userRepository.findUserInfoById(userOne.getId().toHexString())).thenReturn(Optional.empty());
+      when(userRepository.findUserInfoWithoutEventsById(userOne.getId())).thenReturn(Optional.empty());
 
       GeneralException errorIfUserNotFound = assertThrows(GeneralException.class,
           () -> userService.findUserInfoById(userOne.getId().toHexString()));
@@ -151,7 +158,7 @@ class UserServiceImpTest {
       assertEquals(String.format("User with ID [%s] not found.", userOne.getId().toHexString()),
           errorIfUserNotFound.getMessage());
 
-      verify(userRepository, times(1)).findUserInfoById(userOne.getId().toHexString());
+      verify(userRepository, times(1)).findUserInfoWithoutEventsById(userOne.getId());
     }
   }
 
@@ -202,24 +209,24 @@ class UserServiceImpTest {
       verify(userRepository, times(1)).findUserInfoByEmail(userOne.getEmail());
     }
   }
-
-  @Test
-  void save() {
-  }
-
-  @Nested
-  @DisplayName("Test UserService method updateFieldsFromAdmin")
-  class UpdateFieldsFromAdmin {
-    @Test
-    @DisplayName("Test UserService method updateFieldsFromAdmin. Positive Scenario User is Updated.")
-    void testUpdateFieldsFromAdminPositiveScenarioUpdatedUser() {
-
-    }
-  }
-
-  @Test
-  void delete() {
-  }
+//
+//  @Test
+//  void save() {
+//  }
+//
+//  @Nested
+//  @DisplayName("Test UserService method updateFieldsFromAdmin")
+//  class UpdateFieldsFromAdmin {
+//    @Test
+//    @DisplayName("Test UserService method updateFieldsFromAdmin. Positive Scenario User is Updated.")
+//    void testUpdateFieldsFromAdminPositiveScenarioUpdatedUser() {
+//
+//    }
+//  }
+//
+//  @Test
+//  void delete() {
+//  }
 
   @Nested
   @DisplayName("Test UserService method DeleteFromAdmin")
@@ -227,7 +234,7 @@ class UserServiceImpTest {
     @Test
     @DisplayName("Test UserService method deleteFromAdmin. Positive Scenario User was Deleted.")
     void testDeleteFromAdminPositiveScenarioUserDeleted() {
-      when(userRepository.findById(userOne.getId().toHexString())).thenReturn(Optional.of(userOne));
+      when(userRepository.findById(userOne.getId())).thenReturn(Optional.of(userOne));
       doNothing().when(deletedUsersService).addUserToDeletedList(userOne.getEmail());
       doNothing().when(userRepository).delete(userOne);
 
@@ -237,7 +244,7 @@ class UserServiceImpTest {
           () -> assertEquals("User was deleted successfully.", responseMessage)
       );
 
-      verify(userRepository, times(1)).findById(userOne.getId().toHexString());
+      verify(userRepository, times(1)).findById(userOne.getId());
     }
 
     @Test
@@ -257,7 +264,7 @@ class UserServiceImpTest {
     @Test
     @DisplayName("Test UserService method deleteFromAdmin. Negative Scenario User Not Found.")
     public void testDeleteFromAdminNegativeScenarioUserNotFound() {
-      when(userRepository.findById(userOne.getId().toHexString())).thenReturn(Optional.empty());
+      when(userRepository.findById(userOne.getId())).thenReturn(Optional.empty());
 
       GeneralException errorIfUserNotFound = assertThrows(GeneralException.class,
           () -> userService.deleteFromAdmin(userOne.getId().toHexString()));
@@ -266,7 +273,7 @@ class UserServiceImpTest {
       assertEquals(String.format("User with ID [%s] not found.", userOne.getId().toHexString()),
           errorIfUserNotFound.getMessage());
 
-      verify(userRepository, times(1)).findById(userOne.getId().toHexString());
+      verify(userRepository, times(1)).findById(userOne.getId());
     }
   }
 
@@ -325,8 +332,6 @@ class UserServiceImpTest {
       verify(userRepository, times(1)).findUserByEmail(userOne.getEmail());
       verify(userRepository, times(0)).save(any());
     }
-
-
   }
 
   @Nested

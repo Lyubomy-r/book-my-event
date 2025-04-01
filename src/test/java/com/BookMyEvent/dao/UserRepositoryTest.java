@@ -152,7 +152,7 @@ class UserRepositoryTest {
   @DisplayName("Test UserRepository method Delete")
   void testMethodDeletePositiveScenario(){
     userRepository.save(userOne);
-    userRepository.deleteById(userOne.getId().toHexString());
+    userRepository.deleteById(userOne.getId());
     Optional<User> user = userRepository.findUserByEmail(userOne.getEmail());
 
         assertFalse(user.isPresent());

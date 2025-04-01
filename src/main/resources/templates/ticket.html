@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A4 Page</title>
+    <style>
+        .a4-page {
+            width: 794px; /* A4 */
+            height: 1123px; /* A4 */
+            background: white;
+            border: 1px solid #000;
+            margin: 20px auto; /* Центрування */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            position: relative;
+            display: flex;
+            flex-direction: column; /* Головне: змінюємо на column */
+        }
+
+        .top-line {
+            width: 100%;
+            height: 50px;
+            background-color: #b64747;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .top-line img {
+            height: 40px;
+            width: auto;
+            margin-left: 10px;
+        }
+
+        .left-side {
+            width: 50%;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .left-side h2 {
+            margin-bottom: 15px;
+        }
+
+        .event-image {
+            width: 80%;
+            height: auto;
+            border: 2px solid #000;
+            margin-bottom: 10px;
+        }
+
+        .seat-info {
+            text-align: left;
+            width: 80%;
+            margin-top: 10px;
+            font-size: 18px;
+        }
+
+        .qr-code {
+            margin-top: 20px;
+            width: 100px;
+            height: 100px;
+        }
+
+        .right-side {
+            width: 50%;
+            padding: 20px;
+            font-size: 16px;
+            text-align: justify;
+        }
+
+        .barcode {
+            margin-top: 20px;
+            width: 200px;
+            height: 50px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex-direction: row; /* Лівий і правий блоки в один рядок */
+            /*flex: 1; !* Розтягуємо, щоб займало місце *!*/
+        }
+
+        .cut-line {
+            width: 100%;
+            border-top: 2px dashed black; /* Пунктирна лінія */
+            margin-top: 20px;
+            position: relative; /* Вирівнюється внизу */
+        }
+
+
+
+        /* Для друку */
+        @media print {
+            .a4-page {
+                width: 210mm;
+                height: 297mm;
+                box-shadow: none;
+                border: none;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+            }
+            .top-line {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 50px;
+                background-color: black;
+            }
+            .cut-line {
+                border-top: 2px dashed black;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="a4-page">
+    <div class="top-line">
+        <h1>evently-book</h1>
+        <img src="20flight-ticket/BookMyEvent-Logo.png" alt="Логотип">
+    </div>
+    <div class="content-wrapper">
+    <div class="left-side">
+        <h2>Let’s Talk про ментальне здоров'я</h2>
+        <img src="/file/ochi-v-ochi.jpg" alt="Зображення події" class="event-image">
+        <div class="seat-info">
+            <p><strong>Дата :</strong> 30 вересня</p>
+            <p><strong>Локація :</strong> Київ вул. Антоновича, 50</p>
+            <p><strong>Час :</strong> 12:00 </p>
+            <p><strong>Місце :</strong> 12</p>
+            <p><strong>Ряд :</strong> 5</p>
+            <p><strong>Замовлення :</strong> 233446788</p>
+        </div>
+        <img src="/file/qr-code.png" alt="QR-код" class="qr-code">
+        <img src="/file/barcode.jpeg" alt="Штрих-код" class="barcode">
+    </div>
+
+    <div class="right-side">
+        <h3>Правила та умови</h3>
+        <p>1. Цей епектронний квиток надає право на відвідування заходу</p>
+        <p>2. Електронний квиток заборонено копіювати та передавати колії третім особам. Унікальний ідентифікатор (штрих-код), який міститься на цьому епектрочному квитку, гарантує вам право на одноразове відвідування заходу. Пред явлення гретіми особами електронного квитка з ідентичним ідентифікатором позбавляє вас права на відвідування закоту.</p>
+        <p> 3. У разі виникнення будь яких проблем, таких як неможливість прочитети ідентифікатор (штрих-код), Фізичне пошкодження цього електронного квитка або в іших зипадках, необхідно звернутися в спеціальний пункт обміву або в каси, перелік яких на сайті
+            https://evently-book.vercel.app/ У виладик лице ви самовільно залишили межі контрольно-перепуских вулитів, квиток стаєнедійсним і не підлягає
+            поверненню.</p>
+        <p>4. Перевірка електронних квитків та прохід на захід здійснюється у відповідності з правилами, що встановлені організаторами або адміністрацією залу. Для проходження процедури ідентифікації електронного квитка та з метою перевірки права використання цього електронного квитка рекомендовано мати при собі документ, що підтверджує особу.
+        </p>
+        <p> 5. Квиток поверненню та обміну не підлягає. Вартість цього електронного квитка може бути повернена лише у разі відміни заходу на умовах, встановлених офертою. Вартість сервісного або іншого зборів та транзакційних витрат продавця, які стягуються при продажі електронного квитка, поверненню не підлягає.
+        </p>
+        <p>6. * Глядачі молодші за вік, зазначений в квитку, не допускаються до виступу.</p>
+        <p>  ПРИЄМНОГО ВІДПОЧИНКУ!</p>
+
+    </div>
+    </div>
+    <div class="cut-line"></div>
+</div>
+
+
+</body>
+</html>

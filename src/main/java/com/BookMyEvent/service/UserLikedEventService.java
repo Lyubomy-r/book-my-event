@@ -7,7 +7,16 @@ import java.util.List;
 
 public interface UserLikedEventService {
     void addLikedEvent(LikedEventDto likedEventDto);
+
     void removeLikedEvent(LikedEventDto likedEventDto);
+
     LikedEventResponseDto getLikedEvents(String userId);
+
     long countLikedEvents(String userId);
+
+    Long getTotalEventLikes(String eventId);
+
+    void deleteByUserId(String userId);
+
+    void deleteByEventId(String eventId);
 }

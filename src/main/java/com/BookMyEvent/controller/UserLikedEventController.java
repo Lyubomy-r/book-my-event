@@ -180,7 +180,7 @@ public class UserLikedEventController {
       responses = {
           @ApiResponse(
               responseCode = "200",
-              description = "Total count of liked events",
+              description = "Total count of user liked events",
               content = @Content(
                   mediaType = "application/json",
                   schema = @Schema(implementation = Long.class)
@@ -197,6 +197,40 @@ public class UserLikedEventController {
         this.getClass().getSimpleName(), methodName, userId);
 
     long count = likedEventService.countLikedEvents(userId);
+    return ResponseEntity.ok(count);
+  }
+
+  @Operation(
+      summary = "Count Total Event Likes events by eventId",
+      description = "Retrieve the total number of liked events for the specified event ID. Example endpoint /liked-events/count/event/671516169d404702baa62693",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Total count of liked events",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = Long.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request or eventId format invalid",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = ErrorResponseDto.class)
+                  )
+              }
+          ),
+      }
+  )
+  @GetMapping("/count/event/{eventId}")
+  public ResponseEntity<Long> getTotalEventLikes(@PathVariable String eventId) {
+    String methodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    Long count = likedEventService.getTotalEventLikes(eventId);
+    log.info("{}::{} - Counting total likes event for event ID: {}.",
+        this.getClass().getSimpleName(), methodName, eventId);
     return ResponseEntity.ok(count);
   }
 }

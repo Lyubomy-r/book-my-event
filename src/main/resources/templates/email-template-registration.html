@@ -63,10 +63,12 @@
 														style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 0px;"
 														valign="top">
 														<p>Привіт!🎉</p>
-														<p>Дякуємо, що приєднався до BookMyEvent! Щоб завершити реєстрацію, просто натисни на цей лінк: <div class="password">
-														<strong
-																style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;"
-																th:text="${link}"></strong>
+														<p>Дякуємо, що приєднався до BookMyEvent! Щоб завершити реєстрацію, просто натисни на цей лінк: <a th:href="${link}">завершення реєстрації</a> <div class="password">
+<!--														<strong-->
+<!--																style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;"-->
+<!--																>-->
+<!--															<p th:utext="${link}"></p>-->
+<!--														</strong>-->
 													</div></p>
 														<p>
 															Тепер ти готовий створити свою першу подію або забронювати білет на класний івент! Чекаємо на тебе!

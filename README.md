@@ -3,8 +3,7 @@ The backend server is designed to manage an event booking platform, enabling use
 It handles user authentication, event creation, ticket transactions, and ensures secure and efficient processing of bookings and payments.
 ![Event-Concert-Ticket](src/main/resources/file/Event-Concert-Ticket.jpg)
 ## Technologies Used
-- Spring Boot 3 
-- Hibernate 5 
+- Spring Boot 3
 - Spring REST 
 - Spring Security  
 - Java 17 

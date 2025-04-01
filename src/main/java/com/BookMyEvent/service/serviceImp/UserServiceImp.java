@@ -2,19 +2,38 @@ package com.BookMyEvent.service.serviceImp;
 
 import com.BookMyEvent.dao.UserRepository;
 import com.BookMyEvent.entity.Enums.Status;
+import com.BookMyEvent.entity.Image;
 import com.BookMyEvent.entity.User;
+import com.BookMyEvent.entity.dto.EventResponseDto;
 import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.entity.dto.UserUpdateDto;
 import com.BookMyEvent.exception.GeneralException;
+import com.BookMyEvent.mapper.EventMapper;
 import com.BookMyEvent.mapper.UserMapper;
+import com.BookMyEvent.service.CloudinaryService;
 import com.BookMyEvent.service.DeletedUsersService;
+import com.BookMyEvent.service.EventService;
 import com.BookMyEvent.service.MailService;
+import com.BookMyEvent.service.MediaService;
+import com.BookMyEvent.service.UserLikedEventService;
 import com.BookMyEvent.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,31 +47,42 @@ public class UserServiceImp implements UserService {
   private final DeletedUsersService deletedUsersService;
   private final UserMapper userMapper;
   private final MailService mailService;
+  private final CloudinaryService mediaService;
+  private final PasswordEncoder passwordEncoder;
+  private final UserLikedEventService likedEventService;
+
+  @Value("${front.url}")
+  private String frontUrl;
 
   @Value("${company.phone}")
   private String companyPhone;
   public static final String NOT_FOUND_MESSAGE_ID = "User with ID [%s] not found.";
   public static final String NOT_FOUND_MESSAGE_EMAIL = "User with Email [%s] not found.";
-  private final String clasName = this.getClass().getSimpleName();
+  private final String className = this.getClass().getSimpleName();
 
   @Override
-  public List<UserResponseDto> findAllUserProfiles() {
-    List<UserResponseDto> userList = userRepository.findAllUserProfiles();
-    log.info("{}::findAllUserProfiles. Return all existing users." , clasName );
-    return userList;
+  public Page<UserResponseDto> findAllUserProfiles(Pageable pageable) {
+//    List<UserResponseDto> userList = userRepository.findAllUserProfiles();
+    Page<User> userPage = userRepository.findAll(pageable);
+    log.info("{}::findAllUserProfiles. Return all existing users.", className);
+    return userPage.map(userMapper::toUserResponseDtoWithoutAvatarAndEvents);
+//    return userL.stream()
+//        .map(userMapper::toUserResponseDtoWithoutAvatarAndEvents)
+//        .toList();
   }
 
   @Override
   public UserResponseDto findUserInfoById(String userId) {
     if (userId == null || userId.isEmpty()) {
-      log.warn("{}::findUserInfoById. Return error message.", clasName);
+      log.warn("{}::findUserInfoById. Return error message.", className);
       throw new GeneralException("User ID cannot be null or empty", HttpStatus.BAD_REQUEST);
     }
-    Optional<UserResponseDto> user = userRepository.findUserInfoById(userId);
+//    Optional<UserResponseDto> user = userRepository.findUserInfoById(userId);
+    Optional<User> user = userRepository.findUserInfoWithoutEventsById(new ObjectId(userId));
     if (user.isPresent()) {
       log.info("UserServiceImp::findUserInfoById. Return user by ID: {}.", userId);
 
-      return user.get();
+      return userMapper.toUserResponseDtoWithoutEvents(user.get());
     } else {
       log.warn("UserServiceImp::findUserInfoById. Return error message.");
       throw new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
@@ -77,8 +107,37 @@ public class UserServiceImp implements UserService {
   }
 
   @Override
+  public User findUserById(String userId) {
+    if (userId == null || userId.isEmpty()) {
+      log.warn("{}::findUserInfoById. Return error message.", className);
+      throw new GeneralException("User ID cannot be null or empty", HttpStatus.BAD_REQUEST);
+    }
+    User user = userRepository.findById(new ObjectId(userId)).orElseThrow(
+        () -> {
+          log.warn("UserServiceImp::findUserInfoById. Return error message.");
+          return new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
+        }
+    );
+    log.info("UserServiceImp::findUserInfoById. Return user by ID: {}.", userId);
+
+    return user;
+  }
+
+//  @Override
+//  public  Page<EventResponseDto> findUserCreatedEvents(String userId, Pageable pageable) {
+//    if (userId == null || userId.isEmpty()) {
+//      log.warn("{}::findUserInfoById. Return error message.", className);
+//      throw new GeneralException("User ID cannot be null or empty", HttpStatus.BAD_REQUEST);
+//    }
+//
+//    log.info("UserServiceImp::findUserInfoById. Return user by ID: {}.", userId);
+//    Page<EventResponseDto> list = eventService.getByOrganizersId(userId, pageable);
+//    return list;
+//  }
+
+  @Override
   public UserResponseDto save(User user) {
-    if(userRepository.existsByEmail(user.getEmail())){
+    if (userRepository.existsByEmail(user.getEmail())) {
       log.warn("UserServiceImp::save. Return error message.");
       throw new GeneralException(String.format("User with email <%s> already exists", user.getEmail()), HttpStatus.BAD_REQUEST);
     }
@@ -94,34 +153,66 @@ public class UserServiceImp implements UserService {
   }
 
   @Override
-  public UserResponseDto updateFieldsFromAdmin(String userId, UserUpdateDto userUpdateDto) {
-    if (userUpdateDto == null || (userId == null || userId.isEmpty())) {
-      log.warn("UserServiceImp::updateFields. Return error message.");
-      throw new GeneralException("Can't make changes fields is null or empty.", HttpStatus.BAD_REQUEST);
-    }
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> {
-          log.warn("UserServiceImp::updateFields. Return error message.");
-          return new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
-        });
-    userMapper.mapUserUpdateToUser(userUpdateDto, user);
-    User updateUser = userRepository.save(user);
-
-    return userMapper.toUserResponseDto(updateUser);
-  }
-
-  @Override
   public UserResponseDto updateUserFields(String userId, UserUpdateDto userUpdateDto) {
     if (userUpdateDto == null || (userId == null || userId.isEmpty())) {
       log.warn("UserServiceImp::updateFields. Return error message.");
       throw new GeneralException("Can't make changes fields is null or empty.", HttpStatus.BAD_REQUEST);
     }
-    User user = userRepository.findById(userId)
+    User user = userRepository.findById(new ObjectId(userId))
         .orElseThrow(() -> {
           log.warn("UserServiceImp::updateFields. Return error message.");
           return new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
         });
-    userMapper.mapUserUpdateToUser(userUpdateDto, user);
+//    userMapper.mapUserUpdateToUser(userUpdateDto, user);
+//    checkAndAddPasswordIfExist(userUpdateDto, user);
+
+    User mappedUser = userMapper.mapUserUpdateToUser(userUpdateDto, user);
+    mappedUser.setPassword(checkAndAddPasswordIfExist(userUpdateDto, user));
+    User updateUser = userRepository.save(mappedUser);
+    log.info("!updateUser.getPassword().equals(user.getPassword()) {}", !updateUser.getPassword().equals(user.getPassword()));
+    if(!updateUser.getPassword().equals(user.getPassword())){
+      mailService.sendSimpleHtmlMailMessage6Line(updateUser.getEmail(),
+          "Твій пароль успішно оновлено BookMyEvent",
+          "Привіт!",
+          "Твій пароль було успішно оновлено.",
+          "Тепер ти можете увійти до свого облікового запису за допомогою нового пароля: " + frontUrl,
+          "Якщо ти не запитував зміну пароля, будь ласка, зверніться до нашої служби підтримки.",
+          "",
+          "",
+          ""
+      );
+    }
+    return userMapper.toUserResponseDto(updateUser);
+  }
+
+//  @Override
+//  public UserResponseDto updateUserFields(String userId, UserUpdateDto userUpdateDto) {
+//    if (userUpdateDto == null || (userId == null || userId.isEmpty())) {
+//      log.warn("UserServiceImp::updateFields. Return error message.");
+//      throw new GeneralException("Can't make changes fields is null or empty.", HttpStatus.BAD_REQUEST);
+//    }
+//    User user = userRepository.findById(new ObjectId(userId))
+//        .orElseThrow(() -> {
+//          log.warn("UserServiceImp::updateFields. Return error message.");
+//          return new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
+//        });
+//    userMapper.mapUserUpdateToUser(userUpdateDto, user);
+//    User updateUser = userRepository.save(user);
+//
+//    return userMapper.toUserResponseDto(updateUser);
+//  }
+
+  @Override
+  public UserResponseDto updateUserAvatar(String userId, MultipartFile userAvatar) {
+    User user = userRepository.findById(new ObjectId(userId))
+        .orElseThrow(() -> {
+          log.warn("UserServiceImp::updateFields. Return error message.");
+          return new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
+        });
+    String imageName = user.getId().toHexString() + "/" + userAvatar.getOriginalFilename();
+    Image newImage = mediaService.savedUserImage(userAvatar, user.getId().toHexString());
+    newImage.setName(imageName);
+    user.linkImageWithUser(newImage);
     User updateUser = userRepository.save(user);
 
     return userMapper.toUserResponseDto(updateUser);
@@ -129,19 +220,23 @@ public class UserServiceImp implements UserService {
 
   @Override
   public String delete(String userId) {
+
     if (userId == null || userId.isEmpty()) {
       log.warn("UserServiceImp::delete. Return error message.");
       throw new GeneralException(String.format("User ID cannot be null or empty. %s ", userId), HttpStatus.BAD_REQUEST);
     }
-    if (userRepository.existsById(userId)) {
-      log.info("UserServiceImp::delete. Deleted user by ID: {}.", userId);
-      userRepository.deleteById(userId);
-
-      return "User was deleted successfully.";
-    } else {
-      log.warn("UserServiceImp::delete. Return error message.");
-      throw new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
+    User user = userRepository.findById(new ObjectId(userId))
+        .orElseThrow(() -> {
+          log.warn("UserServiceImp::updateFields. Return error message.");
+          return new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
+        });
+    log.info("UserServiceImp::delete. Deleted user by ID: {}.", userId);
+    if (user.getAvatarImage() != null) {
+      mediaService.deleteUserImg(user.getAvatarImage());
     }
+    userRepository.delete(user);
+    likedEventService.deleteByUserId(user.getId().toHexString());
+    return "User was deleted successfully.";
   }
 
   @Override
@@ -150,17 +245,19 @@ public class UserServiceImp implements UserService {
       log.warn("UserServiceImp::deleteFromAdmin. Return error message.");
       throw new GeneralException(String.format("User ID cannot be null or empty. %s ", userId), HttpStatus.BAD_REQUEST);
     }
-    Optional<User> user=userRepository.findById(userId);
-    if (user.isPresent()) {
-      log.info("UserServiceImp::deleteFromAdmin. Deleted user by ID: {}.", userId);
-
-      deletedUsersService.addUserToDeletedList(user.get().getEmail());
-      userRepository.delete(user.get());
-      return "User was deleted successfully.";
-    } else {
+    User user = userRepository.findById(new ObjectId(userId)).orElseThrow(() -> {
       log.warn("UserServiceImp::deleteFromAdmin. Return error message.");
-      throw new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
+      return new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
+    });
+    log.info("UserServiceImp::deleteFromAdmin. Deleted user by ID: {}.", userId);
+
+    deletedUsersService.addUserToDeletedList(user.getEmail());
+    if (user.getAvatarImage() != null) {
+      mediaService.deleteUserImg(user.getAvatarImage());
     }
+    userRepository.delete(user);
+    likedEventService.deleteByUserId(user.getId().toHexString());
+    return "User was deleted successfully.";
   }
 
   @Override
@@ -177,10 +274,10 @@ public class UserServiceImp implements UserService {
         userRepository.save(user);
 //        mailService.blockingMessage(user.getEmail());
         mailService.sendSimpleHtmlMailMessage4Line(user.getEmail(),
-            "Інформація про блокування на сайті BookMyEvent.",
+            "Твій акаунт тимчасово заблоковано – що робити далі?",
             "",
-            "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
-            "Якщо у вас є питання, зателефонуйте на нашу гарячу лінію.",
+            "Твій акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
+            "Якщо у тебе є питання, зателефонуй на нашу гарячу лінію.",
             "\uD83D\uDCF2 " + companyPhone,
             "");
         log.info("User status updated to 'BANNED' for user: {}", user.getEmail());
@@ -192,9 +289,24 @@ public class UserServiceImp implements UserService {
     } else {
       log.warn("No user found with email: {}", email);
       throw new GeneralException(
-              String.format("User with such email: (%s) not found", email),
-              HttpStatus.NOT_FOUND);
+          String.format("User with such email: (%s) not found", email),
+          HttpStatus.NOT_FOUND);
     }
+  }
+
+  @Override
+  public UserResponseDto deleteUserAvatar(String userId) {
+    User user = userRepository.findById(new ObjectId(userId))
+        .orElseThrow(() -> {
+          log.warn("UserServiceImp::deleteUserAvatar. Return error message.");
+          return new GeneralException(String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
+        });
+    mediaService.deleteUserImg(user.getAvatarImage());
+
+    user.setAvatarImage(null);
+    User updateUser = userRepository.save(user);
+
+    return userMapper.toUserResponseDto(updateUser);
   }
 
   @Override
@@ -211,9 +323,9 @@ public class UserServiceImp implements UserService {
         userRepository.save(user);
 //        mailService.unblockingMessage(user.getEmail());
         mailService.sendSimpleHtmlMailMessage4Line(user.getEmail(),
-            "Інформація про розблокування на сайті BookMyEvent.",
+            "Твій акаунт знову активний – ласкаво просимо назад!",
             "Вітаємо!",
-            "Ваш акаунт розблоковано, і ви знову можете користуватися всіма можливостями нашого сайту. Насолоджуйтесь!",
+            "Твій акаунт розблоковано, і ти знову можете користуватися всіма можливостями нашого сайту. Насолоджуйся!",
             "",
             "",
             "");
@@ -231,5 +343,12 @@ public class UserServiceImp implements UserService {
     }
   }
 
-
+  public String checkAndAddPasswordIfExist(UserUpdateDto userUpdateDto, User user) {
+    if (userUpdateDto.getPassword() != null && !userUpdateDto.getPassword().isEmpty()
+        && !passwordEncoder.matches(userUpdateDto.getPassword(), user.getPassword())) {
+      return passwordEncoder.encode(userUpdateDto.getPassword());
+    }else {
+      return user.getPassword();
+    }
+  }
 }

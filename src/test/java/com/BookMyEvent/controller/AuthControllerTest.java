@@ -438,7 +438,7 @@ class AuthControllerTest {
               .contentType(MediaType.APPLICATION_JSON)
               .content(requestBody))
           .andExpect(status().isBadRequest())
-          .andExpect(jsonPath("$.email").value("Неправильний формат email"));
+          .andExpect(jsonPath("$.details.email").value("Неправильний формат email"));
     }
 
     @Test
@@ -455,7 +455,7 @@ class AuthControllerTest {
               .contentType(MediaType.APPLICATION_JSON)
               .content(requestBody))
           .andExpect(status().isBadRequest())
-          .andExpect(jsonPath("$.email").value("Email не може бути порожнім"));
+          .andExpect(jsonPath("$.details.email").value("Email не може бути порожнім"));
     }
 
     @Test
@@ -472,7 +472,7 @@ class AuthControllerTest {
               .contentType(MediaType.APPLICATION_JSON)
               .content(requestBody))
           .andExpect(status().isBadRequest())
-          .andExpect(jsonPath("$.password").value("must match \"^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[@$!%*?&]).+$\""));
+          .andExpect(jsonPath("$.details.password").value("must match \"^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[@$!%*?&]).+$\""));
     }
 
     @Test
@@ -489,7 +489,7 @@ class AuthControllerTest {
               .contentType(MediaType.APPLICATION_JSON)
               .content(requestBody))
           .andExpect(status().isBadRequest())
-          .andExpect(jsonPath("$.password").value("Пароль не може бути порожнім"));
+          .andExpect(jsonPath("$.details.password").value("Пароль не може бути порожнім"));
     }
 
     @Test
@@ -506,7 +506,7 @@ class AuthControllerTest {
               .contentType(MediaType.APPLICATION_JSON)
               .content(requestBody))
           .andExpect(status().isBadRequest())
-          .andExpect(jsonPath("$.password").value("Пароль повинен містити щонайменше 8 символів"));
+          .andExpect(jsonPath("$.details.password").value("Пароль повинен містити щонайменше 8 символів"));
     }
 
   }

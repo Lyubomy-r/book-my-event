@@ -8,15 +8,22 @@ import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
 import com.BookMyEvent.service.EventService;
 import com.BookMyEvent.service.UserService;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -27,6 +34,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+import static com.BookMyEvent.config.SwaggerConfig.PAGE_EVENT_RESPONSEDTO_PAYLOAD_SCHEMA;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -38,6 +46,9 @@ public class AdminController {
 
   private final UserService userService;
   private final EventService eventService;
+
+  private String className = this.getClass().getSimpleName();
+
   @Operation(
       summary = "Get  list of users",
       description = "Retrieves a list of users.",
@@ -62,10 +73,65 @@ public class AdminController {
               })
       })
   @GetMapping("/users")
-  public ResponseEntity<List<UserResponseDto>> findAllUserProfiles() {
-    List<UserResponseDto> userList = userService.findAllUserProfiles();
+  public ResponseEntity<Page<UserResponseDto>> findAllUserProfiles(@PageableDefault(
+      page = 0,
+      size = 8) Pageable pageable) {
+    Page<UserResponseDto> userList = userService.findAllUserProfiles(pageable);
     log.info("{}::findAllUsers - /admin/users - Return list of user.", this.getClass().getSimpleName());
     return ResponseEntity.ok(userList);
+  }
+
+  @Operation(
+      summary = "Get USER info by id.",
+      description = "Get USER info by id.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = " Return USER info.",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = UserResponseDto.class)
+                  )}
+          ),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request or not Validation failed. User ID cannot be null or empty",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = ErrorResponseDto.class))
+              }),
+          @ApiResponse(
+              responseCode = "404",
+              description = "User with ID not found.",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = ErrorResponseDto.class)
+                  )
+              }),
+          @ApiResponse(
+              responseCode = "403",
+              description = "Access forbidden. Can use Admin.",
+              content = @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(
+                      example = "{\n" +
+                          "    \"timestamp\": \"2024-12-19T16:40:54.575+00:00\",\n" +
+                          "    \"status\": 403,\n" +
+                          "    \"error\": \"Forbidden\",\n" +
+                          "    \"path\": \"/api/v1/users/674cb373e84f0654529647c4\"\n" +
+                          "}"
+                  )
+              )
+          )
+      })
+  @GetMapping("/users/{userId}")
+  public ResponseEntity<UserResponseDto> findUserInfoById(@PathVariable("userId") String userId) {
+    UserResponseDto userResponse = userService.findUserInfoById(userId);
+    log.info("UserController::findUserInfoById - /users/{userId} - Return User Info email: {} .", userResponse.getEmail());
+    return ResponseEntity.ok(userResponse);
   }
 
   @Operation(
@@ -81,9 +147,41 @@ public class AdminController {
               })
       })
   @GetMapping("/events")
-  public ResponseEntity<List<EventResponseDto>> getAllEvents() {
+  public ResponseEntity<Page<EventResponseDto>> getAllEvents(@PageableDefault(
+      page = 0,
+      size = 8,
+  sort = "creationDate",
+      direction = Sort.Direction.DESC) Pageable pageable) {
     log.info("Class: {}, Method: getAllEvents - Fetching all events.", this.getClass().getSimpleName());
-    List<EventResponseDto> events = eventService.getAllEvents();
+    Page<EventResponseDto> events = eventService.getAllEvents(pageable);
+    return ResponseEntity.ok(events);
+  }
+
+  @Operation(
+      summary = "Get Event by eventId",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Get info by Event.",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = EventResponseDto.class))
+              }),
+          @ApiResponse(
+              responseCode = "404",
+              description = "Event with the provided id not found",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = ErrorResponseDto.class)
+                  )
+              })
+      })
+  @GetMapping("/events/{eventId}")
+  public ResponseEntity<EventResponseDto> getEventById(@PathVariable("eventId") String eventId) {
+    log.info("Class: {}, Method: getAllEventsUA - Fetching all APPROVED events.", className);
+    EventResponseDto events = eventService.getEventById(eventId);
     return ResponseEntity.ok(events);
   }
 
@@ -92,6 +190,66 @@ public class AdminController {
     log.info("Class: {}, Method: approveEvent - Approving event with ID: {}", this.getClass().getSimpleName(), id);
     EventResponseDto approvedEvent = eventService.approveEvent(id);
     return ResponseEntity.ok(approvedEvent);
+  }
+
+  @Operation(
+      summary = "Get USER Created Events by user id.",
+      description = "Get USER Created Events info by user id. "+
+          "Example request: /api/v1/admin/users/67ab5fbff1f4cb4bb7825f11/events?page=0&size=6",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = " Return list of events created by user.",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(example = PAGE_EVENT_RESPONSEDTO_PAYLOAD_SCHEMA
+                      )
+                  )}
+          ),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request or not Validation failed. User ID cannot be null or empty",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = ErrorResponseDto.class))
+              }),
+          @ApiResponse(
+              responseCode = "404",
+              description = "User with ID not found.",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = ErrorResponseDto.class)
+                  )
+              }),
+          @ApiResponse(
+              responseCode = "403",
+              description = "Access forbidden. User ID does not match token ID",
+              content = @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(
+                      example = "{\n" +
+                          "    \"timestamp\": \"2024-12-19T16:40:54.575+00:00\",\n" +
+                          "    \"status\": 403,\n" +
+                          "    \"error\": \"Forbidden\",\n" +
+                          "    \"path\": \"string\"\n" +
+                          "}"
+                  )
+              )
+          )
+      })
+  @GetMapping("/users/{userId}/events")
+  public ResponseEntity<Page<EventResponseDto>> findUserCreatedEvents(
+      @PathVariable("userId") String userId,
+      @Parameter(name = "pageable", description = "Parameters for pagination (page, size). Example: /users/{userId}/events?page=0&size=6")
+      @PageableDefault(
+          page = 0,
+          size = 6) Pageable pageable) {
+    Page<EventResponseDto> userResponse = eventService.getByOrganizersId(userId, pageable);
+    log.info("UserController::findUserCreatedEvents - /users/{userId} - Return User Info id: {} .", userId);
+    return ResponseEntity.ok(userResponse);
   }
 
   @Operation(
@@ -214,6 +372,40 @@ public class AdminController {
     return ResponseEntity.status(HttpStatus.OK).body(response);
   }
 
+  @Operation(
+      summary = "Get event count by status",
+      description = "Returns a map where the key is the event status and the value is the number of events with that status.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Successful response",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(
+                      type = "object"
+                  ),
+                  examples = @ExampleObject(
+                      value = "{ \"CANCELLED\": 6, \"PENDING\": 9, \"APPROVED\": 34 }"
+                  )
+              )
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "Access forbidden.",
+              content = @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(
+                      example = "{\n" +
+                          "    \"timestamp\": \"2024-12-19T16:40:54.575+00:00\",\n" +
+                          "    \"status\": 403,\n" +
+                          "    \"error\": \"Forbidden\",\n" +
+                          "    \"path\": \"string\"\n" +
+                          "}"
+                  )
+              )
+          )
+      }
+  )
   @GetMapping("/events/count/status")
   public ResponseEntity<Map<String, Integer>> getCountByStatus() {
     log.info("Class: {}, Method: getCountByStatus - Counting events for all statuses", this.getClass().getSimpleName());
@@ -224,10 +416,33 @@ public class AdminController {
     return ResponseEntity.ok(statusCountMap);
   }
 
+  @Operation(
+      summary = "Get events by status",
+      description = "Fetches a paginated list of events based on their status. " +
+          "Example request: /api/v1/admin/events/status/CANCELLED?page=0&size=6"
+  )
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "List of events with the specified status",
+          content = @Content(mediaType = "application/json",
+              schema = @Schema(implementation = Page.class),
+              examples = @ExampleObject(value = PAGE_EVENT_RESPONSEDTO_PAYLOAD_SCHEMA))),
+      @ApiResponse(responseCode = "400", description = "Invalid status value or such status doesn't exist",
+          content = @Content),
+      @ApiResponse(responseCode = "500", description = "Internal server error",
+          content = @Content)
+  })
   @GetMapping("/events/status/{status}")
-  public ResponseEntity<List<EventResponseDto>> getEventsByStatus(@PathVariable("status") String status) {
+  public ResponseEntity<Page<EventResponseDto>> getEventsByStatus(
+      @Parameter(name = "status", description = "Events status [PENDING, APPROVED, CANCELLED]", example = "PENDING")
+      @PathVariable("status") String status,
+      @Parameter(name = "pageable", description = "Parameters for pagination (page, size). Example: /CANCELLED?page=0&size=6")
+      @PageableDefault(
+          page = 0,
+          size = 8,
+          sort = "creationDate",
+          direction = Sort.Direction.DESC) Pageable pageable) {
     log.info("Class: {}, Method: getEventsByStatus - Fetching events with status: {}", this.getClass().getSimpleName(), status);
-    List<EventResponseDto> events = eventService.getEventsByStatus(status.toUpperCase());
+    Page<EventResponseDto> events = eventService.getEventsByStatus(status.toUpperCase(), pageable);
 
     return ResponseEntity.ok(events);
   }
@@ -247,6 +462,12 @@ public class AdminController {
               description = "The new status of the event",
               required = true,
               example = "APPROVED"
+          ),
+          @Parameter(
+              name = "urlToEvent",
+              description = "Url link to the event",
+              required = true,
+              example = "string"
           )
       },
       responses = {
@@ -269,10 +490,25 @@ public class AdminController {
       }
   )
   @PatchMapping("/events/{eventsId}/status")
-  public ResponseEntity<EventResponseDto> updateEventStatus(@PathVariable String eventsId, @RequestParam String status) {
+  public ResponseEntity<EventResponseDto> updateEventStatus(@PathVariable String eventsId,
+                                                            @RequestParam String status,
+                                                            @RequestParam String urlToEvent) {
     log.info("Class: {}, Method: updateEventStatus - Updating status of event ID: {} to {}", this.getClass().getSimpleName(), eventsId, status);
-    EventResponseDto updatedEvent = eventService.updateEventStatus(eventsId, status);
+    EventResponseDto updatedEvent = eventService.updateEventStatus(eventsId, status, urlToEvent);
+    log.info("Class: {}, Method: updateEventStatus - Event status updated successfully ID: {}", this.getClass().getSimpleName(), eventsId);
     return ResponseEntity.ok(updatedEvent);
+  }
+
+  //  @Operation(
+//      summary = "Delete not linked images",
+//      description = "Delete not linked images"
+//  )
+  @Hidden
+  @DeleteMapping("/img/img")
+  public ResponseEntity<String> deleteNotLinkedImg() {
+    log.info("Class: {}, Method: getAllEventsUA - Fetching all APPROVED events.", className);
+    eventService.deleteNotLinkedImg();
+    return ResponseEntity.ok("deleteNotLinkedImg - ok");
   }
 
 }

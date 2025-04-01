@@ -6,6 +6,7 @@ import com.BookMyEvent.service.MailService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -79,10 +80,11 @@ class PasswordResetServiceImplTest {
 
     Mockito.verify(emailService).sendSimpleHtmlMailMessage6Line(
         eq(email),
-        eq("Відновлення паролю BookMyEvent"),
+        eq("Запит на відновлення пароля BookMyEvent"),
         anyString(),
         anyString(),
-        eq("\t1.\tНатисніть на: " + expectedUrl),
+        ArgumentMatchers.contains(expectedUrl),
+//        eq("\t1.\tНатисніть на: " + expectedUrl),
         anyString(),
         anyString(),
         anyString(),

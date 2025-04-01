@@ -5,5 +5,5 @@ import com.BookMyEvent.entity.Event;
 
 import java.util.List;
 
-public record LikedEventResponseDto( String userId, List<Event> eventsList) {
+public record LikedEventResponseDto( String userId, List<EventResponseDto> eventsList) {
 }

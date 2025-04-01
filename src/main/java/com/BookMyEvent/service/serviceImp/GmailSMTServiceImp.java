@@ -17,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -26,7 +25,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.io.File;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -54,14 +52,13 @@ public class GmailSMTServiceImp implements MailService {
   private String emailPassword;
 
   private final String clasName = this.getClass().getSimpleName();
-  public static final String SUB_REGISTRATION = "Реєстрація на сайті BookMyEvent.";
+  public static final String SUB_REGISTRATION = "Ласкаво просимо до BookMyEvent – завершіть реєстрацію!";
   public static final String SUB_UNBLOCKING_MESSAGE = "Інформація про розблокування на сайті BookMyEvent.";
   public static final String SUB_BLOCKING_MESSAGE = "Інформація про блокування на сайті BookMyEvent.";
   public static final String UTF_8_ENCODING = "UTF-8";
   public static final String TEMPLATE_TITLE_4_LINE_TEXT = "email-template-title-4linetext";
   public static final String TEMPLATE_TITLE_6_LINE_TEXT = "email-template-title-6linetext";
   public static final String TEMPLATE_REGISTRATION = "email-template-registration";
-  public static final String TEMPLATE_UNBLOCKING_MESSAGE = "email-template-unblocking-ms";
 
   private final JavaMailSender emailSender;
 
@@ -81,8 +78,7 @@ public class GmailSMTServiceImp implements MailService {
                                              String messageText2,
                                              String messageText3,
                                              String messageText4) {
-
-    log.info("{}}::sendSimpleMailMessage - Sending email to: {}", clasName, emailTo);
+    log.info("{}::sendSimpleMailMessage - Preparation for sending the email to: {}", clasName, emailTo);
     try {
       String text = createHtmlTemplateTitle4Line(
           title,
@@ -105,6 +101,7 @@ public class GmailSMTServiceImp implements MailService {
       throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
+
   @Override
   public void sendSimpleHtmlMailMessage6Line(String emailTo,
                                         String subject,
@@ -157,17 +154,17 @@ public class GmailSMTServiceImp implements MailService {
 
   @Override
   public void sendHtmlEmailAfterRegistration(String emailTo) {
-
     try {
       var password = randomPasswordGenerator();
       var baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
       var url = serverUrl + "/api/v1/authorize/mail-confirmation/" + emailTo + "/" + password;
-      log.info("sendHtmlEmailRegistration : baseUrl - {}", baseUrl);
-      log.info("sendHtmlEmailRegistration - serverUrl : {}", serverUrl);
-      log.info("sendHtmlEmailRegistration - verify url : {}", url);
-      Context context = new Context();
-      context.setVariables(Map.of("link", url));
-      String text = templateEngine.process(TEMPLATE_REGISTRATION, context);
+      log.info("sendHtmlEmailAfterRegistration : baseUrl - {}", baseUrl);
+      log.info("sendHtmlEmailAfterRegistration - serverUrl : {}", serverUrl);
+      log.info("sendHtmlEmailAfterRegistration - verify url : {}", url);
+//      Context context = new Context();
+//      context.setVariables(Map.of("link", url));
+      String text = createHtmlTemplateRegistration(url);
+//      String text = templateEngine.process(TEMPLATE_REGISTRATION, context);
       MimeMessage message = getMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, true, UTF_8_ENCODING);
       helper.setPriority(1);
@@ -187,7 +184,6 @@ public class GmailSMTServiceImp implements MailService {
       exception.printStackTrace();
       throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
-
   }
 
   @Override
@@ -214,9 +210,6 @@ public class GmailSMTServiceImp implements MailService {
 
       Message[] messages = emailFolder.getMessages();
       String searchText = "Привіт!🎉\n Дякуємо, що приєднався до BookMyEvent! Щоб завершити реєстрацію, просто натисни на цей лінк:";
-
-      log.info("Searching for messages containing text: {}", searchText);
-
       for (Message message : messages) {
         Object content = message.getContent();
 
@@ -320,10 +313,10 @@ public class GmailSMTServiceImp implements MailService {
     try {
       Context context = new Context();
       context.setVariables(Map.of("title", title,
-          "messageText1", replaceLinksWithHtml(messageText1),
-          "messageText2", replaceLinksWithHtml(messageText2),
-          "messageText3", replaceLinksWithHtml(messageText3),
-          "messageText4", replaceLinksWithHtml(messageText4),
+          "messageText1", messageText1,
+          "messageText2", messageText2,
+          "messageText3", messageText3,
+          "messageText4", messageText4,
           "linkInEnd", frontUrl));
       String text = templateEngine.process(TEMPLATE_TITLE_4_LINE_TEXT, context);
       return text;
@@ -333,7 +326,6 @@ public class GmailSMTServiceImp implements MailService {
       throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
-
   public String createHtmlTemplateTitle6Line(String title,
                                              String messageText1,
                                              String messageText2,
@@ -352,7 +344,22 @@ public class GmailSMTServiceImp implements MailService {
           "messageText6", replaceLinksWithHtml(messageText6),
           "linkInEnd", frontUrl));
       String text = templateEngine.process(TEMPLATE_TITLE_6_LINE_TEXT, context);
-      log.info("{}::mailSender. text({})", clasName, text);
+      log.info("{}::createHtmlTemplateTitle6Line. create Html Template Title 6 Line", clasName);
+      return text;
+    } catch (Exception exception) {
+      log.error("{}::mailSender. Error occurred while retrieving messages({})", clasName, exception.getMessage());
+      exception.printStackTrace();
+      throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  public String createHtmlTemplateRegistration(String url) {
+    try {
+      Context context = new Context();
+      context.setVariables(Map.of("link", url,
+              "linkInEnd", frontUrl));
+      String text = templateEngine.process(TEMPLATE_REGISTRATION, context);
+      log.info("{}::createHtmlTemplateRegistration. creat eHtml Template Registration", clasName);
       return text;
     } catch (Exception exception) {
       log.error("{}::mailSender. Error occurred while retrieving messages({})", clasName, exception.getMessage());
@@ -402,6 +409,15 @@ public class GmailSMTServiceImp implements MailService {
     }
     matcher.appendTail(result);
     return result.toString();
+  }
+
+  @Override
+  public String replaceTextToLinkWithHtml(String text, String urlToEvent) {
+      String replacement = String.format(
+          "<a href=\"%s\" target=\"_blank\">%s</a>", urlToEvent, text
+      );
+    log.info("{}::replaceTextToLinkWithHtml. Created active links to Template Html to title ({})", clasName, text);
+    return replacement;
   }
 }
 

@@ -11,6 +11,7 @@ import com.BookMyEvent.mapper.TicketMapper;
 import com.BookMyEvent.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -51,7 +52,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public Event getEventById(String eventId) {
         log.info("BookingServiceImpl::getEventById - Fetching event with ID: {}", eventId);
-        return eventRepository.findById(eventId)
+        return eventRepository.findById(new ObjectId(eventId))
                 .orElseThrow(() -> {
                     log.error("BookingServiceImpl::getEventById - Event not found with ID: {}", eventId);
                     return new GeneralException("Event not found with ID " + eventId, HttpStatus.NOT_FOUND);
@@ -62,7 +63,7 @@ public class BookingServiceImpl implements BookingService {
     public void bookTickets(String eventId, String userId, Long row, Long seat, int numberOfTickets) {
         log.info("BookingServiceImpl::bookTickets - Start booking process for {} tickets for event ID: {}, user ID: {}, row: {}, seat: {}", numberOfTickets, eventId, userId, row, seat);
 
-        Event event = eventRepository.findById(eventId)
+        Event event = eventRepository.findById(new ObjectId(eventId))
                 .orElseThrow(() -> {
                     log.error("BookingServiceImpl::bookTickets - Event not found with ID: {}", eventId);
                     return new GeneralException("Event not found with ID " + eventId, HttpStatus.NOT_FOUND);
@@ -105,7 +106,7 @@ public class BookingServiceImpl implements BookingService {
         ticketRepository.deleteAll(expiredTickets);
 
         for (Ticket ticket : expiredTickets) {
-            Event event = eventRepository.findById(String.valueOf(ticket.getEventId())).orElse(null);
+            Event event = eventRepository.findById(ticket.getEventId()).orElse(null);
             if (event != null) {
                 event.setAvailableTickets(event.getAvailableTickets() + ticket.getNumberOfTickets());
                 eventRepository.save(event);
@@ -118,7 +119,7 @@ public class BookingServiceImpl implements BookingService {
     public void sendConfirmationEmail(String userId, String eventId, int numberOfTickets) {
         log.info("BookingServiceImpl::sendConfirmationEmail - Sending confirmation email to user ID: {} for event ID: {}", userId, eventId);
 
-        User user = userRepository.findById(userId)
+        User user = userRepository.findById(new ObjectId(userId))
                 .orElseThrow(() -> new GeneralException("User not found with ID " + userId));
 
         String userEmail = user.getEmail();

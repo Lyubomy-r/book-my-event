@@ -2,22 +2,23 @@ package com.BookMyEvent.entity.dto;
 
 import com.BookMyEvent.entity.Enums.Role;
 import com.BookMyEvent.entity.Enums.Status;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.BookMyEvent.entity.Image;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.bson.types.ObjectId;
-import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class UserResponseDto {
+    @NotBlank(message = "User id can't be null or empty")
     private String id;
     private String name;
     private String surname;
@@ -27,7 +28,8 @@ public class UserResponseDto {
     private boolean mailConfirmation;
     private Role role;
     private String location;
-    private String avatarUrl;
+    private Image avatarImage;
     private String phoneNumber;
     private Status status;
+    private List<EventResponseDto> createdEvents;
 }

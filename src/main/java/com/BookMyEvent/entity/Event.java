@@ -1,6 +1,7 @@
 package com.BookMyEvent.entity;
 
 import com.BookMyEvent.entity.Enums.EventCategory;
+import com.BookMyEvent.entity.Enums.EventFormat;
 import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Enums.EventType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -8,7 +9,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -23,34 +26,46 @@ import java.util.List;
 public class Event {
 
   @Id
-  private String id;
+  private ObjectId id;
   private String title;
   private String description;
-  private String photoUrl;
-  private List<String> images;
+//  private String photoUrl;
   @JsonProperty("date")
   private DateDetails date;
   private LocalDateTime creationDate;
-  @JsonProperty("tickets")
   private Integer availableTickets;
+  private Boolean unlimitedTickets;
   private String phoneNumber;
   @JsonProperty("price")
   private Long ticketPrice;
-  @JsonIgnore
   private Integer numberOfTickets;
   private Location location;
-  private List<User> organizers;
+  private GeoJsonPoint coordinates;
+//    private String userId;
+  private String aboutOrganizer;
   private double rating;
   @JsonProperty("type")
   private EventType eventType;
   @JsonProperty("category")
   private EventCategory eventCategory;
-
-  @DBRef
-  private User createdBy;
+  private EventFormat eventFormat;
+  private EventStatus eventStatus = EventStatus.PENDING;
   private String eventUrl;
+  @DBRef
+  private List<Image> images=new ArrayList<>();
+  @DBRef
+  private User organizers;
 
-  private EventStatus eventStatus=EventStatus.PENDING;
+  public void linkUserWithEvent(User user) {
+    user.getCreatedEvents().add(this);
+    this.setOrganizers(user);
+  }
 
+  public void linkImageWithEvent(Image image) {
+    this.getImages().add(image);
+  }
 
+  public void linkAllImageWithEvent(List<Image> image) {
+    this.getImages().addAll(image);
+  }
 }

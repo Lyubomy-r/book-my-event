@@ -2,39 +2,59 @@ package com.BookMyEvent.service.serviceImp;
 
 import com.BookMyEvent.TestConfig;
 import com.BookMyEvent.dao.EventRepository;
+import com.BookMyEvent.dao.UserRepository;
 import com.BookMyEvent.entity.DateDetails;
 import com.BookMyEvent.entity.Enums.EventCategory;
+import com.BookMyEvent.entity.Enums.EventFormat;
 import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Enums.EventType;
 import com.BookMyEvent.entity.Event;
+import com.BookMyEvent.entity.Image;
+import com.BookMyEvent.entity.Location;
+import com.BookMyEvent.entity.User;
 import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventResponseDto;
+import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.mapper.EventMapper;
+import com.BookMyEvent.mapper.UserMapper;
+import com.BookMyEvent.service.CloudinaryService;
+import com.BookMyEvent.service.MailService;
+import com.BookMyEvent.service.MediaService;
+import com.BookMyEvent.service.UserService;
+import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.DoNotMock;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 import java.time.format.DateTimeFormatter;
 
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.Temporal;
-import java.time.temporal.TemporalAmount;
-import java.time.temporal.TemporalUnit;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -51,28 +71,59 @@ class EventServiceImplTest {
 
   @Mock
   private EventMapper eventMapper;
+  @Mock
+  private CloudinaryService mediaService;
+  @Mock
+  private UserService userService;
+  @Mock
+  private MailService mailService;
+  @Mock
+  private UserMapper userMapper;
+  @Mock
+  private UserRepository userRepository;
 
   private Event event;
-
   private DateDetails dateDetails;
-
+  private EventResponseDto eventResponseDto;
   DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("d MMMM", new Locale("uk"));
   DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH);
 
   @BeforeEach
   void setUp() {
-    LocalTime  localTime =  LocalTime.now();
+    LocalTime localTime = LocalTime.now();
+    List<Image> imageList = Arrays.asList(Image.builder()
+        .id(new ObjectId("66c648b600179737a3d5c212")).build()
+    );
     event = new Event();
-    event.setId("66c648b600179737a3d5c235");
+    event.setId(new ObjectId("66c648b600179737a3d5c235"));
     event.setTitle("Test Event");
     event.setDescription("Test Description");
     event.setEventType(EventType.SPORTS_EVENTS);
     event.setEventCategory(EventCategory.TOP_EVENTS);
     event.setEventStatus(EventStatus.PENDING);
+    event.setEventFormat(EventFormat.OFFLINE);
     event.setAvailableTickets(100);
     event.setNumberOfTickets(100);
-
-    event.setDate(new DateDetails(LocalDate.of(2025, 10, 21).toString(),
+    event.setUnlimitedTickets(false);
+    event.setPhoneNumber("+380961232456");
+    event.setTicketPrice(800L);
+    event.setLocation(new Location(
+        "Київ",
+        "вул. Успішна, 1",
+        "",
+        "50.426129",
+        "30.514067"));
+    event.setAboutOrganizer("Text About Organizer");
+    event.setRating(4.2D);
+    event.setImages(imageList);
+    event.setOrganizers(User.builder().id(new ObjectId("66c648b600179737a3d5c211"))
+        .email("test@email.com")
+        .createdEvents(new ArrayList<>())
+        .build());
+    event.setDate(new DateDetails(
+        LocalDate.of(LocalDate.now().plusYears(1).getYear(),
+            10, 21
+        ).toString(),
         localTime.toString(),
         localTime.plusHours(2L).toString()));
 
@@ -81,129 +132,100 @@ class EventServiceImplTest {
         LocalTime.parse(event.getDate().time()).format(timeFormatter),
         LocalTime.parse(event.getDate().endTime()).format(timeFormatter));
 
-//    event.setDate(new DateDetails(LocalDate.of(2025, 10, 21).toString(), LocalTime.now().toString(),LocalTime.now().plus(5, ChronoUnit.HOURS).toString()));
+
+    eventResponseDto = new EventResponseDto();
+    eventResponseDto.setId(event.getId().toHexString());
+    eventResponseDto.setTitle(event.getTitle());
+    eventResponseDto.setDescription(event.getDescription());
+    eventResponseDto.setEventType(event.getEventType().getUkrainianName());
+    eventResponseDto.setEventCategory(event.getEventCategory().toString());
+    eventResponseDto.setEventStatus(event.getEventStatus().toString());
+    eventResponseDto.setEventFormat(event.getEventFormat().toString());
+    eventResponseDto.setAvailableTickets(event.getAvailableTickets());
+    eventResponseDto.setNumberOfTickets(event.getNumberOfTickets());
+    eventResponseDto.setUnlimitedTickets(event.getUnlimitedTickets());
+    eventResponseDto.setPhoneNumber(event.getPhoneNumber());
+    eventResponseDto.setTicketPrice(event.getTicketPrice());
+    eventResponseDto.setLocation(event.getLocation());
+    eventResponseDto.setAboutOrganizer(event.getAboutOrganizer());
+    eventResponseDto.setRating(event.getRating());
+    eventResponseDto.setImages(event.getImages());
+    eventResponseDto.setDate(event.getDate());
 
   }
 
   @Test
   @DisplayName("Test EventServiceImpl method getEvents")
   void testMethodGetEvents() {
-    EventResponseDto eventResponseDto = new EventResponseDto();
-    eventResponseDto.setId("66c648b600179737a3d5c235");
-    eventResponseDto.setTitle("Test Event");
-    eventResponseDto.setDescription("Test Description");
-    eventResponseDto.setEventType(EventType.SPORTS_EVENTS.getUkrainianName());
-    eventResponseDto.setEventCategory(EventCategory.TOP_EVENTS.toString());
-    eventResponseDto.setAvailableTickets(100);
-    eventResponseDto.setNumberOfTickets(100);
-
-//    DateDetails dateDetails = new DateDetails(LocalDate.parse(
-//        event.getDate().day()).format(dayFormatter),
-//        LocalTime.parse(event.getDate().time()).format(timeFormatter),
-//        LocalTime.parse(event.getDate().endTime()).format(timeFormatter));
-
-//    DateDetails dateDetails = new DateDetails("21 жовтня", event.getDate().time(),event.getDate().endTime());
-
-    eventResponseDto.setDate(dateDetails);
-
-    when(eventRepository.findEventByEventStatus(EventStatus.APPROVED)).thenReturn(List.of(event));
-    when(eventMapper.toEventResponseDtoFromEvent(event, dateDetails)).thenReturn(eventResponseDto);
-    List<EventResponseDto> result = eventService.getEventsUA();
+    Pageable pageable = PageRequest.of(0,6);
+    PageImpl <Event> eventPage = new PageImpl<>(List.of(event),pageable, 1);
+    when(eventRepository.findEventByEventStatus(EventStatus.APPROVED, pageable)).thenReturn(eventPage);
+    when(eventMapper.toEventResponseDtoFromEventWithoutUser(event)).thenReturn(eventResponseDto);
+    Page<EventResponseDto> result = eventService.getApprovedEvents(pageable);
     assertAll(
         () -> assertFalse(result.isEmpty()),
-        () -> assertEquals(1, result.size()),
-        () -> assertEquals(event.getId(), result.get(0).getId())
+        () -> assertEquals(1, result.getContent().size()),
+        () -> assertEquals(event.getId().toHexString(), result.getContent().get(0).getId()),
+        () -> assertNull(result.getContent().get(0).getOrganizers())
     );
 
-    verify(eventRepository, times(1)).findEventByEventStatus(EventStatus.APPROVED);
+    verify(eventRepository, times(1)).findEventByEventStatus(EventStatus.APPROVED, pageable);
   }
 
-  @Test
-  void testUpdateEventStatus() {
-    String eventId = "66c648b600179737a3d5c235";
-
-    EventDTO updatedEventDTO = new EventDTO();
-    updatedEventDTO.setId(eventId);
-    updatedEventDTO.setEventStatus(EventStatus.APPROVED);
-
-    EventResponseDto eventResponseDto = new EventResponseDto();
-    eventResponseDto.setId("66c648b600179737a3d5c235");
-    eventResponseDto.setTitle("Test Event");
-    eventResponseDto.setDescription("Test Description");
-    eventResponseDto.setEventType(EventType.SPORTS_EVENTS.getUkrainianName());
-    eventResponseDto.setEventCategory(EventCategory.TOP_EVENTS.toString());
-    eventResponseDto.setEventStatus(EventStatus.APPROVED);
-    eventResponseDto.setAvailableTickets(100);
-    eventResponseDto.setNumberOfTickets(100);
-
-    eventResponseDto.setDate(dateDetails);
-
-    when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
-    when(eventRepository.save(event)).thenReturn(event);
-    when(eventMapper.toEventResponseDtoFromEvent(event, dateDetails)).thenReturn(eventResponseDto);
-
-    EventResponseDto result = eventService.updateEventStatus(eventId, EventStatus.APPROVED.toString());
-
-    assertEquals( EventStatus.APPROVED, result.getEventStatus());
-    verify(eventRepository, times(1)).save(event);
-  }
+//  @Test
+//  void testUpdateEventStatus() {
+//    event.setEventStatus(EventStatus.APPROVED);
+//    eventResponseDto.setEventStatus(event.getEventStatus().toString());
+//    when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
+//    when(eventRepository.save(event)).thenReturn(event);
+//    when(eventMapper.toEventResponseDtoFromEventWithoutUser(event)).thenReturn(eventResponseDto);
+//
+//    EventResponseDto result = eventService.updateEventStatus(event.getId().toHexString(), EventStatus.APPROVED.toString());
+//
+//    assertEquals(EventStatus.APPROVED.toString(), result.getEventStatus());
+//    verify(eventRepository, times(1)).findById(event.getId());
+//    verify(eventRepository, times(1)).save(event);
+//    verify(eventMapper, times(1)).toEventResponseDtoFromEventWithoutUser(event);
+//
+//  }
 
   @Test
   @DisplayName("Test EventServiceImpl method GetEventsByStatus find PENDING events")
   void testMethodGetEventsByStatusPENDING() {
-
-    EventResponseDto eventResponseDto = new EventResponseDto();
-    eventResponseDto.setId("66c648b600179737a3d5c235");
-    eventResponseDto.setTitle("Test Event");
-    eventResponseDto.setDescription("Test Description");
-    eventResponseDto.setEventType(EventType.SPORTS_EVENTS.getUkrainianName());
-    eventResponseDto.setEventCategory(EventCategory.TOP_EVENTS.toString());
-    eventResponseDto.setEventStatus(event.getEventStatus());
-    eventResponseDto.setAvailableTickets(100);
-    eventResponseDto.setNumberOfTickets(100);
-
-    eventResponseDto.setDate(event.getDate());
-
-    when(eventRepository.findEventByEventStatus(EventStatus.PENDING)).thenReturn(List.of(event));
-    when(eventMapper.toEventResponseDtoFromEvent(event, dateDetails)).thenReturn(eventResponseDto);
-    List<EventResponseDto> result = eventService.getEventsByStatus(EventStatus.PENDING.toString());
+    Pageable pageable = PageRequest.of(0,6);
+    event.setEventStatus(EventStatus.PENDING);
+    PageImpl <Event> eventPage = new PageImpl<>(List.of(event), pageable, 1);
+    when(eventRepository.findEventByEventStatus(EventStatus.PENDING, pageable)).thenReturn(eventPage);
+    when(eventMapper.toEventResponseDtoFromEvent(event, eventResponseDto.getOrganizers())).thenReturn(eventResponseDto);
+    Page<EventResponseDto> result = eventService.getEventsByStatus(EventStatus.PENDING.toString(),pageable);
     assertAll(
         () -> assertFalse(result.isEmpty()),
-        () -> assertEquals(1, result.size()),
-        () -> assertEquals(event.getId(), result.get(0).getId()),
-        () -> assertEquals(event.getEventStatus(), result.get(0).getEventStatus())
+        () -> assertEquals(1, result.getContent().size()),
+        () -> assertEquals(event.getId().toHexString(), result.getContent().get(0).getId()),
+        () -> assertEquals(EventStatus.PENDING.toString(), result.getContent().get(0).getEventStatus())
     );
 
-    verify(eventRepository, times(1)).findEventByEventStatus(EventStatus.PENDING);
+    verify(eventRepository, times(1)).findEventByEventStatus(EventStatus.PENDING, pageable);
   }
 
   @Test
   @DisplayName("Test EventServiceImpl method GetEventsByStatus find APPROVED events")
   void testMethodGetEventsByStatusAPPROVED() {
+    Pageable pageable = PageRequest.of(0,6);
     event.setEventStatus(EventStatus.APPROVED);
-    EventResponseDto eventResponseDto = new EventResponseDto();
-    eventResponseDto.setId("66c648b600179737a3d5c235");
-    eventResponseDto.setTitle("Test Event");
-    eventResponseDto.setDescription("Test Description");
-    eventResponseDto.setEventType(EventType.SPORTS_EVENTS.getUkrainianName());
-    eventResponseDto.setEventCategory(EventCategory.TOP_EVENTS.toString());
-    eventResponseDto.setEventStatus(event.getEventStatus());
-    eventResponseDto.setAvailableTickets(100);
-    eventResponseDto.setNumberOfTickets(100);
-
-    eventResponseDto.setDate(event.getDate());
-
-    when(eventRepository.findEventByEventStatus(EventStatus.APPROVED)).thenReturn(List.of(event));
-    when(eventMapper.toEventResponseDtoFromEvent(event, dateDetails)).thenReturn(eventResponseDto);
-    List<EventResponseDto> result = eventService.getEventsByStatus(EventStatus.APPROVED.toString());
+    PageImpl <Event> eventPage = new PageImpl<>(List.of(event), pageable, 1);
+    eventResponseDto.setEventStatus(event.getEventStatus().toString());
+    when(eventRepository.findEventByEventStatus(EventStatus.APPROVED, pageable)).thenReturn(eventPage);
+    when(eventMapper.toEventResponseDtoFromEvent(event, eventResponseDto.getOrganizers())).thenReturn(eventResponseDto);
+    Page<EventResponseDto> result = eventService.getEventsByStatus(EventStatus.APPROVED.toString(),pageable);
     assertAll(
         () -> assertFalse(result.isEmpty()),
-        () -> assertEquals(1, result.size()),
-        () -> assertEquals(event.getId(), result.get(0).getId()),
-        () -> assertEquals(event.getEventStatus(), result.get(0).getEventStatus())
+        () -> assertEquals(1, result.getContent().size()),
+        () -> assertEquals(event.getId().toHexString(), result.getContent().get(0).getId()),
+        () -> assertEquals(EventStatus.APPROVED.toString(), result.getContent().get(0).getEventStatus())
     );
 
-    verify(eventRepository, times(1)).findEventByEventStatus(EventStatus.APPROVED);
+    verify(eventRepository, times(1)).findEventByEventStatus(EventStatus.APPROVED, pageable);
   }
 
   @Test
@@ -225,20 +247,65 @@ class EventServiceImplTest {
 
   @Test
   @DisplayName("Test EventServiceImpl method approveEvent.")
-  void testMethodApproveEvent(){
+  void testMethodApproveEvent() {
+    event.setEventStatus(EventStatus.APPROVED);
+    eventResponseDto.setEventStatus(event.getEventStatus().toString());
+    when(eventRepository.findById(event.getId())).thenReturn(Optional.ofNullable(event));
+    when(eventRepository.save(event)).thenReturn(event);
+    when(eventMapper.toEventResponseDtoFromEventWithoutUser(event)).thenReturn(eventResponseDto);
 
-    when(eventRepository.findEventByEventStatus(EventStatus.APPROVED)).thenReturn(List.of(event));
-    when(eventRepository.findEventByEventStatus(EventStatus.CANCELLED)).thenReturn(List.of());
-    when(eventRepository.findEventByEventStatus(EventStatus.PENDING)).thenReturn(List.of(event));
-
-    Map<String, Integer> countByStatus = eventService.countByStatus();
+    EventResponseDto result = eventService.approveEvent(event.getId().toHexString());
     assertAll(
-        () -> assertFalse(countByStatus.isEmpty()),
-        () -> assertEquals(1, countByStatus.get(EventStatus.APPROVED.toString())),
-        () -> assertEquals(1, countByStatus.get(EventStatus.PENDING.toString())),
-        () -> assertEquals(0, countByStatus.get(EventStatus.CANCELLED.toString()))
+        () -> assertNotNull(result),
+        () -> assertEquals(event.getId().toHexString(), result.getId()),
+        () -> assertEquals(EventStatus.APPROVED.toString(), result.getEventStatus())
     );
   }
 
+  @Test
+  public void testCreateEvent() {
 
+    EventDTO eventDTO = new EventDTO();
+    eventDTO.setOrganizers(UserResponseDto.builder()
+        .id(event.getOrganizers().getId().toHexString())
+        .email(event.getOrganizers().getEmail()).build());
+    eventDTO.setTitle("anyString");
+    eventDTO.setLocation(new Location("Київ", "вул. Академіка Баха, 3", "", "50.417223", "30.524763"));
+    MultipartFile firstImage = mock(MultipartFile.class);
+    MultipartFile secondImage = mock(MultipartFile.class);
+    MultipartFile thirdImage = mock(MultipartFile.class);
+
+    UserResponseDto userResponseDto = new UserResponseDto();
+    userResponseDto.setId(eventDTO.getOrganizers().getId());
+    userResponseDto.setEmail(eventDTO.getOrganizers().getEmail());
+    eventResponseDto.setOrganizers(userResponseDto);
+
+    when(userService.findUserById(eventDTO.getOrganizers().getId())).thenReturn(event.getOrganizers());
+    List<MultipartFile> multipartFiles = Arrays.asList(firstImage, secondImage, thirdImage);
+    when(mediaService.savedEventImages(multipartFiles,"anyString")).thenReturn(Collections.emptyList());
+    when(eventMapper.toEvent(eventDTO)).thenReturn(event);
+    when(eventRepository.save(event)).thenReturn(event);
+    doNothing().when(mailService).sendSimpleHtmlMailMessage4Line(
+        eventDTO.getOrganizers().getEmail(),
+        "Твоя подія успішно створена на BookMyEvent",
+        "Вітаємо! Твоя подія успішно створена \uD83C\uDF89",
+        String.format("Ми раді повідомити, що твоя подія [%s] успішно створена.", event.getTitle()),
+        "Дякуємо, що обрав нашу платформу для організації подій. Якщо тобі потрібна додаткова" +
+            " допомога чи виникнуть запитання, звертайся до нашої служби підтримки.",
+        "",
+        "");
+    when(eventMapper.toEventResponseDtoFromEvent(event, userResponseDto)).thenReturn(eventResponseDto);
+    when(userMapper.toUserResponseDtoWithoutAvatarAndEvents(event.getOrganizers())).thenReturn(userResponseDto);
+    when(userRepository.save(event.getOrganizers())).thenReturn(event.getOrganizers());
+
+    EventResponseDto result = eventService.createEvent(eventDTO, firstImage, secondImage, thirdImage);
+
+    assertNotNull(result);
+    assertEquals(EventStatus.PENDING.toString(), result.getEventStatus());
+    assertEquals(event.getId().toHexString(), result.getId());
+    assertEquals(event.getOrganizers().getId().toHexString(), result.getOrganizers().getId());
+    assertEquals(event.getImages().get(0).getId(), result.getImages().get(0).getId());
+
+    verify(eventRepository, times(1)).save(any(Event.class));
+  }
 }

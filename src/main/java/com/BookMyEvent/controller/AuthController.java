@@ -58,7 +58,7 @@ public class AuthController {
                   name = "UserSaveDto",
                   description = """
                 Example of User Signup:
-                - Name: Must contain 3-40 characters, only alphabetic characters are allowed. Cannot be empty.
+                - Name: Must contain 2-15 characters, only alphabetic characters are allowed. Cannot be empty.
                 - Email: Must be a valid email address. Cannot be empty.
                 - Password: Must be at least 8 characters long and contain an lowercase letter,uppercase letter, a number, and a special character. Cannot be empty.
                 - Phone: Can take from 10 - 15 digits, can store null value.
@@ -104,7 +104,7 @@ public class AuthController {
     public ResponseEntity<AppResponse> mailConfirmation(@PathVariable String email, @PathVariable String password) {
       var response = service.emailVerificationCheck(email,password);
       String encodedMessage = URLEncoder.encode(response, StandardCharsets.UTF_8);
-      log.info("AuthController::mailConfirmation - /registration - return mail confirmation message with email {}", email);
+      log.info("AuthController::mailConfirmation - /mail-confirmation/{}/password - return mail confirmation message with email {}", email, email);
       return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(frontUrl + "/?emailConfirmed=true&message="
           + encodedMessage + "&email=" + email)).build();
 
@@ -226,7 +226,7 @@ public class AuthController {
                                     )
                             })
             })
-    @GetMapping("/sendLetterToUser/{email}")
+    @GetMapping("/letter/user/{email}")
     public ResponseEntity<AppResponse> sendLetterToUser(@PathVariable String email) {
         log.info("Received request to send letter to user with email: {}", email);
 

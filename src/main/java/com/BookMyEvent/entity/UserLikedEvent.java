@@ -11,9 +11,9 @@ import java.time.LocalDateTime;
 public class UserLikedEvent {
     @Id
     private String id;
-
     private String userId;
     private String eventId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+

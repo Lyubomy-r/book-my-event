@@ -37,7 +37,6 @@ import java.util.*;
 public class AuthServiceImp implements AuthService {
     @Value("${jwt.signing.key}")
     private String signingKey;
-
     private final String className = this.getClass().getSimpleName();
 
     private final UserMapper userMapper;
@@ -46,7 +45,6 @@ public class AuthServiceImp implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
     private final JwtAuthentication jwtAuthentication;
-//    private final MailService mailService2;
     private final MailConfirmationRepository mailRepository;
 
     public AuthServiceImp(
@@ -54,7 +52,6 @@ public class AuthServiceImp implements AuthService {
         UserRepository repository,
         DeletedUsersService deletedUsersService,
         PasswordEncoder passwordEncoder,
-//        @Qualifier("mailServiceImp") MailService mailService,
         @Qualifier("gmailSMTServiceImp") MailService mailService,
         MailConfirmationRepository mailRepository,
         JwtAuthentication jwtAuthentication
@@ -64,7 +61,6 @@ public class AuthServiceImp implements AuthService {
         this.deletedUsersService = deletedUsersService;
         this.passwordEncoder = passwordEncoder;
         this.mailService = mailService;
-//        this.mailService2=mailService2;
         this.mailRepository = mailRepository;
         this.jwtAuthentication=jwtAuthentication;
     }
@@ -90,7 +86,7 @@ public class AuthServiceImp implements AuthService {
             throw new GeneralException("Email is already in use.", HttpStatus.BAD_REQUEST);
         } else {
 //            mailService.mailSenderAfterRegistration(userData.getEmail());
-            mailService.sendHtmlEmailAfterRegistration(userData.getEmail());
+
             var hashedPassword = passwordEncoder.encode(userData.getPassword());
             userData.setPassword(hashedPassword);
             User newUser = userMapper.toUserFromUserSaveDto(userData);
@@ -104,6 +100,7 @@ public class AuthServiceImp implements AuthService {
             newUser.setStatus(Status.ACTIVE);
             repository.save(newUser);
             String response = "User registered successfully.";
+            mailService.sendHtmlEmailAfterRegistration(userData.getEmail());
             mailService.deleteOldEmails(userData.getEmail());
             log.info("{}::userRegistration. Return message ({}).", className, response);
             return response;

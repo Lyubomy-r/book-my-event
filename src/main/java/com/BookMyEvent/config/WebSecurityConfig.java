@@ -57,10 +57,18 @@ public class WebSecurityConfig {
             .cors(cors -> cors.configurationSource(corsFilterRegistrationBean()))
             .authorizeHttpRequests((requests) -> requests
                 .requestMatchers("/secured/**").authenticated()
-                .requestMatchers("/users/**", "/liked-events/**")
+                .requestMatchers(GET,"/liked-events/count/event/{eventId}").permitAll()
+                .requestMatchers("/users/**",
+                    "/liked-events/**",
+                    "/liked-events/**")
+                .hasAnyRole(Role.VISITOR.toString(), Role.ADMIN.toString(), Role.ORGANIZER.toString())
+                .requestMatchers(POST,"/events/filtered").permitAll()
+                .requestMatchers(POST,"/events")
                 .hasAnyRole(Role.VISITOR.toString(), Role.ADMIN.toString(), Role.ORGANIZER.toString())
                 .requestMatchers("/organizer/**").hasRole(Role.ORGANIZER.toString())
                 .requestMatchers("/admin/**").hasRole(Role.ADMIN.toString())
+                .requestMatchers(DELETE, "/events/{id}").hasRole(Role.ADMIN.toString())
+
                 .anyRequest().permitAll()
             )
             .addFilterBefore(JwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
@@ -72,7 +80,7 @@ public class WebSecurityConfig {
     public CorsConfigurationSource corsFilterRegistrationBean() {
 
         CorsConfiguration cors = new CorsConfiguration();
-        cors.setAllowedOrigins(List.of("http://localhost:5173", frontUrl));
+        cors.setAllowedOrigins(List.of("http://localhost:5173", frontUrl, "https://adjacent-lethia-sergiomail-580b8292.koyeb.app"));
         cors.setAllowedMethods(
             List.of(GET.name(), POST.name(), DELETE.name(), PATCH.name(), PUT.name(), OPTIONS.name()));
         cors.setAllowedHeaders(List.of(ORIGIN, CONTENT_TYPE, ACCEPT, AUTHORIZATION));
