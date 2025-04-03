@@ -6,6 +6,7 @@ import com.BookMyEvent.entity.dto.EventFilterRequest;
 import com.BookMyEvent.entity.dto.EventResponseDto;
 import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
+import com.BookMyEvent.security.SecurityUser;
 import com.BookMyEvent.service.EventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,8 +25,12 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.security.Principal;
+import java.util.Map;
 
 import static com.BookMyEvent.config.SwaggerConfig.CREATED_EVENT_PAYLOAD_SCHEMA;
 import static com.BookMyEvent.config.SwaggerConfig.PAGE_EVENT_RESPONSEDTO_PAYLOAD_SCHEMA;
@@ -76,12 +81,37 @@ public class EventController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
     }
 
-
+    @Operation(summary = "Update an event",
+        description = "Updates an existing event with the given ID. Only the event organizer can update the event.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Event updated successfully",
+            content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = EventResponseDto.class))),
+        @ApiResponse(responseCode = "403", description = "User is not the organizer of the event",
+            content = {
+                @Content(
+                    mediaType = APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponseDto.class)
+                )}),
+        @ApiResponse(responseCode = "404", description = "Event not found",
+            content = {
+                @Content(
+                    mediaType = APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponseDto.class)
+                )}),
+        @ApiResponse(responseCode = "400", description = "Invalid request data",
+            content = {
+                @Content(
+                    mediaType = APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponseDto.class)
+                )})
+    })
     @PutMapping("/{id}")
     public ResponseEntity<EventResponseDto> updateEvent(@PathVariable String id,
-                                                        @RequestBody EventDTO eventDTO) {
-        log.info("Class: {}, Method: updateEvent - Updating event with id: {}", className, id);
-        EventResponseDto updatedEvent = eventService.updateEvent(id, eventDTO);
+                                                        @RequestBody EventDTO eventDTO,
+                                                        @AuthenticationPrincipal Map<String, Object> principal) {
+        String userId = (String) principal.get("id");
+        log.info("Class: {}, Method: updateEvent - Updating event with id: {}  authentication user {}", className, id, userId);
+        EventResponseDto updatedEvent = eventService.updateEvent(id, eventDTO, userId);
         return ResponseEntity.ok(updatedEvent);
     }
 

@@ -16,7 +16,7 @@ It handles user authentication, event creation, ticket transactions, and ensures
 - Maven 
 
 ## Public IP
-[Public IP](https://rendereventapp.onrender.com)
+[Public IP](https://adjacent-lethia-sergiomail-580b8292.koyeb.app/api/v1/)
 
-[Swagger doc.](https://rendereventapp.onrender.com/api/v1/swagger-ui/index.html)
+[Swagger doc.](https://adjacent-lethia-sergiomail-580b8292.koyeb.app/api/v1/swagger-ui/index.html)
 

@@ -129,10 +129,14 @@ public class EventServiceImpl implements EventService {
 
   @Override
   @Transactional
-  public EventResponseDto updateEvent(String id, EventDTO eventDTO) {
+  public EventResponseDto updateEvent(String id, EventDTO eventDTO, String userId) {
     log.info("EventServiceImpl::updateEvent - Updating event ID: {} with data: {}", id, eventDTO);
     Event existingEvent = eventRepository.findById(new ObjectId(id))
         .orElseThrow(() -> new GeneralException("Event not found with ID " + id, HttpStatus.NOT_FOUND));
+    if(!userId.equals(existingEvent.getOrganizers().getId().toHexString())){
+      log.warn("Send error message. Authentication user id {} don't equal organizers id {} ", userId, existingEvent.getOrganizers().getId().toHexString());
+      throw new GeneralException("It's not your event you can't edit it.", HttpStatus.FORBIDDEN);
+    }
     eventMapper.updateEventFromDTO(eventDTO, existingEvent);
     Event updatedEvent = eventRepository.save(existingEvent);
     log.info("EventServiceImpl::updateEvent - Event updated successfully: {}", updatedEvent);

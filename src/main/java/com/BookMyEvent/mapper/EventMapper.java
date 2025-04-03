@@ -94,7 +94,7 @@ public interface EventMapper {
     @Mapping(target= "rating", ignore = true)
     @Mapping(target= "eventCategory", ignore = true)
     @Mapping(target= "eventStatus", ignore = true)
-    @Mapping(target= "unlimitedTickets", ignore = true)
+//    @Mapping(target= "unlimitedTickets", ignore = true)
     void updateEventFromDTO(EventDTO eventDTO, @MappingTarget Event event);
 
     @Mapping(target = "id", expression = "java(convertToStringId(event.getId()))")
