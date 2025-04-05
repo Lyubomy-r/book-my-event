@@ -38,7 +38,7 @@ import java.util.UUID;
 @Hidden
 @Slf4j
 @RestController
-@RequestMapping("/pay")
+@RequestMapping("/pay-f")
 @RequiredArgsConstructor
 public class PayFormController {
 

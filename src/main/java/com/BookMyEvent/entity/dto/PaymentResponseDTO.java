@@ -17,6 +17,7 @@ public record PaymentResponseDTO(String merchantAccount,
                                  String clientAddress,
                                  String clientCity,
                                  String clientEmail,
+                                 String clientPhone,
                                  String defaultPaymentSystem,
                                  String serviceUrl,
                                  String merchantSignature

@@ -13,14 +13,14 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Slf4j
 public class UserDetailsServiceImp implements UserDetailsService {
-
   private final UserRepository userRepository;
+
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
     User customer = userRepository.findUserByEmail(username).orElseThrow(
         () -> new UsernameNotFoundException("User with this email doesn't exists, you can't get Authentication ")
     );
-    log.info("From UserDetailsServiceImp method -loadUserByUsername- check if email exists: {} ", username);
+    log.info("Class: UserDetailsServiceImp Method: loadUserByUsername. Check if email exists: {} ", username);
 
     return new SecurityUser(customer);
   }
