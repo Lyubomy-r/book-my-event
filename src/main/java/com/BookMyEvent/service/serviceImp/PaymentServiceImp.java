@@ -7,6 +7,7 @@ import com.BookMyEvent.exception.GeneralException;
 import com.BookMyEvent.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Random;
 
@@ -31,11 +36,16 @@ public class PaymentServiceImp implements PaymentService {
   String merchantDomainName = "https://evently-book.vercel.app/";
   String currency = "UAH";
   String serviceUrl = "http://localhost:8080/api/v1/pay/status";
-  String orderDate = "1415379863";
+
+  @Value("${percentage}")
+  private int percentage;
 
   @Override
   public PaymentResponseDTO prepareForPayment(String eventId, PaymentRequestDTO paymentRequest) {
     String orderReference = "DH" + random();
+    ZoneId kyivZone = ZoneId.of("Europe/Kyiv");
+    ZonedDateTime kyivTime = ZonedDateTime.now(kyivZone);
+    String orderDate = String.valueOf(kyivTime.toEpochSecond());
     String amount = calculateAmount(paymentRequest.product()).toString();
     String dataToSign = String.join(";",
         merchantAccount,
@@ -54,6 +64,7 @@ public class PaymentServiceImp implements PaymentService {
     log.info("merchantSignature  {}", merchantSignature);
     log.info("amount  {}", amount);
     log.info("orderReference  {}", orderReference);
+    log.info("orderDate  {}", orderDate);
 
     PaymentResponseDTO paymentResponseDTO = new PaymentResponseDTO(
         merchantAccount,
@@ -68,8 +79,6 @@ public class PaymentServiceImp implements PaymentService {
         paymentRequest.product(),
         paymentRequest.clientFirstName(),
         paymentRequest.clientLastName(),
-        null,
-        null,
         paymentRequest.clientEmail(),
         paymentRequest.clientPhone(),
         "card",
@@ -113,8 +122,13 @@ public class PaymentServiceImp implements PaymentService {
 
   public BigDecimal calculateAmount(List<ProductDTO> product) {
     try {
-      return product.stream().map(prod ->BigDecimal.valueOf(Long.parseLong(prod.productPrice()) * Long.parseLong(prod.productCount()))
-              .setScale(2, RoundingMode.HALF_UP))
+      return product.stream()
+          .map(prod -> {
+            BigDecimal price = new BigDecimal(prod.productPrice());
+            BigDecimal count = new BigDecimal(prod.productCount());
+            BigDecimal percentageOfPrice = price.multiply(new BigDecimal(percentage/100));
+            return price.multiply(count).add(percentageOfPrice).setScale(2, RoundingMode.HALF_UP);
+          })
           .reduce(BigDecimal.ZERO, BigDecimal::add);
     } catch (Exception e) {
       throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
