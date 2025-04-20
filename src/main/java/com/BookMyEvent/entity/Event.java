@@ -15,6 +15,7 @@ import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,12 +34,14 @@ public class Event {
   @JsonProperty("date")
   private DateDetails date;
   private LocalDateTime creationDate;
-  private Integer availableTickets;
-  private Boolean unlimitedTickets;
   private String phoneNumber;
   @JsonProperty("price")
   private Long ticketPrice;
+  private Integer availableTickets;
+  private Boolean unlimitedTickets;
   private Integer numberOfTickets;
+  private Integer soldTickets;
+  private BigDecimal profit;
   private Location location;
   private GeoJsonPoint coordinates;
 //    private String userId;

@@ -4,7 +4,7 @@ import java.util.List;
 
 public record PaymentRequestDTO(
                                 String userId,
-                                List<ProductDTO> product,
+                                ProductDTO product,
                                 String clientFirstName,
                                 String clientLastName,
                                 String clientPhone,
