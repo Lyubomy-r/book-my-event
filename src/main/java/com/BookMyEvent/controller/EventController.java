@@ -1,5 +1,6 @@
 package com.BookMyEvent.controller;
 
+import com.BookMyEvent.entity.PromoCode;
 import com.BookMyEvent.entity.dto.AppResponse;
 import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventFilterRequest;
@@ -106,13 +107,20 @@ public class EventController {
                 )})
     })
     @PutMapping("/{id}")
-    public ResponseEntity<EventResponseDto> updateEvent(@PathVariable String id,
-                                                        @RequestBody EventDTO eventDTO,
-                                                        @AuthenticationPrincipal Map<String, Object> principal) {
+    public ResponseEntity<AppResponse> updateEvent(@PathVariable String id,
+                                                   @RequestBody EventDTO eventDTO,
+                                                   @AuthenticationPrincipal Map<String, Object> principal,
+                                                   @Parameter(description = "Second event image (Max 1MB)", required = false)
+                                                   @RequestPart(value = "secondImage", required = false) MultipartFile secondImage,
+                                                   @Parameter(description = "Third event image (Max 1MB)", required = false)
+                                                   @RequestPart(value = "thirdImage", required = false) MultipartFile thirdImage) {
         String userId = (String) principal.get("id");
         log.info("Class: {}, Method: updateEvent - Updating event with id: {}  authentication user {}", className, id, userId);
-        EventResponseDto updatedEvent = eventService.updateEvent(id, eventDTO, userId);
-        return ResponseEntity.ok(updatedEvent);
+        AppResponse response = new AppResponse(200,
+            eventService.makeUpdateEventRequest(id, eventDTO, userId, secondImage, thirdImage)
+        );
+        log.info("Class: {}, Method: updateEvent - return successfully code message", className);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(

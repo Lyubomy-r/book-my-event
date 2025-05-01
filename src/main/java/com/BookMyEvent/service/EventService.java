@@ -18,7 +18,11 @@ public interface EventService {
                                         MultipartFile secondImage,
                                         MultipartFile thirdImage);
 
-    EventResponseDto updateEvent(String eventId, EventDTO eventDTO, String userId);
+    String makeUpdateEventRequest(String id, EventDTO eventDTO, String userId,
+                                  MultipartFile secondImage,
+                                  MultipartFile thirdImage);
+
+    EventResponseDto updateEvent(String eventId, String eventUpdateRequestId);
 
     Page<EventResponseDto> getApprovedEvents(Pageable pageable);
 

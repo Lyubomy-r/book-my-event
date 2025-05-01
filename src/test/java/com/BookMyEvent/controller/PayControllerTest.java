@@ -1,6 +1,5 @@
-package com.BookMyEvent.service.serviceImp;
+package com.BookMyEvent.controller;
 
-import com.BookMyEvent.TestConfig;
 import com.BookMyEvent.dao.EventRepository;
 import com.BookMyEvent.dao.OrderDetailsRepository;
 import com.BookMyEvent.dao.PromoCodeRepository;
@@ -17,70 +16,61 @@ import com.BookMyEvent.entity.Event;
 import com.BookMyEvent.entity.Location;
 import com.BookMyEvent.entity.OrderDetails;
 import com.BookMyEvent.entity.PaymentDetails;
-import com.BookMyEvent.entity.PromoCode;
 import com.BookMyEvent.entity.User;
 import com.BookMyEvent.entity.dto.PaymentRequestDTO;
-import com.BookMyEvent.entity.dto.PaymentResponseDTO;
 import com.BookMyEvent.entity.dto.PaymentStatusResponseDTO;
 import com.BookMyEvent.entity.dto.ProductDTO;
-import com.BookMyEvent.mapper.PaymentDetailsMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {
     "spring.config.location=classpath:integrationtest.properties"
 })
-@Import(TestConfig.class)
+@AutoConfigureMockMvc
 @Slf4j
-class PaymentServiceImpTest {
+class PayControllerTest {
+//
 //  @Autowired
-//  private PromoCodeRepository promoCodeRepository;
+//  private MockMvc mockMvc;
 //  @Autowired
 //  private OrderDetailsRepository orderDetailsRepository;
-//  @Autowired
-//  private PaymentDetailsMapper paymentDetailsMapper;
 //  @Autowired
 //  private EventRepository eventRepository;
 //  @Autowired
 //  private UserRepository userRepository;
-//  @Autowired
-//  private PaymentServiceImp paymentService;
+//  @MockBean
+//  private PromoCodeRepository promoCodeRepository;
 //
 //  private final ExecutorService executorService = Executors.newFixedThreadPool(3);
-//
 //  private final String merchantSecretKey = "07e12edf1d5f39eaf8b1b7fd029cd10f2b557c3e";
 //  private final String merchantLogin = "evently_book_vercel_app";
 //  private final String baseUrl = "https://secure.wayforpay.com/pay";
@@ -153,8 +143,7 @@ class PaymentServiceImpTest {
 //  }
 //
 //  @Test
-//  void prepareForPayment() {
-//    LocalTime localTime = LocalTime.now();
+//  void prepareForPayment() throws Exception {
 //    PaymentRequestDTO paymentRequest = new PaymentRequestDTO(
 //        "67a7b34c48d0462fabc62d22",
 //        new ProductDTO("", "700", "1", "700"),
@@ -163,21 +152,29 @@ class PaymentServiceImpTest {
 //        "+380345728991",
 //        "clientest@code.com"
 //    );
-//    String eventId = "67a7b34c48d0462fabc62d70";
 //
-//    PaymentResponseDTO paymentResponse = paymentService.prepareForPayment(eventId, paymentRequest);
-//    OrderDetails existOrder = orderDetailsRepository.findByOrderReference(paymentResponse.orderReference()).get();
-//    log.info("PaymentServiceImpTest : paymentResponse  {}", paymentResponse);
-//    log.info("PaymentServiceImpTest : existOrder  {}", existOrder);
-//    assertAll(
-//        () -> assertNotNull(paymentResponse),
-//        () -> assertEquals(paymentRequest.product().productPrice(), paymentResponse.product().productPrice())
-//    );
+//    MvcResult result = mockMvc.perform(post("/api/pay/{eventId}", event.getId())
+//            .contentType(MediaType.APPLICATION_JSON)
+//            .content(new ObjectMapper().writeValueAsString(paymentRequest)))
+//        .andExpect(status().isOk())
+//        .andReturn();
+//
+//    String responseJson = result.getResponse().getContentAsString();
+//    JsonNode jsonNode = new ObjectMapper().readTree(responseJson);
+//    String responseMerchantDomainName = jsonNode.get("merchantDomainName").asText();
+//    String clientEmail = jsonNode.get("clientEmail").asText();
+//    String responseOrderReference = jsonNode.get("orderReference").asText();
+//    assertEquals(paymentRequest.clientEmail(),clientEmail);
+//    assertEquals(merchantDomainName, responseMerchantDomainName);
+//
+//    mockMvc.perform(get("/api/v1/pay/order/details/{orderReference}", responseOrderReference))
+//        .andExpect(status().isOk())
+//        .andExpect(jsonPath("$.orderReference").value(responseOrderReference))
+//        .andExpect(jsonPath("$.status").value(OrderStatus.UNPAID));
 //  }
 //
 //  @Test
-//  void paymentVerification() throws InterruptedException {
-//
+//  void paymentVerification() throws Exception {
 //    PaymentStatusResponseDTO statusResponse = new PaymentStatusResponseDTO(
 //        "evently_book_vercel_app",
 //        "ON1375089945192",
@@ -226,61 +223,22 @@ class PaymentServiceImpTest {
 //        .build();
 //    orderDetailsRepository.save(orderDetails);
 //
-//    CountDownLatch latch = new CountDownLatch(3);
+//    mockMvc.perform(post("/api/payments/status/verification")
+//            .contentType(MediaType.APPLICATION_JSON)
+//            .content(new ObjectMapper().writeValueAsString(statusResponse)))
+//        .andExpect(status().isOk());
 //
-//    for (int i = 0; i < 3; i++) {
-//      int numberTread = i;
-//      executorService.submit(() -> {
-//        try {
-//          paymentService.paymentVerification(statusResponse);
-//          log.info("PaymentServiceImpTest : paymentVerification Thread  {} done", numberTread);// викликаємо метод у кожному потоці
-//        } finally {
-//          latch.countDown();
-//        }
-//      });
-//    }
-//    latch.await();
-//    executorService.shutdown();
-//
-//    OrderDetails existOrder = orderDetailsRepository.findByOrderReference(statusResponse.orderReference()).get();
-//    log.info("PaymentServiceImpTest : paymentVerification existOrder  {}", existOrder);
-//    assertAll(
-//        () -> assertNotNull(existOrder),
-//        () -> assertEquals(OrderStatus.PAID, existOrder.getStatus()),
-//        () -> assertEquals(3, existOrder.getEvent().getSoldTickets()),
-//        () -> assertEquals(97, existOrder.getEvent().getAvailableTickets()),
-//        () -> assertEquals(BigDecimal.valueOf(2100).setScale(2, RoundingMode.HALF_UP), existOrder.getEvent().getProfit())
-//    );
-//
+//    mockMvc.perform(get("/api/payments/order/details/{orderReference}", statusResponse.orderReference()))
+//        .andExpect(status().isOk())
+//        .andExpect(jsonPath("$.orderReference").value(statusResponse.orderReference()))
+//        .andExpect(jsonPath("$.status").value("APPROVED"));
 //  }
-//
-//  @Test
-//  void generateSignature() {
-//  }
-//
-//  @Test
-//  void random() {
-//  }
-//
-//  @Test
-//  void calculateAmount() {
-//  }
-//
-//  @Test
-//  void testCalculateAmount() {
-//  }
-//
-//  @Test
-//  void getPromoCode() {
-//    PromoCode promoCode = PromoCode.builder()
-//        .name("WelcomeBME")
-//        .percentage(5)
-//        .build();
-//    promoCodeRepository.save(promoCode);
-//
-//    PromoCode existPromoCode = paymentService.getPromoCode(promoCode.getName());
-//
-//    assertEquals(promoCode.getName(), existPromoCode.getName());
-//    assertEquals(promoCode.getPercentage(), existPromoCode.getPercentage());
-//  }
+
+  @Test
+  void getOrderDetails() {
+  }
+
+  @Test
+  void getPromoCode() {
+  }
 }

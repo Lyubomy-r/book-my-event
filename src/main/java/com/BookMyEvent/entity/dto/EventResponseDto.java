@@ -1,6 +1,8 @@
 package com.BookMyEvent.entity.dto;
 
 import com.BookMyEvent.entity.DateDetails;
+import com.BookMyEvent.entity.EventCancelRequest;
+import com.BookMyEvent.entity.EventUpdateRequest;
 import com.BookMyEvent.entity.Image;
 import com.BookMyEvent.entity.Location;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -42,4 +44,8 @@ public class EventResponseDto {
   private String eventUrl;
   private String eventStatus;
   private List<Image> images;
+  private Boolean hasUpdateRequest;
+  private Boolean hasCancelRequest;
+  private EventUpdateRequest eventUpdateRequest;
+  private EventCancelRequest eventCancelRequest;
 }

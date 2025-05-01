@@ -1,12 +1,16 @@
 package com.BookMyEvent.service.serviceImp;
 
+import com.BookMyEvent.dao.EventCancelRequestRepository;
 import com.BookMyEvent.dao.EventRepository;
+import com.BookMyEvent.dao.EventUpdateRequestRepository;
 import com.BookMyEvent.dao.ImageRepository;
 import com.BookMyEvent.dao.UserRepository;
 import com.BookMyEvent.entity.Enums.EventCategory;
 import com.BookMyEvent.entity.Enums.EventFormat;
 import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Event;
+import com.BookMyEvent.entity.EventCancelRequest;
+import com.BookMyEvent.entity.EventUpdateRequest;
 import com.BookMyEvent.entity.Image;
 import com.BookMyEvent.entity.User;
 import com.BookMyEvent.entity.dto.EventDTO;
@@ -59,6 +63,8 @@ public class EventServiceImpl implements EventService {
   private final MailService mailService;
   private final ImageRepository imageRepository;
   private final UserLikedEventService likedEventService;
+  private final EventUpdateRequestRepository eventUpdateRepository;
+  private final EventCancelRequestRepository eventCancelRepository;
   private final String className = this.getClass().getSimpleName();
 
   @Override
@@ -128,17 +134,51 @@ public class EventServiceImpl implements EventService {
   }
 
   @Override
-  @Transactional
-  public EventResponseDto updateEvent(String id, EventDTO eventDTO, String userId) {
+  public String makeUpdateEventRequest(String id,
+                                       EventDTO eventDTO,
+                                       String userId,
+                                       MultipartFile secondImage,
+                                       MultipartFile thirdImage) {
     log.info("EventServiceImpl::updateEvent - Updating event ID: {} with data: {}", id, eventDTO);
     Event existingEvent = eventRepository.findById(new ObjectId(id))
         .orElseThrow(() -> new GeneralException("Event not found with ID " + id, HttpStatus.NOT_FOUND));
-    if(!userId.equals(existingEvent.getOrganizers().getId().toHexString())){
+    if (!userId.equals(existingEvent.getOrganizers().getId().toHexString())) {
       log.warn("Send error message. Authentication user id {} don't equal organizers id {} ", userId, existingEvent.getOrganizers().getId().toHexString());
       throw new GeneralException("It's not your event you can't edit it.", HttpStatus.FORBIDDEN);
     }
-    eventMapper.updateEventFromDTO(eventDTO, existingEvent);
-    Event updatedEvent = eventRepository.save(existingEvent);
+    EventUpdateRequest eventUpdateRequest = EventUpdateRequest.builder()
+        .eventId(existingEvent.getId().toHexString())
+        .title(eventDTO.getTitle())
+        .description(eventDTO.getDescription())
+        .ticketPrice(validatePriceChange(existingEvent, eventDTO.getTicketPrice()))
+        .numberOfTickets(validateNumberOfTicketsChange(existingEvent, eventDTO.getNumberOfTickets()))
+        .aboutOrganizer(eventDTO.getAboutOrganizer())
+        .eventType(eventDTO.getEventType())
+        .images(validateImageAdd(existingEvent, secondImage, thirdImage))
+        .build();
+    EventUpdateRequest updatedEvent = eventUpdateRepository.save(eventUpdateRequest);
+    existingEvent.setEventStatus(EventStatus.PENDING);
+    existingEvent.setHasUpdateRequest(true);
+    eventRepository.save(existingEvent);
+    log.info("EventServiceImpl::updateEvent - Event updated request created successfully: {}", updatedEvent);
+    return "Request for update event is created successfully.";
+  }
+
+  @Override
+  @Transactional
+  public EventResponseDto updateEvent(String eventId, String eventUpdateRequestId) {
+    log.info("EventServiceImpl::updateEvent - Updating event ID: {}", eventId);
+    Event existingEvent = eventRepository.findById(new ObjectId(eventId))
+        .orElseThrow(() -> new GeneralException("Event not found with ID " + eventId, HttpStatus.NOT_FOUND));
+//    if (!userId.equals(existingEvent.getOrganizers().getId().toHexString())) {
+//      log.warn("Send error message. Authentication user id {} don't equal organizers id {} ", userId, existingEvent.getOrganizers().getId().toHexString());
+//      throw new GeneralException("It's not your event you can't edit it.", HttpStatus.FORBIDDEN);
+//    }
+    EventUpdateRequest updatedEventRequest = eventUpdateRepository.findById(new ObjectId(eventUpdateRequestId))
+        .orElseThrow(() -> new GeneralException("Event not found with ID " + eventUpdateRequestId, HttpStatus.NOT_FOUND));
+
+    Event mappedEvent = eventMapper.toEventFrom(existingEvent, updatedEventRequest);
+    Event updatedEvent = eventRepository.save(mappedEvent);
     log.info("EventServiceImpl::updateEvent - Event updated successfully: {}", updatedEvent);
     return eventMapper.toEventResponseDtoFromEvent(updatedEvent,
         userService.findUserInfoById(updatedEvent.getOrganizers().getId().toHexString()));
@@ -235,8 +275,20 @@ public class EventServiceImpl implements EventService {
       List<EventResponseDto> eventDTOs = events.stream()
 //          .sorted(this::sortEventByCategoryTopEvents)
           .map(event -> {
+            EventUpdateRequest eventUpdateRequest = null;
+            EventCancelRequest eventCancelRequest = null;
+            if (event.getHasUpdateRequest()) {
+              eventUpdateRequest = eventUpdateRepository.findEventUpdateRequestByEventId(event.getId().toHexString())
+                  .orElse(new EventUpdateRequest());
+            }
+            if (event.getHasUpdateRequest()) {
+              eventCancelRequest = eventCancelRepository.findEventCancelRequestByEventId(event.getId().toHexString())
+                  .orElse(new EventCancelRequest());
+            }
             return eventMapper.toEventResponseDtoFromEvent(event,
-                userMapper.toUserResponseDtoWithoutEvents(event.getOrganizers())
+                userMapper.toUserResponseDtoWithoutEvents(event.getOrganizers()),
+                eventUpdateRequest,
+                eventCancelRequest
             );
           })
           .toList();
@@ -526,4 +578,56 @@ public class EventServiceImpl implements EventService {
       log.info("{}::setCoordinatesToEvent - add coordinates to event.", className);
     }
   }
+
+  private Long validatePriceChange(Event existingEvent, Long newTicketPrice) {
+    if (existingEvent.getSoldTickets() <= 0 && Objects.equals(existingEvent.getNumberOfTickets(), existingEvent.getAvailableTickets())) {
+      return newTicketPrice;
+    }
+    return existingEvent.getTicketPrice();
+  }
+
+  private Integer validateNumberOfTicketsChange(Event existingEvent, Integer newNumberOfTickets){
+    if (existingEvent.getSoldTickets() <= 0 && Objects.equals(existingEvent.getNumberOfTickets(), existingEvent.getAvailableTickets())) {
+        return newNumberOfTickets;
+    }
+    return existingEvent.getNumberOfTickets();
+  }
+
+  private List<Image> validateImageAdd(Event existingEvent, MultipartFile secondImage,
+                                       MultipartFile thirdImage){
+      log.info("EventServiceImpl::validateImageAdd - Updating event image");
+      List<Image> list = new ArrayList<>();
+//      if(secondImage !=null && !secondImage.isEmpty()){
+//        list.add(secondImage);
+//      }
+//    if(thirdImage !=null && !thirdImage.isEmpty()){
+//      list.add(thirdImage);
+//    }
+//     if(existingEvent.getImages().size()>list.size()){
+////       log.error("all photos are already uploaded");
+////       throw new GeneralException("all photos are already uploaded ", HttpStatus.BAD_REQUEST);
+//       return existingEvent.getImages();
+//     }
+    if(existingEvent.getImages().size()==3){
+////       log.error("all photos are already uploaded");
+////       throw new GeneralException("all photos are already uploaded ", HttpStatus.BAD_REQUEST);
+       return existingEvent.getImages();
+    }
+    if(existingEvent.getImages().size()==1){
+      Image newImage2 = mediaService.saveEventImage(secondImage, existingEvent.getTitle());
+      Image newImag3 = mediaService.saveEventImage(thirdImage, existingEvent.getTitle());
+      list.addAll(existingEvent.getImages());
+      list.add(newImage2);
+      list.add(newImag3);
+      return existingEvent.getImages();
+    }
+    if(existingEvent.getImages().size()==2){
+      Image newImage = mediaService.saveEventImage(thirdImage, existingEvent.getTitle());
+      list.addAll(existingEvent.getImages());
+      list.add(newImage);
+      return list;
+    }
+    return existingEvent.getImages();
+  }
+
 }

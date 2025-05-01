@@ -39,6 +39,7 @@ import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,7 +62,8 @@ public class PaymentServiceImp implements PaymentService {
   String merchantAccount = merchantLogin;
   String merchantDomainName = "https://evently-book.vercel.app/";
   String currency = "UAH";
-  String serviceUrl = "http://localhost:8080/api/v1/pay/status/verification";
+//    String serviceUrl = "http://localhost:8080/api/v1/pay/status/verification";
+  String serviceUrl = "https://adjacent-lethia-sergiomail-580b8292.koyeb.app/api/v1/pay/status/verification";
 
   @Value("${percentage}")
   private int percentage;
@@ -138,17 +140,22 @@ public class PaymentServiceImp implements PaymentService {
 
   @Override
   public void paymentVerification(PaymentStatusResponseDTO statusResponse) {
-    if (statusResponse.transactionStatus().equals("Approved")) {
-      Optional<OrderDetails> orderDetails = orderDetailsRepository.findByOrderReference(statusResponse.orderReference());
+    if (statusResponse.getTransactionStatus().equals("Approved")) {
+      Optional<OrderDetails> orderDetails = orderDetailsRepository.findByOrderReference(statusResponse.getOrderReference());
       if (orderDetails.isPresent()) {
-        if (orderDetails.get().getPaymentDetails().getMerchantSignature().equals(statusResponse.merchantSignature())) {
+        String str = statusResponse.getMerchantAccount()+";"+
+            statusResponse.getOrderReference()+";"+
+            statusResponse.getAmount()+";"+statusResponse.getCurrency()+";"+
+            statusResponse.getAuthCode()+";"+statusResponse.getCardPan()+";"+statusResponse.getTransactionStatus()+";"+
+        statusResponse.getReasonCode();
+        String getMerchantSignature = generateSignature(merchantSecretKey, str);
+        if (Objects.equals(getMerchantSignature, statusResponse.getMerchantSignature())) {
           orderDetails.get().setPaymentDetails(
               paymentDetailsMapper.toPaymentDetails(orderDetails.get().getPaymentDetails(), statusResponse));
           orderDetails.get().setStatus(OrderStatus.PAID);
 
           ObjectId eventId = orderDetails.get().getEvent().getId();
 
-          // Беремо або створюємо замок для цього eventId
           ReentrantLock lock = eventLocks.computeIfAbsent(eventId, id -> new ReentrantLock());
 
           lock.lock();
@@ -157,8 +164,8 @@ public class PaymentServiceImp implements PaymentService {
                 .orElseThrow(() -> new GeneralException("Event not found", HttpStatus.NOT_FOUND));
             Integer productCount = Integer.parseInt(orderDetails.get().getPaymentDetails().getProduct().productCount());
             Integer productPrice = Integer.parseInt(orderDetails.get().getPaymentDetails().getProduct().productPrice());
-            Integer soldTickets = exsistEvent.getSoldTickets() + productCount;
-            Integer availableTickets = exsistEvent.getAvailableTickets() - productCount;
+            Integer soldTickets = Optional.ofNullable(exsistEvent.getSoldTickets()).orElse(0) + productCount;
+            Integer availableTickets = Optional.ofNullable(exsistEvent.getAvailableTickets()).orElse(0) - productCount;
             exsistEvent.setSoldTickets(soldTickets);
             if (availableTickets < 0) {
               log.warn("Available tickets are sold out. availableTickets {} try buy {}",
@@ -167,7 +174,7 @@ public class PaymentServiceImp implements PaymentService {
             } else {
               log.info("Class: PaymentServiceImp, Method: paymentVerification.  tickets are available {}", availableTickets);
               exsistEvent.setAvailableTickets(availableTickets);
-              BigDecimal calculateProfit = calculateProfit(exsistEvent.getProfit(), productPrice, productCount);
+              BigDecimal calculateProfit = calculateProfit(Optional.ofNullable(exsistEvent.getProfit()).orElse(BigDecimal.ZERO), productPrice, productCount);
 //            List<OrderDetails> orderDetailsList = orderDetailsRepository.findByEvent_Id(exsistEvent.getId());
 //            BigDecimal calculateProfit = orderDetailsList.stream()
 //                .map(order -> calculateAmount(order.getPaymentDetails().getProduct()))
@@ -198,13 +205,92 @@ public class PaymentServiceImp implements PaymentService {
               "merchantSignature don't equals"
           ));
           log.warn("OrderDetails merchantSignature don't equals orderDetails ({}) - statusResponse ({})",
-              orderDetails.get().getPaymentDetails().getMerchantSignature(), statusResponse.merchantSignature());
+              orderDetails.get().getPaymentDetails().getMerchantSignature(), statusResponse.getMerchantSignature());
           orderDetailsRepository.save(orderDetails.get());
         }
       } else {
-        log.warn("OrderDetails not exist by order reference {}", statusResponse.orderReference());
+        log.warn("OrderDetails not exist by order reference {}", statusResponse.getOrderReference());
+      }
+    }else if(statusResponse.getTransactionStatus().equals("Refunded")){
+      Optional<OrderDetails> orderDetails = orderDetailsRepository.findByOrderReference(statusResponse.getOrderReference());
+      if (orderDetails.isPresent()) {
+        String str = statusResponse.getMerchantAccount()+";"+
+            statusResponse.getOrderReference()+";"+
+            statusResponse.getAmount()+";"+statusResponse.getCurrency()+";"+
+            statusResponse.getAuthCode()+";"+statusResponse.getCardPan()+";"+statusResponse.getTransactionStatus()+";"+
+            statusResponse.getReasonCode();
+        String getMerchantSignature = generateSignature(merchantSecretKey, str);
+        if (Objects.equals(getMerchantSignature, statusResponse.getMerchantSignature())) {
+          orderDetails.get().setPaymentDetails(
+              paymentDetailsMapper.toPaymentDetails(orderDetails.get().getPaymentDetails(), statusResponse));
+          orderDetails.get().setStatus(OrderStatus.REFUNDED);
+
+          ObjectId eventId = orderDetails.get().getEvent().getId();
+
+          ReentrantLock lock = eventLocks.computeIfAbsent(eventId, id -> new ReentrantLock());
+
+          lock.lock();
+          try {
+            Event exsistEvent = eventRepository.findById(eventId)
+                .orElseThrow(() -> new GeneralException("Event not found", HttpStatus.NOT_FOUND));
+            Integer productCount = Integer.parseInt(orderDetails.get().getPaymentDetails().getProduct().productCount());
+            Integer productPrice = Integer.parseInt(orderDetails.get().getPaymentDetails().getProduct().productPrice());
+            Integer productAmount = Integer.parseInt(orderDetails.get().getPaymentDetails().getProduct().amount());
+            Integer soldTickets = Optional.ofNullable(exsistEvent.getSoldTickets()).orElse(0) - productCount;
+            Integer availableTickets = Optional.ofNullable(exsistEvent.getAvailableTickets()).orElse(0) + productCount;
+            exsistEvent.setSoldTickets(soldTickets);
+            if (availableTickets < 0) {
+              log.warn("Available tickets are sold out. availableTickets {} try buy {}",
+                  exsistEvent.getAvailableTickets(), orderDetails.get().getPaymentDetails().getProduct().productCount());
+              throw new GeneralException("Available tickets are sold out.", HttpStatus.NOT_FOUND);
+            } else {
+              log.info("Class: PaymentServiceImp, Method: paymentVerification.  tickets are available {}", availableTickets);
+              exsistEvent.setAvailableTickets(availableTickets);
+              BigDecimal calculateProfit = exsistEvent.getProfit().subtract(BigDecimal.valueOf(productAmount));
+              exsistEvent.setProfit(calculateProfit);
+            }
+            Event savedEvent = eventRepository.save(exsistEvent);
+            log.info("Class: PaymentServiceImp, Method: paymentVerification.  Event was saved  {}", savedEvent.getAvailableTickets());
+            orderDetails.get().setEvent(savedEvent);
+
+            OrderDetails updatedOrderDetails = orderDetailsRepository.save(orderDetails.get());
+            log.info("Class: PaymentServiceImp, Method: paymentVerification.  getAvailableTickets {}", updatedOrderDetails.getEvent().getAvailableTickets());
+            log.info("Class: PaymentServiceImp, Method: paymentVerification.  getSoldTickets {}", updatedOrderDetails.getEvent().getSoldTickets());
+            log.info("Class: PaymentServiceImp, Method: paymentVerification.  getProfit {}", updatedOrderDetails.getEvent().getProfit());
+//          log.info("Class: PaymentServiceImp, Method: paymentVerification.  updatedOrderDetails {}", updatedOrderDetails);
+          } finally {
+            lock.unlock();
+            eventLocks.computeIfPresent(eventId, (id, l) -> {
+              log.info("Class: PaymentServiceImp, Method: paymentVerification.  unlock event id {}", id);
+              return l.hasQueuedThreads() ? l : null;
+            });
+          }
+        } else {
+          orderDetails.get().setPaymentDetails(paymentDetailsMapper.toPaymentDetails(
+              orderDetails.get().getPaymentDetails(),
+              statusResponse,
+              "merchantSignature don't equals"
+          ));
+          log.warn("OrderDetails merchantSignature don't equals orderDetails ({}) - statusResponse ({})",
+              orderDetails.get().getPaymentDetails().getMerchantSignature(), statusResponse.getMerchantSignature());
+          orderDetailsRepository.save(orderDetails.get());
+        }
+      } else {
+        log.warn("OrderDetails not exist by order reference {}", statusResponse.getOrderReference());
       }
     }
+    log.warn("OrderDetails status Response getOrderReference {}, status {} ,Response object{}", statusResponse.getOrderReference(), statusResponse.getTransactionStatus(), statusResponse);
+  }
+
+  public OrderDetails findByOrderReference(String orderReference) {
+    OrderDetails orderDetails = orderDetailsRepository.findByOrderReference(orderReference)
+        .orElseThrow(() -> {
+              log.warn("OrderDetails not exist by order reference {}", orderReference);
+              throw new GeneralException(String.format("OrderDetails not found by order reference %s.", orderReference), HttpStatus.NOT_FOUND);
+            }
+        );
+
+    return orderDetails;
   }
 
   public static String generateSignature(String secretKey, String params) {
@@ -313,14 +399,17 @@ public class PaymentServiceImp implements PaymentService {
     }
   }
 
+  @Override
   public PromoCode getPromoCode(String promoCode) {
-    try {
-      PromoCode exsistPromoCode = promoCodeRepository.findByName(promoCode).orElseThrow(
-          () -> new GeneralException(String.format("Promo code not exist by name %s", promoCode), HttpStatus.NOT_FOUND)
-      );
-      return exsistPromoCode;
-    } catch (Exception e) {
-      throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
-    }
+//    try {
+    PromoCode exsistPromoCode = promoCodeRepository.findByName(promoCode).orElseThrow(
+        () -> new GeneralException(String.format("Promo code not exist by name %s", promoCode), HttpStatus.NOT_FOUND)
+    );
+    log.info("Class: PaymentServiceImp, Method: getPromoCode.  return exsist promo code {}", exsistPromoCode);
+
+    return exsistPromoCode;
+//    } catch (Exception e) {
+//      throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
+//    }
   }
 }

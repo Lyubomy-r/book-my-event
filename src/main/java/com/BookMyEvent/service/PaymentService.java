@@ -1,5 +1,6 @@
 package com.BookMyEvent.service;
 
+import com.BookMyEvent.entity.OrderDetails;
 import com.BookMyEvent.entity.PromoCode;
 import com.BookMyEvent.entity.dto.PaymentRequestDTO;
 import com.BookMyEvent.entity.dto.PaymentResponseDTO;
@@ -13,6 +14,8 @@ public interface PaymentService {
   PaymentResponseDTO prepareForPayment(String eventId, PaymentRequestDTO paymentRequest);
 
   void paymentVerification(PaymentStatusResponseDTO statusResponse);
+
+  OrderDetails findByOrderReference(String orderReference);
 
   Map<String, List<?>> calculatePriceAfterUsePromoCode(ProductDTO product, String promoCode);
 

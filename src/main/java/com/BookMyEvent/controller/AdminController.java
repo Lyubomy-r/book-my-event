@@ -28,6 +28,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -498,6 +499,35 @@ public class AdminController {
     log.info("Class: {}, Method: updateEventStatus - Event status updated successfully ID: {}", this.getClass().getSimpleName(), eventsId);
     return ResponseEntity.ok(updatedEvent);
   }
+
+  @Operation(summary = "Update an event",
+      description = "Updates an existing event with the given ID. Only the event organizer can update the event.")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Event updated successfully",
+          content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = EventResponseDto.class))),
+      @ApiResponse(responseCode = "404", description = "Event not found",
+          content = {
+              @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(implementation = ErrorResponseDto.class)
+              )}),
+      @ApiResponse(responseCode = "400", description = "Invalid request data",
+          content = {
+              @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(implementation = ErrorResponseDto.class)
+              )})
+  })
+  @PutMapping("/events/{eventsId}")
+  public ResponseEntity<EventResponseDto> updateEvent(@PathVariable String eventsId,
+                                                 @RequestParam("updateRequestId") String updateRequestId) {
+    log.info("Class: {}, Method: updateEvent - Updating event with id: {} and updateRequestId: {}", className, eventsId, updateRequestId );
+    EventResponseDto response = eventService.updateEvent(eventsId, updateRequestId);
+
+    log.info("Class: {}, Method: updateEvent - return successfully code message", className);
+    return ResponseEntity.ok(response);
+  }
+
 
   //  @Operation(
 //      summary = "Delete not linked images",

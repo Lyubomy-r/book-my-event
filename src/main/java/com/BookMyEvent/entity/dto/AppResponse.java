@@ -9,19 +9,26 @@ import java.time.LocalDateTime;
 
 @Setter
 @Getter
-public class AppResponse {
+public class AppResponse{
 
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ssa")
   private LocalDateTime timestamp;
-
   @JsonProperty("status")
   private Integer statusCode;
-
   private String message;
+  private Object response ;
+
 
   public AppResponse(Integer statusCode, String message) {
     this.timestamp = LocalDateTime.now();
     this.statusCode = statusCode;
     this.message = message;
+  }
+
+  public AppResponse(Integer statusCode, String message, Object response) {
+    this.timestamp = LocalDateTime.now();
+    this.statusCode = statusCode;
+    this.message = message;
+    this.response = response;
   }
 }

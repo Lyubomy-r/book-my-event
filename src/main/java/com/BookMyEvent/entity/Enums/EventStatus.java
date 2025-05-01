@@ -1,5 +1,8 @@
 package com.BookMyEvent.entity.Enums;
 
 public enum EventStatus {
-    PENDING, APPROVED, CANCELLED
+    PENDING,
+    APPROVED,
+    CANCELLED,
+    PENDING_UPDATE_REQUEST;
 }
