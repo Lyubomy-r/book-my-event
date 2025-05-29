@@ -1,13 +1,13 @@
 package com.BookMyEvent.controller;
 
-import com.BookMyEvent.entity.PromoCode;
+import com.BookMyEvent.entity.EventDeleteRequest;
 import com.BookMyEvent.entity.dto.AppResponse;
 import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventFilterRequest;
 import com.BookMyEvent.entity.dto.EventResponseDto;
+import com.BookMyEvent.entity.dto.EventUpdateDTO;
 import com.BookMyEvent.entity.dto.UserResponseDto;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
-import com.BookMyEvent.security.SecurityUser;
 import com.BookMyEvent.service.EventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,19 +18,21 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.security.Principal;
 import java.util.Map;
 
 import static com.BookMyEvent.config.SwaggerConfig.CREATED_EVENT_PAYLOAD_SCHEMA;
@@ -106,20 +108,21 @@ public class EventController {
                     schema = @Schema(implementation = ErrorResponseDto.class)
                 )})
     })
-    @PutMapping("/{id}")
-    public ResponseEntity<AppResponse> updateEvent(@PathVariable String id,
-                                                   @RequestBody EventDTO eventDTO,
-                                                   @AuthenticationPrincipal Map<String, Object> principal,
-                                                   @Parameter(description = "Second event image (Max 1MB)", required = false)
-                                                   @RequestPart(value = "secondImage", required = false) MultipartFile secondImage,
-                                                   @Parameter(description = "Third event image (Max 1MB)", required = false)
-                                                   @RequestPart(value = "thirdImage", required = false) MultipartFile thirdImage) {
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AppResponse> createUpdateEventRequest(@PathVariable String id,
+                                                                @Parameter(description = "Event details, including the name, description, and date", required = true)
+                                                                @RequestPart("event") @Valid EventUpdateDTO eventDTO,
+                                                                @AuthenticationPrincipal Map<String, Object> principal,
+                                                                @Parameter(description = "Second event image (Max 1MB)", required = false)
+                                                                @RequestPart(value = "secondImage", required = false) MultipartFile secondImage,
+                                                                @Parameter(description = "Third event image (Max 1MB)", required = false)
+                                                                @RequestPart(value = "thirdImage", required = false) MultipartFile thirdImage) {
         String userId = (String) principal.get("id");
         log.info("Class: {}, Method: updateEvent - Updating event with id: {}  authentication user {}", className, id, userId);
         AppResponse response = new AppResponse(200,
-            eventService.makeUpdateEventRequest(id, eventDTO, userId, secondImage, thirdImage)
+            eventService.createUpdateEventRequest(id, eventDTO, userId, secondImage, thirdImage)
         );
-        log.info("Class: {}, Method: updateEvent - return successfully code message", className);
+        log.info("Class: {}, Method: updateEvent - return successfully code message.", className);
         return ResponseEntity.ok(response);
     }
 
@@ -154,8 +157,8 @@ public class EventController {
     }
 
     @Operation(
-        summary = "Delete an event",
-        description = "Deletes an event by its ID. If the event does not exist, a 404 error is returned."
+        summary = "Create Delete Event Request",
+        description = "Create request to delete an event by its ID. If the event does not exist, a 404 error is returned."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Event deleted successfully",
@@ -167,14 +170,16 @@ public class EventController {
                 schema = @Schema(implementation = ErrorResponseDto.class)
             ))
     })
-    @DeleteMapping("/{id}")
-    public ResponseEntity<AppResponse> deleteEvent(
-        @Parameter(description = "Event ID", required = true, example = "60d21b4667d0d8992e610c85")
-        @PathVariable String id) {
-        eventService.deleteEvent(id);
+    @PostMapping("/cancel/request/{eventId}")
+    public ResponseEntity<AppResponse> createDeleteEventRequest(@PathVariable("eventId") String eventId,
+                                                                @RequestBody EventDeleteRequest eventDeleteRequest,
+                                                                @AuthenticationPrincipal Map<String, Object> principal) {
+        String userId = (String) principal.get("id");
+        log.info("Class: {}, Method: createDeleteEventRequest - Delete event with id: {}  authentication user {}", className, eventId, userId);
+        String messageResponse = eventService.createDeleteEventRequest(eventId, eventDeleteRequest, userId);
         AppResponse response = new AppResponse(
-            HttpStatus.OK.value(), "Event deleted successfully");
-        log.info("Class: {}, Method: deleteEvent - Deleting event with id: {}", className, id);
+            HttpStatus.OK.value(), messageResponse);
+        log.info("Class: {}, Method: createDeleteEventRequest - return successfully code message.", className);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
@@ -193,7 +198,9 @@ public class EventController {
     @GetMapping
     public ResponseEntity<Page<EventResponseDto>> getAllApprovedEvents(@PageableDefault(
         page = 0,
-        size = 6) Pageable pageable) {
+        size = 6,
+            sort = "creationDate",
+            direction = Sort.Direction.DESC) Pageable pageable) {
         log.info("Class: {}, Method: getAllEventsUA - Fetching all APPROVED events.", className);
         Page<EventResponseDto> events = eventService.getApprovedEvents(pageable);
         return ResponseEntity.ok(events);
@@ -232,7 +239,9 @@ public class EventController {
         @Parameter(description = "Pagination information (page, size). Example: /filtered?page=0&size=6")
         @PageableDefault(
             page = 0,
-            size = 6) Pageable pageable) {
+            size = 6,
+                sort = "creationDate",
+                direction = Sort.Direction.DESC) Pageable pageable) {
         log.info("Class: {}, Method: getAllFilteredApprovedEvents - Fetching all APPROVED events. param {}", className, eventFilterRequest);
         Page<EventResponseDto> events = eventService.filterEvents(eventFilterRequest, pageable);
         return ResponseEntity.ok(events);
@@ -321,6 +330,33 @@ public class EventController {
         Page<EventResponseDto> userResponse = eventService.getByOrganizersId(userId, pageable);
         log.info("UserController::findUserCreatedEvents - /users/{userId} - Return User Info id: {} .", userId);
         return ResponseEntity.ok(userResponse);
+    }
+
+    @Operation(
+        summary = "Delete an event",
+        description = "Deletes an event by its ID. If the event does not exist, a 404 error is returned."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Event deleted successfully",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = AppResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Event not found",
+            content = @Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponseDto.class)
+            ))
+    })
+    @DeleteMapping("/{eventId}")
+    public ResponseEntity<AppResponse> deleteEvent(
+        @Parameter(description = "Event ID", required = true, example = "60d21b4667d0d8992e610c85")
+        @PathVariable("eventId") String eventId,
+        @AuthenticationPrincipal Map<String, Object> principal) {
+        String userId = (String) principal.get("id");
+        eventService.userDeleteEvent(eventId, userId);
+        AppResponse response = new AppResponse(
+            HttpStatus.OK.value(), "Event deleted successfully");
+        log.info("Class: {}, Method: deleteEvent - Deleting event with id: {}", className, eventId);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
 //    @Hidden

@@ -27,7 +27,7 @@ import java.util.List;
 public class EventUpdateRequest {
 
   @Id
-  private ObjectId id;
+  private String id;
   private String eventId;
   private String title;
   private String description;

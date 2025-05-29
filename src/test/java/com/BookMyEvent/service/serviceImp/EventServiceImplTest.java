@@ -308,4 +308,9 @@ class EventServiceImplTest {
 
     verify(eventRepository, times(1)).save(any(Event.class));
   }
+
+  @Test
+  public void updateEventTest(){
+
+  }
 }

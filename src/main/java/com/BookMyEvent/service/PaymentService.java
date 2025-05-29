@@ -15,6 +15,8 @@ public interface PaymentService {
 
   void paymentVerification(PaymentStatusResponseDTO statusResponse);
 
+  String paymentVerificationFreeEvents(String eventId, PaymentRequestDTO paymentRequest);
+
   OrderDetails findByOrderReference(String orderReference);
 
   Map<String, List<?>> calculatePriceAfterUsePromoCode(ProductDTO product, String promoCode);

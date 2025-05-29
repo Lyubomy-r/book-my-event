@@ -1,15 +1,12 @@
 package com.BookMyEvent.entity.dto;
 
 import com.BookMyEvent.entity.DateDetails;
-import com.BookMyEvent.entity.EventCancelRequest;
-import com.BookMyEvent.entity.EventUpdateRequest;
 import com.BookMyEvent.entity.Image;
 import com.BookMyEvent.entity.Location;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +29,8 @@ public class EventResponseDto {
   @JsonProperty("price")
   private Long ticketPrice;
   private Integer numberOfTickets;
+  private String soldTickets;
+  private String profit;
   private Location location;
   private UserResponseDto organizers;
   private String aboutOrganizer;
@@ -46,6 +45,6 @@ public class EventResponseDto {
   private List<Image> images;
   private Boolean hasUpdateRequest;
   private Boolean hasCancelRequest;
-  private EventUpdateRequest eventUpdateRequest;
-  private EventCancelRequest eventCancelRequest;
+//  private EventUpdateRequest eventUpdateRequest;
+//  private EventCancelRequest eventCancelRequest;
 }

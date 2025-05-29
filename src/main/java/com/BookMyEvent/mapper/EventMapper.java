@@ -1,28 +1,16 @@
 package com.BookMyEvent.mapper;
 
-import com.BookMyEvent.entity.DateDetails;
-import com.BookMyEvent.entity.Enums.EventFormat;
 import com.BookMyEvent.entity.Event;
-import com.BookMyEvent.entity.EventCancelRequest;
+import com.BookMyEvent.entity.EventDeleteRequest;
 import com.BookMyEvent.entity.EventUpdateRequest;
-import com.BookMyEvent.entity.Image;
 import com.BookMyEvent.entity.Location;
-import com.BookMyEvent.entity.User;
 import com.BookMyEvent.entity.dto.EventDTO;
 import com.BookMyEvent.entity.dto.EventResponseDto;
 import com.BookMyEvent.entity.dto.UserResponseDto;
 import org.bson.types.ObjectId;
-import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
-
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Locale;
 
 import static org.mapstruct.InjectionStrategy.CONSTRUCTOR;
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
@@ -99,7 +87,10 @@ public interface EventMapper {
 //    @Mapping(target= "unlimitedTickets", ignore = true)
     void updateEventFromDTO(EventDTO eventDTO, @MappingTarget Event event);
 
-    Event toEventFrom(@MappingTarget Event event, EventUpdateRequest updatedEvent);
+    @Mapping(target = "hasUpdateRequest", constant = "false")
+    @Mapping(target = "eventStatus", constant = "APPROVED")
+    @Mapping(target = "id", ignore = true)
+    Event toEventFromEventUpdateRequest(@MappingTarget Event event, EventUpdateRequest updatedEvent);
 
     @Mapping(target = "id", expression = "java(convertToStringId(event.getId()))")
     @Mapping(target = "title", source = "event.title")
@@ -118,7 +109,11 @@ public interface EventMapper {
     @Mapping(target = "eventCategory", expression = "java(event.getEventCategory() != null ? event.getEventCategory().toString(): null)")
     @Mapping(target = "images", source = "event.images")
     @Mapping(target = "organizers", expression = "java(user != null ? user: null)")
-    @Mapping(target = "eventUpdateRequest", ignore = true)
+//    @Mapping(target = "eventUpdateRequest", ignore = true)
+    @Mapping(target = "hasUpdateRequest", expression = "java(event.getHasUpdateRequest() != null ? event.getHasUpdateRequest() : null)")
+    @Mapping(target = "hasCancelRequest", expression = "java(event.getHasCancelRequest() != null ? event.getHasCancelRequest() : null)")
+    @Mapping(target = "soldTickets", expression = "java(event.getSoldTickets() != null ? event.getSoldTickets().toString() : \"0\")")
+    @Mapping(target = "profit", expression = "java(event.getProfit() != null ? event.getProfit().toString() : \"0\")")
     EventResponseDto toEventResponseDtoFromEvent(Event event,
                                                  UserResponseDto user);
 
@@ -141,14 +136,14 @@ public interface EventMapper {
     @Mapping(target = "eventCategory", expression = "java(event.getEventCategory() != null ? event.getEventCategory().toString(): null)")
     @Mapping(target = "images", source = "event.images")
     @Mapping(target = "organizers", expression = "java(user != null ? user: null)")
-    @Mapping(target = "eventUpdateRequest", source = "eventUpdateRequest")
-    @Mapping(target = "eventCancelRequest", source = "eventCancelRequest")
+//    @Mapping(target = "eventUpdateRequest", source = "eventUpdateRequest")
+//    @Mapping(target = "eventCancelRequest", source = "eventCancelRequest")
     @Mapping(target = "hasUpdateRequest", source = "event.hasUpdateRequest")
     @Mapping(target = "hasCancelRequest", source = "event.hasCancelRequest")
     EventResponseDto toEventResponseDtoFromEvent(Event event,
                                                  UserResponseDto user,
                                                  EventUpdateRequest eventUpdateRequest,
-                                                 EventCancelRequest eventCancelRequest);
+                                                 EventDeleteRequest eventDeleteRequest);
 
     @Mapping(target = "id", expression = "java(convertToStringId(event.getId()))")
 //    @Mapping(target = "title", source = "event.title")

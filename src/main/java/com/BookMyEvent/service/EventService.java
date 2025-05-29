@@ -1,15 +1,12 @@
 package com.BookMyEvent.service;
 
-import com.BookMyEvent.entity.Event;
-import com.BookMyEvent.entity.dto.EventDTO;
-import com.BookMyEvent.entity.dto.EventFilterRequest;
-import com.BookMyEvent.entity.dto.EventResponseDto;
-import org.bson.types.ObjectId;
+import com.BookMyEvent.entity.EventDeleteRequest;
+import com.BookMyEvent.entity.EventUpdateRequest;
+import com.BookMyEvent.entity.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
 import java.util.Map;
 
 public interface EventService {
@@ -18,17 +15,25 @@ public interface EventService {
                                         MultipartFile secondImage,
                                         MultipartFile thirdImage);
 
-    String makeUpdateEventRequest(String id, EventDTO eventDTO, String userId,
-                                  MultipartFile secondImage,
-                                  MultipartFile thirdImage);
+    String createUpdateEventRequest(String id, EventUpdateDTO eventDTO, String userId,
+                                    MultipartFile secondImage,
+                                    MultipartFile thirdImage);
 
     EventResponseDto updateEvent(String eventId, String eventUpdateRequestId);
 
+    String cancelEventUpdateRequest(String eventId, String eventUpdateRequestId);
+
     Page<EventResponseDto> getApprovedEvents(Pageable pageable);
 
-    void deleteEvent(String id);
+    String createDeleteEventRequest(String eventId, EventDeleteRequest eventDeleteRequest, String userId);
+
+    void deleteEvent(String eventId, String eventDeleteRequestId);
 
     EventResponseDto getEventById(String eventId);
+
+    EventUpdateRequestDTO getEventUpdateRequestById(String eventId);
+
+    EventDeleteRequest getEventCancelRequestById(String eventId);
 
     EventResponseDto getApprovedEventById(String eventId);
 
@@ -52,6 +57,8 @@ public interface EventService {
     Page<EventResponseDto> filterEvents(EventFilterRequest filter, Pageable pageable);
 
     void deleteNotLinkedImg();
+
+    void userDeleteEvent(String eventId, String userId);
 
 //    void chdb();
 

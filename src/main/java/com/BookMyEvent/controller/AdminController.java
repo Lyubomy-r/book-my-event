@@ -1,10 +1,9 @@
 package com.BookMyEvent.controller;
 
 import com.BookMyEvent.entity.Event;
-import com.BookMyEvent.entity.dto.AppResponse;
-import com.BookMyEvent.entity.dto.EventDTO;
-import com.BookMyEvent.entity.dto.EventResponseDto;
-import com.BookMyEvent.entity.dto.UserResponseDto;
+import com.BookMyEvent.entity.EventDeleteRequest;
+import com.BookMyEvent.entity.EventUpdateRequest;
+import com.BookMyEvent.entity.dto.*;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
 import com.BookMyEvent.service.EventService;
 import com.BookMyEvent.service.UserService;
@@ -18,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,12 +27,9 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 
-import java.util.List;
 import java.util.Map;
 
 import static com.BookMyEvent.config.SwaggerConfig.PAGE_EVENT_RESPONSEDTO_PAYLOAD_SCHEMA;
@@ -183,6 +180,66 @@ public class AdminController {
   public ResponseEntity<EventResponseDto> getEventById(@PathVariable("eventId") String eventId) {
     log.info("Class: {}, Method: getAllEventsUA - Fetching all APPROVED events.", className);
     EventResponseDto events = eventService.getEventById(eventId);
+    return ResponseEntity.ok(events);
+  }
+
+  @Operation(
+      summary = "Get Event Update Request by eventId",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Get info by Event Update.",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = EventResponseDto.class))
+              }),
+          @ApiResponse(
+              responseCode = "404",
+              description = "Event with the provided id not found",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = ErrorResponseDto.class)
+                  )
+              })
+      })
+  @GetMapping("/events/update/request/{eventId}")
+  public ResponseEntity<EventUpdateRequestDTO> getEventUpdateRequest(@PathVariable("eventId") String eventId) {
+    log.info("Class: {}, Method: getEventUpdateRequest - Fetching event update request.", className);
+      EventUpdateRequestDTO events = eventService.getEventUpdateRequestById(eventId);
+    log.info("Class: {}, Method: getEventUpdateRequest - Fetching event update request.", className);
+    return ResponseEntity.ok(events);
+  }
+
+  @Operation(
+      summary = "Get Event canceled Request by eventId",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Get info by Event canceled info.",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = EventResponseDto.class))
+              }),
+          @ApiResponse(
+              responseCode = "404",
+              description = "Event with the provided id not found",
+              content = {
+                  @Content(
+                      mediaType = APPLICATION_JSON_VALUE,
+                      schema = @Schema(implementation = ErrorResponseDto.class)
+                  )
+              })
+      })
+  @GetMapping("/events/cancel/request/{eventId}")
+  public ResponseEntity<EventDeleteRequest> getEventCanceledRequest(@PathVariable("eventId") String eventId) {
+    String methodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    log.info("Class: {}, Method: {} - Fetching event canceled request.", className, methodName);
+    EventDeleteRequest events = eventService.getEventCancelRequestById(eventId);
+    log.info("Class: {}, Method: {} - Fetching event canceled request.", className, methodName);
     return ResponseEntity.ok(events);
   }
 
@@ -487,6 +544,14 @@ public class AdminController {
                   mediaType = APPLICATION_JSON_VALUE,
                   schema = @Schema(implementation = ErrorResponseDto.class)
               )
+          ),
+          @ApiResponse(
+              responseCode = "409",
+              description = "Event has update or cancel requests.",
+              content = @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(implementation = ErrorResponseDto.class)
+              )
           )
       }
   )
@@ -528,6 +593,36 @@ public class AdminController {
     return ResponseEntity.ok(response);
   }
 
+    @Operation(summary = "Cancel event update request",
+            description = "Cancel event update request an existing event with the given ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cancel event update request successfully",
+                    content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = EventResponseDto.class))),
+            @ApiResponse(responseCode = "404", description = "Event not found",
+                    content = {
+                            @Content(
+                                    mediaType = APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponseDto.class)
+                            )}),
+            @ApiResponse(responseCode = "400", description = "Invalid request data",
+                    content = {
+                            @Content(
+                                    mediaType = APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponseDto.class)
+                            )})
+    })
+    @DeleteMapping("/events/{eventsId}/update/{updateRequestId}")
+    public ResponseEntity<AppResponse> cancelEventUpdateRequest(@PathVariable("eventsId") String eventsId,
+                                                        @PathVariable("updateRequestId") String updateRequestId) {
+        String methodName = new Object() {
+        }.getClass().getEnclosingMethod().getName();
+        log.info("Class: {}, Method: {} - Updating event with id: {} and updateRequestId: {}", className, methodName, eventsId, updateRequestId );
+        AppResponse response = new AppResponse(
+                HttpStatus.OK.value(), eventService.cancelEventUpdateRequest(eventsId, updateRequestId));
+        log.info("Class: {}, Method: {} - return successfully code message", className, methodName);
+        return ResponseEntity.ok(response);
+    }
+
 
   //  @Operation(
 //      summary = "Delete not linked images",
@@ -541,4 +636,30 @@ public class AdminController {
     return ResponseEntity.ok("deleteNotLinkedImg - ok");
   }
 
+  @Operation(
+      summary = "Delete an event",
+      description = "Deletes an event by its ID. If the event does not exist, a 404 error is returned."
+  )
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Event deleted successfully",
+          content = @Content(mediaType = "application/json",
+              schema = @Schema(implementation = AppResponse.class))),
+      @ApiResponse(responseCode = "404", description = "Event not found",
+          content = @Content(
+              mediaType = APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ErrorResponseDto.class)
+          ))
+  })
+  @DeleteMapping("/events/{eventId}/cancel/{deleteRequestId}")
+  public ResponseEntity<AppResponse> deleteEvent(
+      @Parameter(description = "Event ID", required = true, example = "60d21b4667d0d8992e610c85")
+      @PathVariable("eventId") String eventId,
+      @Parameter(description = "Event delete request Id", required = true, example = "60d21b4667d0d8992e610c43")
+      @PathVariable("deleteRequestId") String deleteRequestId) {
+    eventService.deleteEvent(eventId, deleteRequestId);
+    AppResponse response = new AppResponse(
+        HttpStatus.OK.value(), "Event deleted successfully");
+    log.info("Class: {}, Method: deleteEvent - Deleting event with id: {}", className, eventId);
+    return ResponseEntity.status(HttpStatus.OK).body(response);
+  }
 }

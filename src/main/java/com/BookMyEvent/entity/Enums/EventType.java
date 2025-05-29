@@ -1,7 +1,9 @@
 package com.BookMyEvent.entity.Enums;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
 
+@Getter
 public enum EventType {
     @Schema(description = "Stand-up comedy event")
     STAND_UP("Stand-up"),
@@ -22,9 +24,5 @@ public enum EventType {
 
     EventType(String ukrainianName) {
         this.ukrainianName = ukrainianName;
-    }
-
-    public String getUkrainianName() {
-        return ukrainianName;
     }
 }

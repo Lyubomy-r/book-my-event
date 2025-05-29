@@ -61,34 +61,54 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @Slf4j
 public class PayController {
   private final PaymentService paymentService;
-  private final RestTemplate restTemplate=new RestTemplate();
+  private final RestTemplate restTemplate = new RestTemplate();
 
   private String className = this.getClass().getSimpleName();
 
   @PostMapping("/{eventId}")
-  public ResponseEntity<PaymentResponseDTO> prepareForPayment(@PathVariable("eventId") String eventId,
-                                                              @RequestBody PaymentRequestDTO paymentRequest) {
-    log.info("Class: {}, Method: prepareForPayment - get request eventId {}", className, eventId);
+  public ResponseEntity<PaymentResponseDTO> prepareForPayment(
+      @PathVariable("eventId") String eventId, @RequestBody PaymentRequestDTO paymentRequest) {
+    String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    log.info("Class: {}, Method: {} - get request eventId {}", className, methodName, eventId);
     PaymentResponseDTO response = paymentService.prepareForPayment(eventId, paymentRequest);
     log.info("Class: {}, Method: prepareForPayment - return {}", className, response);
     return ResponseEntity.ok(response);
   }
 
-  @PostMapping(value = "/status/verification", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+  @PostMapping("/free/{eventId}")
+  public ResponseEntity<AppResponse> paymentVerificationFreeEvents(
+      @PathVariable("eventId") String eventId, @RequestBody PaymentRequestDTO paymentRequest) {
+    String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    log.info("Class: {}, Method: {} - get request eventId {}", className, methodName, eventId);
+    String responseMessage = paymentService.paymentVerificationFreeEvents(eventId, paymentRequest);
+    AppResponse response = new AppResponse(200, responseMessage);
+    log.info("Class: {}, Method: {} - return {}", className, methodName, response);
+    return ResponseEntity.ok(response);
+  }
+
+  @PostMapping(
+      value = "/status/verification",
+      consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
   public void paymentVerification(HttpServletRequest request) throws IOException {
     String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
     log.info("Class: {}, Method: paymentVerification - raw body: {}", className, body);
 
     ObjectMapper objectMapper = new ObjectMapper();
     PaymentStatusResponseDTO payload = objectMapper.readValue(body, PaymentStatusResponseDTO.class);
-    log.info("Class: {}, Method: paymentVerification - get request about payment status verification.", className);
-    log.info("Class: {}, Method: paymentVerification - get request about payment status verification. {}", className, payload);
+    log.info(
+        "Class: {}, Method: paymentVerification - get request about payment status verification.",
+        className);
+    log.info(
+        "Class: {}, Method: paymentVerification - get request about payment status verification. {}",
+        className,
+        payload);
 
     paymentService.paymentVerification(payload);
   }
 
   @GetMapping("/order/details/{orderReference}")
-  public ResponseEntity<OrderDetails> getOrderDetails(@PathVariable("orderReference") String orderReference) {
+  public ResponseEntity<OrderDetails> getOrderDetails(
+      @PathVariable("orderReference") String orderReference) {
     log.info("Class: {}, Method: getOrderDetails - get request about order details.", className);
     OrderDetails orderDetails = paymentService.findByOrderReference(orderReference);
 
@@ -98,10 +118,15 @@ public class PayController {
 
   @GetMapping("/price")
   @Hidden
-  public ResponseEntity<Map<String, List<?>>> calculatePriceBeforeUsePromoCode(@RequestParam("productPrice") String productPrice,
-                                                                               @RequestParam("productCount") String productCount) {
-    log.info("Class: {}, Method: calculatePriceBeforeUsePromoCode - get request about price Info.", className);
-    Map<String, List<?>> priceInfo = paymentService.calculatePriceBeforeUsePromoCode(new ProductDTO("", productPrice, productCount, ""));
+  public ResponseEntity<Map<String, List<?>>> calculatePriceBeforeUsePromoCode(
+      @RequestParam("productPrice") String productPrice,
+      @RequestParam("productCount") String productCount) {
+    log.info(
+        "Class: {}, Method: calculatePriceBeforeUsePromoCode - get request about price Info.",
+        className);
+    Map<String, List<?>> priceInfo =
+        paymentService.calculatePriceBeforeUsePromoCode(
+            new ProductDTO("", productPrice, productCount, ""));
 
     log.info("pay/status  {}", priceInfo);
     return ResponseEntity.ok(priceInfo);
@@ -109,81 +134,93 @@ public class PayController {
 
   @GetMapping("/price/promo-code")
   @Hidden
-  public ResponseEntity<Map<String, List<?>>> calculatePriceAfterUsePromoCode(@RequestParam("productPrice") String productPrice,
-                                                                              @RequestParam("productCount") String productCount,
-                                                                              @RequestParam("promoCode") String promoCode) {
-    log.info("Class: {}, Method: calculatePriceAfterUsePromoCode - get request about price Info.", className);
-    Map<String, List<?>> priceInfo = paymentService.calculatePriceAfterUsePromoCode(
-        new ProductDTO("", productPrice, productCount, ""),
-        promoCode);
+  public ResponseEntity<Map<String, List<?>>> calculatePriceAfterUsePromoCode(
+      @RequestParam("productPrice") String productPrice,
+      @RequestParam("productCount") String productCount,
+      @RequestParam("promoCode") String promoCode) {
+    log.info(
+        "Class: {}, Method: calculatePriceAfterUsePromoCode - get request about price Info.",
+        className);
+    Map<String, List<?>> priceInfo =
+        paymentService.calculatePriceAfterUsePromoCode(
+            new ProductDTO("", productPrice, productCount, ""), promoCode);
 
     log.info("pay/price  {}", priceInfo);
     return ResponseEntity.ok(priceInfo);
   }
 
-
   @Operation(
       summary = "Get information about the promo code",
-      description = "Returns information about the specified promo code, if one exists."
-  )
-  @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Promo code processed successfully",
-          content = @Content(mediaType = "application/json",
-              schema = @Schema(implementation = AppResponse.class))),
-      @ApiResponse(responseCode = "404", description = "Promo code not found",
-          content = @Content(
-              mediaType = APPLICATION_JSON_VALUE,
-              schema = @Schema(implementation = ErrorResponseDto.class)
-          )),
-      @ApiResponse(responseCode = "400", description = "Invalid request",
-          content = @Content(
-              mediaType = APPLICATION_JSON_VALUE,
-              schema = @Schema(implementation = ErrorResponseDto.class))
-      )
-  })
+      description = "Returns information about the specified promo code, if one exists.")
+  @ApiResponses(
+      value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Promo code processed successfully",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = AppResponse.class))),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Promo code not found",
+            content =
+                @Content(
+                    mediaType = APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponseDto.class))),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request",
+            content =
+                @Content(
+                    mediaType = APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponseDto.class)))
+      })
   @GetMapping("/promo-code")
   public ResponseEntity<AppResponse> getPromoCode(@RequestParam("promoCode") String promoCode) {
     log.info("Class: {}, Method: getPromoCode - get request about price Info.", className);
     PromoCode promoCodeInfo = paymentService.getPromoCode(promoCode);
-    AppResponse response = new AppResponse(200,
-        "The promo code has been processed successfully.",
-        promoCodeInfo
-    );
+    AppResponse response =
+        new AppResponse(200, "The promo code has been processed successfully.", promoCodeInfo);
     log.info("Class: {}, Method: getPromoCode - return promo code info.", promoCodeInfo);
 
     return ResponseEntity.ok(response);
   }
 
-//  @GetMapping("/order-status")
-//  public ResponseEntity<AppResponse> getOrderStatus(@RequestParam("orderReference") String orderReference,
-//                                                  @RequestParam("merchantSignature") String merchantSignature) {
-//    log.info("Class: {}, Method: getOrderStatus - get request about getOrderStatus Info.", className);
-//    String url = "https://api.wayforpay.com/api";
-//    String param= "evently_book_vercel_app;"+orderReference;
-//    WayforpayRequest wayforpayRequest = new WayforpayRequest(
-//        "CHECK_STATUS",
-//        "evently_book_vercel_app",
-//        orderReference,
-//        generateSignature("07e12edf1d5f39eaf8b1b7fd029cd10f2b557c3e", param),
-//        1
-//    );
-//    HttpHeaders headers = new HttpHeaders();
-//    headers.setContentType(MediaType.APPLICATION_JSON);
-//    HttpEntity<WayforpayRequest> request = new HttpEntity<>(wayforpayRequest, headers);
-//
-////    ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-//    ResponseEntity<Map> response = restTemplate.exchange(
-//        url,
-//        HttpMethod.POST,
-//        request,
-//        Map.class
-//    );
-//    AppResponse appresponse = new AppResponse(200,
-//        "The order status has been processed successfully.",
-//        response
-//    );
-//    log.info("Class: {}, Method: getPromoCode - return getOrderStatus info. {}", className, response);
-//
-//    return ResponseEntity.ok(appresponse);
-//  }
+  //  @GetMapping("/order-status")
+  //  public ResponseEntity<AppResponse> getOrderStatus(@RequestParam("orderReference") String
+  // orderReference,
+  //                                                  @RequestParam("merchantSignature") String
+  // merchantSignature) {
+  //    log.info("Class: {}, Method: getOrderStatus - get request about getOrderStatus Info.",
+  // className);
+  //    String url = "https://api.wayforpay.com/api";
+  //    String param= "evently_book_vercel_app;"+orderReference;
+  //    WayforpayRequest wayforpayRequest = new WayforpayRequest(
+  //        "CHECK_STATUS",
+  //        "evently_book_vercel_app",
+  //        orderReference,
+  //        generateSignature("07e12edf1d5f39eaf8b1b7fd029cd10f2b557c3e", param),
+  //        1
+  //    );
+  //    HttpHeaders headers = new HttpHeaders();
+  //    headers.setContentType(MediaType.APPLICATION_JSON);
+  //    HttpEntity<WayforpayRequest> request = new HttpEntity<>(wayforpayRequest, headers);
+  //
+  ////    ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+  //    ResponseEntity<Map> response = restTemplate.exchange(
+  //        url,
+  //        HttpMethod.POST,
+  //        request,
+  //        Map.class
+  //    );
+  //    AppResponse appresponse = new AppResponse(200,
+  //        "The order status has been processed successfully.",
+  //        response
+  //    );
+  //    log.info("Class: {}, Method: getPromoCode - return getOrderStatus info. {}", className,
+  // response);
+  //
+  //    return ResponseEntity.ok(appresponse);
+  //  }
 }

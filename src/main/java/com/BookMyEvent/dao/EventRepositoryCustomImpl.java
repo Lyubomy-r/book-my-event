@@ -42,6 +42,7 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
   public Page<Event> filterEvents(EventFilterRequest filter, Pageable pageable) {
     List<Criteria> criteriaList = new ArrayList<>();
     List<Criteria> priceCriteriaList = new ArrayList<>();
+    List<Criteria> dateCriteriaList = new ArrayList<>();
 
     // Event Types filter
     if (!CollectionUtils.isEmpty(filter.eventTypes())) {
@@ -73,7 +74,7 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
     }
 
     // Date filters
-    addDateCriteria(filter, criteriaList);
+    addDateCriteria(filter, dateCriteriaList);
 
     // Price filters
     addPriceCriteria(filter, priceCriteriaList);
@@ -83,6 +84,9 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
       finalCriteria.andOperator(criteriaList.toArray(new Criteria[0]));
       if (!priceCriteriaList.isEmpty()) {
         finalCriteria.orOperator(priceCriteriaList.toArray(new Criteria[0]));
+      }
+      if (!dateCriteriaList.isEmpty()) {
+        finalCriteria.orOperator(dateCriteriaList.toArray(new Criteria[0]));
       }
     }
     Query queryCount = Query.query(finalCriteria);
@@ -120,7 +124,7 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
 //          .gte(startOfDay)
 //          .lte(endOfDay));
       criteriaList.add(Criteria.where("date.day")
-          .is(now));
+          .is(now.format(dateFormatter)));
       log.info("Class: {}, Method: addDateCriteria - used DateCriteria filter Today.", className);
     }
 
@@ -128,8 +132,8 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
       LocalDate startOfWeekend = getNextSaturday(now);
       LocalDate endOfWeekend = getNextSunday(now);
       criteriaList.add(Criteria.where("date.day")
-          .gte(startOfWeekend)
-          .lte(endOfWeekend));
+          .gte(startOfWeekend.format(dateFormatter))
+          .lte(endOfWeekend.format(dateFormatter)));
       log.info("Class: {}, Method: addDateCriteria - used DateCriteria filter OnTheWeekend. ({}/{})",
           className, startOfWeekend, endOfWeekend);
     }
@@ -138,8 +142,8 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
 
       LocalDate endOfWeek = getNextSunday(now);
       criteriaList.add(Criteria.where("date.day")
-          .gte(now)
-          .lte(endOfWeek));
+          .gte(now.format(dateFormatter))
+          .lte(endOfWeek.format(dateFormatter)));
       log.info("Class: {}, Method: addDateCriteria - used DateCriteria filter ThisWeek. ({}/{})",
           className, now, endOfWeek);
     }

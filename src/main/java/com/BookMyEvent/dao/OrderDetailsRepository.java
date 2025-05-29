@@ -13,4 +13,6 @@ public interface OrderDetailsRepository extends MongoRepository<OrderDetails, Ob
   Optional<OrderDetails> findByOrderReference(String orderReference);
 
   List<OrderDetails> findByEvent_Id(ObjectId eventId);
+
+  List<OrderDetails> findByUser_Id(ObjectId eventId);
 }

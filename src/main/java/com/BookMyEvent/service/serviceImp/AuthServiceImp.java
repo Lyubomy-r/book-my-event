@@ -69,7 +69,7 @@ public class AuthServiceImp implements AuthService {
     public String userRegistration(UserSaveDto userData) {
         log.info("{}::userRegistration. Start method", className);
         if (deletedUsersService.emailExist(userData.getEmail())) {
-            log.warn("{}::login. Return error message: Email is not longer accessible", className);
+            log.warn("{}::userRegistration. Return error message: Email is not longer accessible", className);
             throw new GeneralException(String.format("The email (%s) has been deleted and is no longer accessible.", userData.getEmail()),
                 HttpStatus.FORBIDDEN);
         }

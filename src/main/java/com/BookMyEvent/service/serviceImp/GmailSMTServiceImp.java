@@ -58,6 +58,7 @@ public class GmailSMTServiceImp implements MailService {
   public static final String UTF_8_ENCODING = "UTF-8";
   public static final String TEMPLATE_TITLE_4_LINE_TEXT = "email-template-title-4linetext";
   public static final String TEMPLATE_TITLE_6_LINE_TEXT = "email-template-title-6linetext";
+  public static final String TEMPLATE_AFTER_BUY_TICKET = "email-template-after-buy-ticket";
   public static final String TEMPLATE_REGISTRATION = "email-template-registration";
 
   private final JavaMailSender emailSender;
@@ -309,6 +310,46 @@ public class GmailSMTServiceImp implements MailService {
     }
   }
 
+  @Override
+  public void sendSimpleHtmlMailMessageAfterBuyTicket(String emailTo,
+                                             String subject,
+                                             String title,
+                                             String messageText1,
+                                             String messageText2,
+                                             String messageText3,
+                                             String messageText4,
+                                             String messageText5,
+                                             String imageUrl,
+                                             String userCabinetUrl) {
+    String methodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    log.info("{}::{} - Sending email to: {}", clasName, methodName, emailTo);
+    try {
+      String text = createHtmlTemplateAfterBuyTicket(
+          title,
+          messageText1,
+          messageText2,
+          messageText3,
+          messageText4,
+          messageText5,
+          imageUrl,
+          userCabinetUrl);
+      MimeMessage message = getMimeMessage();
+      MimeMessageHelper helper = new MimeMessageHelper(message, true, UTF_8_ENCODING);
+      helper.setPriority(1);
+      helper.setSubject(subject);
+      helper.setFrom(fromEmail);
+      helper.setTo(emailTo);
+      helper.setText(text, true);
+      emailSender.send(message);
+      log.info("{}::{}. - Email sent successfully to: {}", clasName, methodName, emailTo);
+    } catch (Exception exception) {
+      log.error("{}::{}. - Error sending email to: {}. Exception: {}", clasName, methodName, emailTo, exception.getMessage());
+      exception.printStackTrace();
+      throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+  }
+
   public String createHtmlTemplateTitle4Line(String title, String messageText1, String messageText2, String messageText3, String messageText4) {
     try {
       Context context = new Context();
@@ -348,6 +389,37 @@ public class GmailSMTServiceImp implements MailService {
       return text;
     } catch (Exception exception) {
       log.error("{}::mailSender. Error occurred while retrieving messages({})", clasName, exception.getMessage());
+      exception.printStackTrace();
+      throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  public String createHtmlTemplateAfterBuyTicket(String title,
+                                             String messageText1,
+                                             String messageText2,
+                                             String messageText3,
+                                             String messageText4,
+                                             String messageText5,
+                                             String imageUrl,
+                                             String userCabinetUrl) {
+    String methodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    try {
+      Context context = new Context();
+      context.setVariables(Map.of("title", title,
+          "messageText1", messageText1,
+          "messageText2", messageText2,
+          "messageText3", messageText3,
+          "messageText4", messageText4,
+          "messageText5", messageText5,
+          "imageUrl",imageUrl,
+          "userCabinetUrl", userCabinetUrl,
+          "linkInEnd", frontUrl));
+      String text = templateEngine.process(TEMPLATE_AFTER_BUY_TICKET, context);
+      log.info("{}::{}. create Html Template AFTER BUY TICKET", clasName, methodName);
+      return text;
+    } catch (Exception exception) {
+      log.error("{}::{}. Error occurred while retrieving messages({})", clasName, methodName, exception.getMessage());
       exception.printStackTrace();
       throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }

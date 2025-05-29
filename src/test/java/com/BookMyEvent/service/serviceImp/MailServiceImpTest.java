@@ -269,7 +269,7 @@ class MailServiceImpTest {
         ""
 
     );
-    fileWriter("billing.html",text3);
+//    fileWriter("billing.html",text3);
 //    assertThat(text2).contains("Ваш акаунт заблоковано");
   }
 
@@ -292,6 +292,25 @@ class MailServiceImpTest {
 
     log.info("MimeMessage text  {}", text);
 //    fileWriter("billing.html",text);
+//    assertThat(text).contains("Ми отримали запит на зміну пароля");
+  }
+
+  @Test
+  @DisplayName("Test MailService method createHtmlTemplateTitle6Line.")
+  void sendSimpleHtmlMailMessageAfterBuyTicket() {
+
+    String text = gmailSMTServiceImp.createHtmlTemplateAfterBuyTicket(
+        "Van",
+        "Нова подія",
+        "07-27-37, 12:00",
+        "місто тест",
+        "ON42567631887",
+        "07-05-30, 500грн",
+            "https://res.cloudinary.com/dlweazskq/image/upload/v1729884314/bookMyEventApp/vln28mu8z9lw9q3wvsd5.png",
+            "https://evently-book.vercel.app/user_profile");
+
+    log.info("sendSimpleHtmlMailMessageAfterBuyTicket text  {}", text);
+    fileWriter("billing.html",text);
 //    assertThat(text).contains("Ми отримали запит на зміну пароля");
   }
 

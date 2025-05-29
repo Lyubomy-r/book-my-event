@@ -3,7 +3,6 @@ package com.BookMyEvent.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -11,11 +10,21 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class EventCancelRequest {
+public class EventDeleteRequest {
   @Id
-  private ObjectId id;
+  private String id;
   private String eventId;
   private String userId;
   private String contact;
   private String reason;
+
+  public EventDeleteRequest(String eventId,
+                            String userId,
+                            String contact,
+                            String reason) {
+    this.eventId = eventId;
+    this.userId = userId;
+    this.contact = contact;
+    this.reason = reason;
+  }
 }

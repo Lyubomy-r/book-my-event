@@ -69,13 +69,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     locations = "classpath:integrationtest.properties")
 @Slf4j
 class AdminControllerTest {
-
   @Autowired
   private MockMvc mockMvc;
-
   @Autowired
   private ObjectMapper objectMapper;
-
   @Mock
   private UserService userService;
   @MockBean

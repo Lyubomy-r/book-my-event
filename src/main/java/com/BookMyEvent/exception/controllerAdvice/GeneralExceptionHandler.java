@@ -1,5 +1,6 @@
 package com.BookMyEvent.exception.controllerAdvice;
 
+import com.BookMyEvent.exception.FieldValidationException;
 import com.BookMyEvent.exception.GeneralException;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +52,14 @@ public class GeneralExceptionHandler {
         errors.put(error.getField(), error.getDefaultMessage())
     );
     ErrorResponseDto errorResponse = new ErrorResponseDto(HttpStatus.BAD_REQUEST.value(), exception.getBody().getDetail(),errors);
+    return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(FieldValidationException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  @ResponseBody
+  public ResponseEntity<ErrorResponseDto> handleValidationExceptions(FieldValidationException exception) {
+    ErrorResponseDto errorResponse = new ErrorResponseDto(HttpStatus.BAD_REQUEST.value(), exception.getMessage(), exception.getDetails());
     return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
   }
 

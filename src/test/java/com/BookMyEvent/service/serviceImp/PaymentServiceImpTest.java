@@ -38,7 +38,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
+import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -60,12 +65,22 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest(properties = {
-    "spring.config.location=classpath:integrationtest.properties"
-})
+//@SpringBootTest(properties = {
+//    "spring.config.location=classpath:integrationtest.properties"
+//})
+@SpringBootTest
 @Import(TestConfig.class)
+@Testcontainers
 @Slf4j
 class PaymentServiceImpTest {
+
+  @Container
+  private static final MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:latest");
+
+  @DynamicPropertySource
+  static void mongoDbProperties(DynamicPropertyRegistry registry) {
+    registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
+  }
 //  @Autowired
 //  private PromoCodeRepository promoCodeRepository;
 //  @Autowired
