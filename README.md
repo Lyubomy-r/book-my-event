@@ -7,7 +7,7 @@ It handles user authentication, event creation, ticket transactions, and ensures
 - Spring REST 
 - Spring Security  
 - Java 17 
-- PostgreSQL, MongoDB. 
+- MongoDB 
 - Lombok 
 - Mapper
 - Slf4j 

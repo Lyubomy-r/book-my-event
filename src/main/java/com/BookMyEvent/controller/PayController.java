@@ -89,7 +89,7 @@ public class PayController {
   @PostMapping(
       value = "/status/verification",
       consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-  public void paymentVerification(HttpServletRequest request) throws IOException {
+  public ResponseEntity<Map<String, String>> paymentVerification(HttpServletRequest request) throws IOException {
     String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
     log.info("Class: {}, Method: paymentVerification - raw body: {}", className, body);
 
@@ -103,7 +103,8 @@ public class PayController {
         className,
         payload);
 
-    paymentService.paymentVerification(payload);
+    Map<String, String> response = paymentService.paymentVerification(payload);
+    return ResponseEntity.ok(response);
   }
 
   @GetMapping("/order/details/{orderReference}")

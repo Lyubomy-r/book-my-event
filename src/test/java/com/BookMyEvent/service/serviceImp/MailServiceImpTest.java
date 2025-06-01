@@ -261,16 +261,17 @@ class MailServiceImpTest {
 
     String activeLinks = mailService.replaceTextToLinkWithHtml("Open air Stand-up", "https://evently-book.vercel.app/event/671e833c56827a52cc267654");
     log.info("MimeMessage  {}", activeLinks);
-    String text3 =gmailSMTServiceImp.createHtmlTemplateTitle4Line(
-        "Вітаємо! Твою подію схвалено \uD83C\uDF89",
-        String.format("Твоя подія [%s] + лінк на неї успішно пройшла перевірку та вже доступна на платформі!", activeLinks),
-        "Тепер користувачі можуть переглядати її та купувати квитки. А ти заробляти. Стеж за статистикою та керуй подією в розділі \"Мої події\".",
-        "Бажаємо успішного заходу! Якщо маєш запитання, наша служба підтримки завжди на зв’язку.",
-        ""
-
-    );
+    String text3 =
+        gmailSMTServiceImp.createHtmlTemplateTitle4Line(
+            "Привіт! \uD83D\uDC4B",
+            "Дякуємо, що створюєш події разом із BookMyEvent!",
+            "Але цього разу ми не можемо опублікувати подію, яку ти надіслав(-ла).",
+            "Можливо, щось не відповідає нашим простим правилам. А може, просто треба трохи уточнень.",
+            "Якщо хочеш розібратись або щось уточнити — пиши на:\n"
+                + " \uD83D\uDCE9 bookmyevent@gmail.com\n"
+                + " Aбо дзвони: \uD83D\uDD7B +380(99) 574 56 76");
 //    fileWriter("billing.html",text3);
-//    assertThat(text2).contains("Ваш акаунт заблоковано");
+    assertThat(text3).contains("Але цього разу ми не можемо опублікувати подію,");
   }
 
   @Test
@@ -289,9 +290,17 @@ class MailServiceImpTest {
     String emailTo = "jj3564527@gmail.com";
     var url = serverUrl + "/api/v1/authorize/mail-confirmation/" + emailTo + "/" + password;
     String text = gmailSMTServiceImp.createHtmlTemplateRegistration(url);
-
+    String text3 =
+        gmailSMTServiceImp.createHtmlTemplateTitle6Line(
+            "Привіт! \uD83D\uDC4B",
+            "Дякуємо, що створюєш події разом із BookMyEvent!",
+            "Але цього разу ми не можемо опублікувати подію, яку ти надіслав(-ла).",
+            "Можливо, щось не відповідає нашим простим правилам. А може, просто треба трохи уточнень.",
+            "Якщо хочеш розібратись або щось уточнити — пиши на:",
+            " \uD83D\uDCE9 bookmyevent@gmail.com",
+            " Aбо дзвони: \uD83D\uDD7D +380(99) 574 56 76");
     log.info("MimeMessage text  {}", text);
-//    fileWriter("billing.html",text);
+    fileWriter("billing.html",text3);
 //    assertThat(text).contains("Ми отримали запит на зміну пароля");
   }
 
@@ -310,7 +319,7 @@ class MailServiceImpTest {
             "https://evently-book.vercel.app/user_profile");
 
     log.info("sendSimpleHtmlMailMessageAfterBuyTicket text  {}", text);
-    fileWriter("billing.html",text);
+//    fileWriter("billing.html",text);
 //    assertThat(text).contains("Ми отримали запит на зміну пароля");
   }
 

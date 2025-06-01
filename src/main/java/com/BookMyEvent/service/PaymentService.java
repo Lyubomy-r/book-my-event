@@ -13,7 +13,7 @@ import java.util.Map;
 public interface PaymentService {
   PaymentResponseDTO prepareForPayment(String eventId, PaymentRequestDTO paymentRequest);
 
-  void paymentVerification(PaymentStatusResponseDTO statusResponse);
+  Map<String, String> paymentVerification(PaymentStatusResponseDTO statusResponse);
 
   String paymentVerificationFreeEvents(String eventId, PaymentRequestDTO paymentRequest);
 

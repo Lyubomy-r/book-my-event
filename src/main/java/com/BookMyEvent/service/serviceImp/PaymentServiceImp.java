@@ -161,152 +161,192 @@ public class PaymentServiceImp implements PaymentService {
   }
 
   @Override
-  public void paymentVerification(PaymentStatusResponseDTO statusResponse) {
+  public Map<String, String> paymentVerification(PaymentStatusResponseDTO statusResponse) {
+    String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     if (statusResponse.getTransactionStatus().equals("Approved")) {
       Optional<OrderDetails> orderDetails =
           orderDetailsRepository.findByOrderReference(statusResponse.getOrderReference());
       if (orderDetails.isPresent()) {
-        String str =
-            statusResponse.getMerchantAccount()
-                + ";"
-                + statusResponse.getOrderReference()
-                + ";"
-                + statusResponse.getAmount()
-                + ";"
-                + statusResponse.getCurrency()
-                + ";"
-                + statusResponse.getAuthCode()
-                + ";"
-                + statusResponse.getCardPan()
-                + ";"
-                + statusResponse.getTransactionStatus()
-                + ";"
-                + statusResponse.getReasonCode();
-        String getMerchantSignature = generateSignature(merchantSecretKey, str);
-        if (Objects.equals(getMerchantSignature, statusResponse.getMerchantSignature())) {
-          orderDetails
-              .get()
-              .setPaymentDetails(
-                  paymentDetailsMapper.toPaymentDetails(
-                      orderDetails.get().getPaymentDetails(), statusResponse));
-          orderDetails.get().setStatus(OrderStatus.PAID);
+        if (!orderDetails.get().getStatus().equals(OrderStatus.PAID)) {
 
-          ObjectId eventId = orderDetails.get().getEvent().getId();
+          String str =
+              statusResponse.getMerchantAccount()
+                  + ";"
+                  + statusResponse.getOrderReference()
+                  + ";"
+                  + statusResponse.getAmount()
+                  + ";"
+                  + statusResponse.getCurrency()
+                  + ";"
+                  + statusResponse.getAuthCode()
+                  + ";"
+                  + statusResponse.getCardPan()
+                  + ";"
+                  + statusResponse.getTransactionStatus()
+                  + ";"
+                  + statusResponse.getReasonCode();
+          String getMerchantSignature = generateSignature(merchantSecretKey, str);
+          if (Objects.equals(getMerchantSignature, statusResponse.getMerchantSignature())) {
+            orderDetails
+                .get()
+                .setPaymentDetails(
+                    paymentDetailsMapper.toPaymentDetails(
+                        orderDetails.get().getPaymentDetails(), statusResponse));
+            orderDetails.get().setStatus(OrderStatus.PAID);
 
-          ReentrantLock lock = eventLocks.computeIfAbsent(eventId, id -> new ReentrantLock());
+            ObjectId eventId = orderDetails.get().getEvent().getId();
 
-          lock.lock();
-          try {
-            Event exsistEvent =
-                eventRepository
-                    .findById(eventId)
-                    .orElseThrow(
-                        () -> new GeneralException("Event not found", HttpStatus.NOT_FOUND));
-            Integer productCount =
-                Integer.parseInt(
+            ReentrantLock lock = eventLocks.computeIfAbsent(eventId, id -> new ReentrantLock());
+
+            lock.lock();
+            try {
+              Event exsistEvent =
+                  eventRepository
+                      .findById(eventId)
+                      .orElseThrow(
+                          () -> new GeneralException("Event not found", HttpStatus.NOT_FOUND));
+              Integer productCount =
+                  Integer.parseInt(
+                      orderDetails.get().getPaymentDetails().getProduct().productCount());
+              Integer productPrice =
+                  Integer.parseInt(
+                      orderDetails.get().getPaymentDetails().getProduct().productPrice());
+              Integer soldTickets =
+                  Optional.ofNullable(exsistEvent.getSoldTickets()).orElse(0) + productCount;
+              Integer availableTickets =
+                  Optional.ofNullable(exsistEvent.getAvailableTickets()).orElse(0) - productCount;
+              exsistEvent.setSoldTickets(soldTickets);
+              if (availableTickets < 0) {
+                log.warn(
+                    "Available tickets are sold out. availableTickets {} try buy {}",
+                    exsistEvent.getAvailableTickets(),
                     orderDetails.get().getPaymentDetails().getProduct().productCount());
-            Integer productPrice =
-                Integer.parseInt(
-                    orderDetails.get().getPaymentDetails().getProduct().productPrice());
-            Integer soldTickets =
-                Optional.ofNullable(exsistEvent.getSoldTickets()).orElse(0) + productCount;
-            Integer availableTickets =
-                Optional.ofNullable(exsistEvent.getAvailableTickets()).orElse(0) - productCount;
-            exsistEvent.setSoldTickets(soldTickets);
-            if (availableTickets < 0) {
-              log.warn(
-                  "Available tickets are sold out. availableTickets {} try buy {}",
-                  exsistEvent.getAvailableTickets(),
-                  orderDetails.get().getPaymentDetails().getProduct().productCount());
-              throw new GeneralException("Available tickets are sold out.", HttpStatus.NOT_FOUND);
-            } else {
+                throw new GeneralException("Available tickets are sold out.", HttpStatus.NOT_FOUND);
+              } else {
+                log.info(
+                    "Class: PaymentServiceImp, Method: paymentVerification.  tickets are available {}",
+                    availableTickets);
+                exsistEvent.setAvailableTickets(availableTickets);
+                BigDecimal calculateProfit =
+                    calculateProfit(
+                        Optional.ofNullable(exsistEvent.getProfit()).orElse(BigDecimal.ZERO),
+                        productPrice,
+                        productCount);
+                //            List<OrderDetails> orderDetailsList =
+                // orderDetailsRepository.findByEvent_Id(exsistEvent.getId());
+                //            BigDecimal calculateProfit = orderDetailsList.stream()
+                //                .map(order ->
+                // calculateAmount(order.getPaymentDetails().getProduct()))
+                //                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                exsistEvent.setProfit(calculateProfit);
+              }
+              Event savedEvent = eventRepository.save(exsistEvent);
               log.info(
-                  "Class: PaymentServiceImp, Method: paymentVerification.  tickets are available {}",
-                  availableTickets);
-              exsistEvent.setAvailableTickets(availableTickets);
-              BigDecimal calculateProfit =
-                  calculateProfit(
-                      Optional.ofNullable(exsistEvent.getProfit()).orElse(BigDecimal.ZERO),
-                      productPrice,
-                      productCount);
-              //            List<OrderDetails> orderDetailsList =
-              // orderDetailsRepository.findByEvent_Id(exsistEvent.getId());
-              //            BigDecimal calculateProfit = orderDetailsList.stream()
-              //                .map(order ->
-              // calculateAmount(order.getPaymentDetails().getProduct()))
-              //                .reduce(BigDecimal.ZERO, BigDecimal::add);
-              exsistEvent.setProfit(calculateProfit);
+                  "Class: PaymentServiceImp, Method: paymentVerification.  Event was saved  {}",
+                  savedEvent.getAvailableTickets());
+              orderDetails.get().setEvent(savedEvent);
+
+              OrderDetails updatedOrderDetails = orderDetailsRepository.save(orderDetails.get());
+              log.info(
+                  "Class: PaymentServiceImp, Method: paymentVerification.  getAvailableTickets {}",
+                  updatedOrderDetails.getEvent().getAvailableTickets());
+              log.info(
+                  "Class: PaymentServiceImp, Method: paymentVerification.  getSoldTickets {}",
+                  updatedOrderDetails.getEvent().getSoldTickets());
+              log.info(
+                  "Class: PaymentServiceImp, Method: paymentVerification.  getProfit {}",
+                  updatedOrderDetails.getEvent().getProfit());
+              //          log.info("Class: PaymentServiceImp, Method: paymentVerification.
+              // updatedOrderDetails {}", updatedOrderDetails);
+              String location =
+                  updatedOrderDetails.getEvent().getEventFormat().equals(EventFormat.ONLINE)
+                      ? "Online"
+                      : String.format(
+                          "%s, %s",
+                          updatedOrderDetails.getEvent().getLocation().city(),
+                          updatedOrderDetails.getEvent().getLocation().street());
+              ZoneId kyivZone = ZoneId.of("Europe/Kiev");
+              ZonedDateTime kyivTime =
+                  ZonedDateTime.ofInstant(
+                      Instant.ofEpochSecond(
+                          Long.parseLong(
+                              updatedOrderDetails.getPaymentDetails().getProcessingDate())),
+                      kyivZone);
+
+              mailService.sendSimpleHtmlMailMessageAfterBuyTicket(
+                  orderDetails.get().getPaymentDetails().getClientEmail(),
+                  String.format(
+                      "Дякую! Замовлення оплачено: %s",
+                      updatedOrderDetails.getPaymentDetails().getProduct().productName()),
+                  updatedOrderDetails.getPaymentDetails().getClientFirstName().toUpperCase(),
+                  updatedOrderDetails.getPaymentDetails().getProduct().productName(),
+                  String.format(
+                      "%s, %s",
+                      updatedOrderDetails.getEvent().getDate().day(),
+                      updatedOrderDetails.getEvent().getDate().time()),
+                  location,
+                  updatedOrderDetails.getOrderReference(),
+                  String.format(
+                      "%s %s, %s грн.",
+                      kyivTime.toLocalDate(),
+                      kyivTime.toLocalTime(),
+                      updatedOrderDetails.getPaymentDetails().getProduct().amount()),
+                  savedEvent.getImages().get(0).getUrl(),
+                  userCabinetUrl);
+            } finally {
+              lock.unlock();
+              eventLocks.computeIfPresent(
+                  eventId,
+                  (id, l) -> {
+                    log.info(
+                        "Class: PaymentServiceImp, Method: paymentVerification.  unlock event id {}",
+                        id);
+                    return l.hasQueuedThreads() ? l : null;
+                  });
             }
-            Event savedEvent = eventRepository.save(exsistEvent);
-            log.info(
-                "Class: PaymentServiceImp, Method: paymentVerification.  Event was saved  {}",
-                savedEvent.getAvailableTickets());
-            orderDetails.get().setEvent(savedEvent);
-
-            OrderDetails updatedOrderDetails = orderDetailsRepository.save(orderDetails.get());
-            log.info(
-                "Class: PaymentServiceImp, Method: paymentVerification.  getAvailableTickets {}",
-                updatedOrderDetails.getEvent().getAvailableTickets());
-            log.info(
-                "Class: PaymentServiceImp, Method: paymentVerification.  getSoldTickets {}",
-                updatedOrderDetails.getEvent().getSoldTickets());
-            log.info(
-                "Class: PaymentServiceImp, Method: paymentVerification.  getProfit {}",
-                updatedOrderDetails.getEvent().getProfit());
-            //          log.info("Class: PaymentServiceImp, Method: paymentVerification.
-            // updatedOrderDetails {}", updatedOrderDetails);
-            String location =
-                updatedOrderDetails.getEvent().getEventFormat().equals(EventFormat.ONLINE)
-                    ? "Online"
-                    : String.format(
-                        "%s, %s",
-                        updatedOrderDetails.getEvent().getLocation().city(),
-                        updatedOrderDetails.getEvent().getLocation().street());
-
-            mailService.sendSimpleHtmlMailMessageAfterBuyTicket(
-                orderDetails.get().getPaymentDetails().getClientEmail(),
-                String.format(
-                    "Дякую! Замовлення оплачено: %s",
-                    updatedOrderDetails.getPaymentDetails().getProduct().productName()),
-                updatedOrderDetails.getPaymentDetails().getClientFirstName().toUpperCase(),
-                updatedOrderDetails.getPaymentDetails().getProduct().productName(),
-                String.format(
-                    "%s, %s",
-                    updatedOrderDetails.getEvent().getDate().day(),
-                    updatedOrderDetails.getEvent().getDate().time()),
-                location,
-                updatedOrderDetails.getOrderReference(),
-                String.format(
-                    "%s, %s грн.",
-                    updatedOrderDetails.getPaymentDetails().getProcessingDate(),
-                    updatedOrderDetails.getPaymentDetails().getProduct().amount()),
-                savedEvent.getImages().get(0).getUrl(),
-                userCabinetUrl);
-          } finally {
-            lock.unlock();
-            eventLocks.computeIfPresent(
-                eventId,
-                (id, l) -> {
-                  log.info(
-                      "Class: PaymentServiceImp, Method: paymentVerification.  unlock event id {}",
-                      id);
-                  return l.hasQueuedThreads() ? l : null;
-                });
+          } else {
+            orderDetails
+                .get()
+                .setPaymentDetails(
+                    paymentDetailsMapper.toPaymentDetails(
+                        orderDetails.get().getPaymentDetails(),
+                        statusResponse,
+                        "merchantSignature don't equals"));
+            log.warn(
+                "OrderDetails merchantSignature don't equals orderDetails ({}) - statusResponse ({})",
+                orderDetails.get().getPaymentDetails().getMerchantSignature(),
+                statusResponse.getMerchantSignature());
+            orderDetailsRepository.save(orderDetails.get());
           }
-        } else {
-          orderDetails
-              .get()
-              .setPaymentDetails(
-                  paymentDetailsMapper.toPaymentDetails(
-                      orderDetails.get().getPaymentDetails(),
-                      statusResponse,
-                      "merchantSignature don't equals"));
-          log.warn(
-              "OrderDetails merchantSignature don't equals orderDetails ({}) - statusResponse ({})",
-              orderDetails.get().getPaymentDetails().getMerchantSignature(),
-              statusResponse.getMerchantSignature());
-          orderDetailsRepository.save(orderDetails.get());
+          Long instantNow = Instant.now().getEpochSecond();
+          String str2 =statusResponse.getOrderReference()
+                          + ";"
+                          + "accept"
+                          + ";"
+                          + instantNow;
+          String getMerchantSignatureResponse = generateSignature(merchantSecretKey, str2);
+          return Map.of("orderReference", statusResponse.getOrderReference(),
+                  "status", "accept",
+                  "time", instantNow.toString(),
+                  "signature", getMerchantSignatureResponse);
         }
+        log.info(
+            "{}::{} - finishe payment verification status {} order {}",
+            className,
+            methodName,
+            "Approved",
+            statusResponse.getOrderReference());
+        Long instantNow = Instant.now().getEpochSecond();
+        String str2 =statusResponse.getOrderReference()
+                + ";"
+                + "accept"
+                + ";"
+                + instantNow;
+        String getMerchantSignatureResponse = generateSignature(merchantSecretKey, str2);
+        return Map.of("orderReference", statusResponse.getOrderReference(),
+                "status", "accept",
+                "time", instantNow.toString(),
+                "signature", getMerchantSignatureResponse);
       } else {
         log.warn(
             "OrderDetails not exist by order reference {}", statusResponse.getOrderReference());
@@ -315,113 +355,143 @@ public class PaymentServiceImp implements PaymentService {
       Optional<OrderDetails> orderDetails =
           orderDetailsRepository.findByOrderReference(statusResponse.getOrderReference());
       if (orderDetails.isPresent()) {
-        String str =
-            statusResponse.getMerchantAccount()
-                + ";"
-                + statusResponse.getOrderReference()
-                + ";"
-                + statusResponse.getAmount()
-                + ";"
-                + statusResponse.getCurrency()
-                + ";"
-                + statusResponse.getAuthCode()
-                + ";"
-                + statusResponse.getCardPan()
-                + ";"
-                + statusResponse.getTransactionStatus()
-                + ";"
-                + statusResponse.getReasonCode();
-        String getMerchantSignature = generateSignature(merchantSecretKey, str);
-        if (Objects.equals(getMerchantSignature, statusResponse.getMerchantSignature())) {
-          orderDetails
-              .get()
-              .setPaymentDetails(
-                  paymentDetailsMapper.toPaymentDetails(
-                      orderDetails.get().getPaymentDetails(), statusResponse));
-          orderDetails.get().setStatus(OrderStatus.REFUNDED);
+        if (!orderDetails.get().getStatus().equals(OrderStatus.REFUNDED)) {
+          String str =
+              statusResponse.getMerchantAccount()
+                  + ";"
+                  + statusResponse.getOrderReference()
+                  + ";"
+                  + statusResponse.getAmount()
+                  + ";"
+                  + statusResponse.getCurrency()
+                  + ";"
+                  + statusResponse.getAuthCode()
+                  + ";"
+                  + statusResponse.getCardPan()
+                  + ";"
+                  + statusResponse.getTransactionStatus()
+                  + ";"
+                  + statusResponse.getReasonCode();
+          String getMerchantSignature = generateSignature(merchantSecretKey, str);
+          if (Objects.equals(getMerchantSignature, statusResponse.getMerchantSignature())) {
+            orderDetails
+                .get()
+                .setPaymentDetails(
+                    paymentDetailsMapper.toPaymentDetails(
+                        orderDetails.get().getPaymentDetails(), statusResponse));
+            orderDetails.get().setStatus(OrderStatus.REFUNDED);
 
-          ObjectId eventId = orderDetails.get().getEvent().getId();
+            ObjectId eventId = orderDetails.get().getEvent().getId();
 
-          ReentrantLock lock = eventLocks.computeIfAbsent(eventId, id -> new ReentrantLock());
+            ReentrantLock lock = eventLocks.computeIfAbsent(eventId, id -> new ReentrantLock());
 
-          lock.lock();
-          try {
-            Event exsistEvent =
-                eventRepository
-                    .findById(eventId)
-                    .orElseThrow(
-                        () -> new GeneralException("Event not found", HttpStatus.NOT_FOUND));
-            Integer productCount =
-                Integer.parseInt(
+            lock.lock();
+            try {
+              Event exsistEvent =
+                  eventRepository
+                      .findById(eventId)
+                      .orElseThrow(
+                          () -> new GeneralException("Event not found", HttpStatus.NOT_FOUND));
+              Integer productCount =
+                  Integer.parseInt(
+                      orderDetails.get().getPaymentDetails().getProduct().productCount());
+              Integer productPrice =
+                  Integer.parseInt(
+                      orderDetails.get().getPaymentDetails().getProduct().productPrice());
+              Double productAmount =
+                  Double.parseDouble(orderDetails.get().getPaymentDetails().getProduct().amount());
+              Integer soldTickets =
+                  Optional.ofNullable(exsistEvent.getSoldTickets()).orElse(0) - productCount;
+              Integer availableTickets =
+                  Optional.ofNullable(exsistEvent.getAvailableTickets()).orElse(0) + productCount;
+              exsistEvent.setSoldTickets(soldTickets);
+              if (availableTickets < 0) {
+                log.warn(
+                    "Available tickets are sold out. availableTickets {} try buy {}",
+                    exsistEvent.getAvailableTickets(),
                     orderDetails.get().getPaymentDetails().getProduct().productCount());
-            Integer productPrice =
-                Integer.parseInt(
-                    orderDetails.get().getPaymentDetails().getProduct().productPrice());
-            Integer productAmount =
-                Integer.parseInt(orderDetails.get().getPaymentDetails().getProduct().amount());
-            Integer soldTickets =
-                Optional.ofNullable(exsistEvent.getSoldTickets()).orElse(0) - productCount;
-            Integer availableTickets =
-                Optional.ofNullable(exsistEvent.getAvailableTickets()).orElse(0) + productCount;
-            exsistEvent.setSoldTickets(soldTickets);
-            if (availableTickets < 0) {
-              log.warn(
-                  "Available tickets are sold out. availableTickets {} try buy {}",
-                  exsistEvent.getAvailableTickets(),
-                  orderDetails.get().getPaymentDetails().getProduct().productCount());
-              throw new GeneralException("Available tickets are sold out.", HttpStatus.NOT_FOUND);
-            } else {
+                throw new GeneralException("Available tickets are sold out.", HttpStatus.NOT_FOUND);
+              } else {
+                log.info(
+                    "Class: PaymentServiceImp, Method: paymentVerification.  tickets are available {}",
+                    availableTickets);
+                exsistEvent.setAvailableTickets(availableTickets);
+                BigDecimal calculateProfit =
+                    exsistEvent.getProfit().subtract(BigDecimal.valueOf(productAmount));
+                exsistEvent.setProfit(calculateProfit);
+              }
+              Event savedEvent = eventRepository.save(exsistEvent);
               log.info(
-                  "Class: PaymentServiceImp, Method: paymentVerification.  tickets are available {}",
-                  availableTickets);
-              exsistEvent.setAvailableTickets(availableTickets);
-              BigDecimal calculateProfit =
-                  exsistEvent.getProfit().subtract(BigDecimal.valueOf(productAmount));
-              exsistEvent.setProfit(calculateProfit);
-            }
-            Event savedEvent = eventRepository.save(exsistEvent);
-            log.info(
-                "Class: PaymentServiceImp, Method: paymentVerification.  Event was saved  {}",
-                savedEvent.getAvailableTickets());
-            orderDetails.get().setEvent(savedEvent);
+                  "Class: PaymentServiceImp, Method: paymentVerification.  Event was saved  {}",
+                  savedEvent.getAvailableTickets());
+              orderDetails.get().setEvent(savedEvent);
 
-            OrderDetails updatedOrderDetails = orderDetailsRepository.save(orderDetails.get());
-            log.info(
-                "Class: PaymentServiceImp, Method: paymentVerification.  getAvailableTickets {}",
-                updatedOrderDetails.getEvent().getAvailableTickets());
-            log.info(
-                "Class: PaymentServiceImp, Method: paymentVerification.  getSoldTickets {}",
-                updatedOrderDetails.getEvent().getSoldTickets());
-            log.info(
-                "Class: PaymentServiceImp, Method: paymentVerification.  getProfit {}",
-                updatedOrderDetails.getEvent().getProfit());
-            //          log.info("Class: PaymentServiceImp, Method: paymentVerification.
-            // updatedOrderDetails {}", updatedOrderDetails);
-          } finally {
-            lock.unlock();
-            eventLocks.computeIfPresent(
-                eventId,
-                (id, l) -> {
-                  log.info(
-                      "Class: PaymentServiceImp, Method: paymentVerification.  unlock event id {}",
-                      id);
-                  return l.hasQueuedThreads() ? l : null;
-                });
+              OrderDetails updatedOrderDetails = orderDetailsRepository.save(orderDetails.get());
+              log.info(
+                  "Class: PaymentServiceImp, Method: paymentVerification.  getAvailableTickets {}",
+                  updatedOrderDetails.getEvent().getAvailableTickets());
+              log.info(
+                  "Class: PaymentServiceImp, Method: paymentVerification.  getSoldTickets {}",
+                  updatedOrderDetails.getEvent().getSoldTickets());
+              log.info(
+                  "Class: PaymentServiceImp, Method: paymentVerification.  getProfit {}",
+                  updatedOrderDetails.getEvent().getProfit());
+              //          log.info("Class: PaymentServiceImp, Method: paymentVerification.
+              // updatedOrderDetails {}", updatedOrderDetails);
+            } finally {
+              lock.unlock();
+              eventLocks.computeIfPresent(
+                  eventId,
+                  (id, l) -> {
+                    log.info(
+                        "Class: PaymentServiceImp, Method: paymentVerification.  unlock event id {}",
+                        id);
+                    return l.hasQueuedThreads() ? l : null;
+                  });
+            }
+          } else {
+            orderDetails
+                .get()
+                .setPaymentDetails(
+                    paymentDetailsMapper.toPaymentDetails(
+                        orderDetails.get().getPaymentDetails(),
+                        statusResponse,
+                        "merchantSignature don't equals"));
+            log.warn(
+                "OrderDetails merchantSignature don't equals orderDetails ({}) - statusResponse ({})",
+                orderDetails.get().getPaymentDetails().getMerchantSignature(),
+                statusResponse.getMerchantSignature());
+            orderDetailsRepository.save(orderDetails.get());
           }
-        } else {
-          orderDetails
-              .get()
-              .setPaymentDetails(
-                  paymentDetailsMapper.toPaymentDetails(
-                      orderDetails.get().getPaymentDetails(),
-                      statusResponse,
-                      "merchantSignature don't equals"));
-          log.warn(
-              "OrderDetails merchantSignature don't equals orderDetails ({}) - statusResponse ({})",
-              orderDetails.get().getPaymentDetails().getMerchantSignature(),
-              statusResponse.getMerchantSignature());
-          orderDetailsRepository.save(orderDetails.get());
+          Long instantNow = Instant.now().getEpochSecond();
+          String str2 =statusResponse.getOrderReference()
+                  + ";"
+                  + "accept"
+                  + ";"
+                  + instantNow;
+          String getMerchantSignatureResponse = generateSignature(merchantSecretKey, str2);
+          return Map.of("orderReference", statusResponse.getOrderReference(),
+                  "status", "accept",
+                  "time", instantNow.toString(),
+                  "signature", getMerchantSignatureResponse);
         }
+        log.info(
+            "{}::{} - finishe payment verification status {} order {}",
+            className,
+            methodName,
+            "Refunded",
+            statusResponse.getOrderReference());
+        Long instantNow = Instant.now().getEpochSecond();
+        String str2 =statusResponse.getOrderReference()
+                + ";"
+                + "accept"
+                + ";"
+                + instantNow;
+        String getMerchantSignatureResponse = generateSignature(merchantSecretKey, str2);
+        return Map.of("orderReference", statusResponse.getOrderReference(),
+                "status", "accept",
+                "time", instantNow.toString(),
+                "signature", getMerchantSignatureResponse);
       } else {
         log.warn(
             "OrderDetails not exist by order reference {}", statusResponse.getOrderReference());
@@ -432,6 +502,17 @@ public class PaymentServiceImp implements PaymentService {
         statusResponse.getOrderReference(),
         statusResponse.getTransactionStatus(),
         statusResponse);
+    Long instantNow = Instant.now().getEpochSecond();
+    String str2 =statusResponse.getOrderReference()
+            + ";"
+            + "accept"
+            + ";"
+            + instantNow;
+    String getMerchantSignatureResponse = generateSignature(merchantSecretKey, str2);
+    return Map.of("orderReference", statusResponse.getOrderReference(),
+            "status", "accept",
+            "time", instantNow.toString(),
+            "signature", getMerchantSignatureResponse);
   }
 
   @Override
@@ -460,26 +541,19 @@ public class PaymentServiceImp implements PaymentService {
       if (availableTickets < 0) {
         log.warn(
             "{}::{} - Available tickets are sold out. availableTickets {} try buy {}",
-                className,
-                methodName,
+            className,
+            methodName,
             exsistEvent.getAvailableTickets(),
             paymentRequest.product().productCount());
         throw new GeneralException("Available tickets are sold out.", HttpStatus.NOT_FOUND);
       } else {
-        log.info(
-            "{}::{} - tickets are available {}",
-            className,
-            methodName,
-            availableTickets);
+        log.info("{}::{} - tickets are available {}", className, methodName, availableTickets);
         exsistEvent.setAvailableTickets(availableTickets);
         exsistEvent.setSoldTickets(soldTickets);
       }
       Event savedEvent = eventRepository.save(exsistEvent);
       log.info(
-          "{}::{} - Event was saved  {}",
-          className,
-          methodName,
-          savedEvent.getAvailableTickets());
+          "{}::{} - Event was saved  {}", className, methodName, savedEvent.getAvailableTickets());
       User user =
           userRepository
               .findById(new ObjectId(paymentRequest.userId()))
@@ -509,9 +583,7 @@ public class PaymentServiceImp implements PaymentService {
               .paymentDetails(paymentDetails)
               .status(OrderStatus.PAID)
               .build();
-      log.info( "{}::{} - Created order details {}",
-              className,
-              methodName, orderDetails);
+      log.info("{}::{} - Created order details {}", className, methodName, orderDetails);
       OrderDetails savedOrderDetails = orderDetailsRepository.save(orderDetails);
       log.info(
           "{}::{} - get available tickets after saved order {}",
