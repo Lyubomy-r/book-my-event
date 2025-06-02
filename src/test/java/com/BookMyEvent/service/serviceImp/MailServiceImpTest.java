@@ -33,25 +33,26 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @SpringBootTest
-//@ActiveProfiles("integrationtest")
+// @ActiveProfiles("integrationtest")
 @TestPropertySource("classpath:integrationtest.properties")
 @Slf4j
 @Import(TestConfig.class)
 class MailServiceImpTest {
 
   private GreenMail greenMail;
-  @Autowired
-  private MailService mailService;
+  @Autowired private MailService mailService;
 
-  @Autowired
-  private GmailSMTServiceImp gmailSMTServiceImp;
+  @Autowired private GmailSMTServiceImp gmailSMTServiceImp;
 
   @Value("${cloud.server.url}")
   private String serverUrl;
+
   @Value("${front.url}")
   private String frontUrl;
+
   @Value("${company.phone}")
   private String companyPhone;
+
   @Value("${password.reset.url}")
   private String passwordResetUrl;
 
@@ -61,7 +62,7 @@ class MailServiceImpTest {
   @BeforeEach
   public void setUp() {
     ServerSetup smtpSetup = new ServerSetup(3025, null, "smtp");
-//    smtpSetup.setServerStartupTimeout(5000);
+    //    smtpSetup.setServerStartupTimeout(5000);
     greenMail = new GreenMail((smtpSetup));
     greenMail.start();
     assertTrue(greenMail.isRunning(), "GreenMail не запустився!");
@@ -85,7 +86,7 @@ class MailServiceImpTest {
     log.info("MimeMessage  {}", receivedMessages[0].getContent());
 
     assertThat(message.getSubject()).isEqualTo(GmailSMTServiceImp.SUB_REGISTRATION);
-//    assertThat(receivedHtmlContent).contains(url);
+    //    assertThat(receivedHtmlContent).contains(url);
 
     Message.RecipientType recipientType = Message.RecipientType.TO;
     assertThat(message.getRecipients(recipientType)[0].toString()).isEqualTo(recipientEmail);
@@ -102,7 +103,7 @@ class MailServiceImpTest {
 
     MimeMessage message = receivedMessages[0];
 
-//      log.info("decodedContent2 ddd {}", message.getContentType());
+    //      log.info("decodedContent2 ddd {}", message.getContentType());
 
     String receivedHtmlContent = GreenMailUtil.getBody(message);
 
@@ -127,7 +128,7 @@ class MailServiceImpTest {
     log.info("receivedHtmlContent  {}", receivedHtmlContent);
     assertThat(message.getSubject()).isEqualTo(GmailSMTServiceImp.SUB_BLOCKING_MESSAGE);
     assertThat(receivedHtmlContent).contains(frontUrl);
-//      assertThat(receivedHtmlContent).contains("Ваш акаунт заблоковано");
+    //      assertThat(receivedHtmlContent).contains("Ваш акаунт заблоковано");
 
     Message.RecipientType recipientType = Message.RecipientType.TO;
     assertThat(message.getRecipients(recipientType)[0].toString()).isEqualTo(recipientEmail);
@@ -136,7 +137,8 @@ class MailServiceImpTest {
   @Test
   @DisplayName("Test MailService method sendSimpleHtmlMailMessage4Line Positive Scenario.")
   void testSendSimpleHtmlMailMessage4Line() throws Exception {
-    mailService.sendSimpleHtmlMailMessage4Line(recipientEmail,
+    mailService.sendSimpleHtmlMailMessage4Line(
+        recipientEmail,
         GmailSMTServiceImp.SUB_BLOCKING_MESSAGE,
         "Інформація про блокування на сайті BookMyEvent.",
         "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
@@ -163,7 +165,8 @@ class MailServiceImpTest {
   @Test
   @DisplayName("Test MailService method sendSimpleHtmlMailMessage4Line Positive Scenario.")
   void testSendSimpleHtmlMailMessage6Line() throws Exception {
-    mailService.sendSimpleHtmlMailMessage6Line(recipientEmail,
+    mailService.sendSimpleHtmlMailMessage6Line(
+        recipientEmail,
         GmailSMTServiceImp.SUB_BLOCKING_MESSAGE,
         "Інформація про блокування на сайті BookMyEvent.",
         "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
@@ -190,39 +193,29 @@ class MailServiceImpTest {
   }
 
   @Test
-  void deleteOldEmails() {
-  }
+  void deleteOldEmails() {}
 
   @Test
-  void getMessagesFromUser() {
-  }
+  void getMessagesFromUser() {}
 
   @Test
   @DisplayName("Test MailService method unblockingMessage Negative Scenario. Mail ServerError.")
   void testUnblockingMessageNegativeScenarioServerError() throws Exception {
     greenMail.stop();
 
-    assertThrows(GeneralException.class, () -> mailService.sendHtmlEmailAfterRegistration(recipientEmail));
+    assertThrows(
+        GeneralException.class, () -> mailService.sendHtmlEmailAfterRegistration(recipientEmail));
     assertThrows(GeneralException.class, () -> mailService.unblockingMessage(recipientEmail));
     assertThrows(GeneralException.class, () -> mailService.blockingMessage(recipientEmail));
-    assertThrows(GeneralException.class, () -> mailService.sendSimpleHtmlMailMessage4Line(recipientEmail,
-        "",
-        "",
-        "",
-        "",
-        "",
-        ""));
-    assertThrows(GeneralException.class, () -> mailService.sendSimpleHtmlMailMessage6Line(recipientEmail,
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        ""));
+    assertThrows(
+        GeneralException.class,
+        () -> mailService.sendSimpleHtmlMailMessage4Line(recipientEmail, "", "", "", "", "", ""));
+    assertThrows(
+        GeneralException.class,
+        () ->
+            mailService.sendSimpleHtmlMailMessage6Line(
+                recipientEmail, "", "", "", "", "", "", "", ""));
     assertThrows(GeneralException.class, () -> mailService.blockingMessage(recipientEmail));
-
   }
 
   @RepeatedTest(5)
@@ -239,27 +232,30 @@ class MailServiceImpTest {
     assertFalse(randomPasswordSecond.equals(randomPasswordThird));
     assertFalse(randomPasswordSecond.equals(randomPasswordFourth));
     assertFalse(randomPasswordThird.equals(randomPasswordFourth));
-
   }
 
   @Test
   @DisplayName("Test MailService method createHtmlTemplateTitle4Line.")
   void testCreateHtmlTemplateTitle4Line() {
-//    String text = gmailSMTServiceImp.createHtmlTemplateTitle4Line("Вітаємо!",
-//        "Ваш акаунт розблоковано, і ви знову можете користуватися всіма можливостями нашого сайту. Насолоджуйтесь!",
-//        "",
-//        "",
-//        "");
-//    log.info("MimeMessage  {}", text);
-//    assertThat(text).contains("Ваш акаунт розблоковано");
-//
-//    String text2 = gmailSMTServiceImp.createHtmlTemplateTitle4Line("",
-//        "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
-//        "Якщо у вас є питання, зателефонуйте на нашу гарячу лінію.", "\uD83D\uDCF2 " + companyPhone,
-//        "");
-//    log.info("MimeMessage  {}", text2);
+    //    String text = gmailSMTServiceImp.createHtmlTemplateTitle4Line("Вітаємо!",
+    //        "Ваш акаунт розблоковано, і ви знову можете користуватися всіма можливостями нашого
+    // сайту. Насолоджуйтесь!",
+    //        "",
+    //        "",
+    //        "");
+    //    log.info("MimeMessage  {}", text);
+    //    assertThat(text).contains("Ваш акаунт розблоковано");
+    //
+    //    String text2 = gmailSMTServiceImp.createHtmlTemplateTitle4Line("",
+    //        "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
+    //        "Якщо у вас є питання, зателефонуйте на нашу гарячу лінію.", "\uD83D\uDCF2 " +
+    // companyPhone,
+    //        "");
+    //    log.info("MimeMessage  {}", text2);
 
-    String activeLinks = mailService.replaceTextToLinkWithHtml("Open air Stand-up", "https://evently-book.vercel.app/event/671e833c56827a52cc267654");
+    String activeLinks =
+        mailService.replaceTextToLinkWithHtml(
+            "Open air Stand-up", "https://evently-book.vercel.app/event/671e833c56827a52cc267654");
     log.info("MimeMessage  {}", activeLinks);
     String text3 =
         gmailSMTServiceImp.createHtmlTemplateTitle4Line(
@@ -270,22 +266,23 @@ class MailServiceImpTest {
             "Якщо хочеш розібратись або щось уточнити — пиши на:\n"
                 + " \uD83D\uDCE9 bookmyevent@gmail.com\n"
                 + " Aбо дзвони: \uD83D\uDD7B +380(99) 574 56 76");
-//    fileWriter("billing.html",text3);
+    //    fileWriter("billing.html",text3);
     assertThat(text3).contains("Але цього разу ми не можемо опублікувати подію,");
   }
 
   @Test
   @DisplayName("Test MailService method createHtmlTemplateTitle6Line.")
   void testCreateHtmlTemplateTitle6Line() {
-//    String url = passwordResetUrl
-//        .replace("{token}", "142556343d");
-//    String text = gmailSMTServiceImp.createHtmlTemplateTitle6Line("Інформація про блокування на сайті BookMyEvent.",
-//        "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
-//        "Якщо у вас є питання, зателефонуйте на нашу гарячу лінію.",
-//        "\uD83D\uDCF2 " + companyPhone,
-//        "",
-//        "",
-//        "");
+    //    String url = passwordResetUrl
+    //        .replace("{token}", "142556343d");
+    //    String text = gmailSMTServiceImp.createHtmlTemplateTitle6Line("Інформація про блокування
+    // на сайті BookMyEvent.",
+    //        "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
+    //        "Якщо у вас є питання, зателефонуйте на нашу гарячу лінію.",
+    //        "\uD83D\uDCF2 " + companyPhone,
+    //        "",
+    //        "",
+    //        "");
     var password = gmailSMTServiceImp.randomPasswordGenerator();
     String emailTo = "jj3564527@gmail.com";
     var url = serverUrl + "/api/v1/authorize/mail-confirmation/" + emailTo + "/" + password;
@@ -300,27 +297,30 @@ class MailServiceImpTest {
             " \uD83D\uDCE9 bookmyevent@gmail.com",
             " Aбо дзвони: \uD83D\uDD7D +380(99) 574 56 76");
     log.info("MimeMessage text  {}", text);
-    fileWriter("billing.html",text3);
-//    assertThat(text).contains("Ми отримали запит на зміну пароля");
+    //    fileWriter("billing.html",text3);
+    //    assertThat(text).contains("Ми отримали запит на зміну пароля");
   }
 
   @Test
   @DisplayName("Test MailService method createHtmlTemplateTitle6Line.")
   void sendSimpleHtmlMailMessageAfterBuyTicket() {
 
-    String text = gmailSMTServiceImp.createHtmlTemplateAfterBuyTicket(
-        "Van",
-        "Нова подія",
-        "07-27-37, 12:00",
-        "місто тест",
-        "ON42567631887",
-        "07-05-30, 500грн",
+    String text =
+        gmailSMTServiceImp.createHtmlTemplateAfterBuyTicket(
+            "Van",
+            "Нова подія",
+            "07-27-37, 12:00",
+            "місто тест",
+            "ON42567631887",
+            "07-05-30,",
+            "23:21",
+            "51 грн",
             "https://res.cloudinary.com/dlweazskq/image/upload/v1729884314/bookMyEventApp/vln28mu8z9lw9q3wvsd5.png",
             "https://evently-book.vercel.app/user_profile");
 
     log.info("sendSimpleHtmlMailMessageAfterBuyTicket text  {}", text);
-//    fileWriter("billing.html",text);
-//    assertThat(text).contains("Ми отримали запит на зміну пароля");
+//    fileWriter("billing.html", text);
+    //    assertThat(text).contains("Ми отримали запит на зміну пароля");
   }
 
   private void fileWriter(String saveFileName, String htmlText) {
@@ -336,5 +336,4 @@ class MailServiceImpTest {
       e.printStackTrace();
     }
   }
-
 }

@@ -28,6 +28,7 @@ import org.thymeleaf.context.Context;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -40,21 +41,29 @@ import java.util.regex.Pattern;
 public class GmailSMTServiceImp implements MailService {
   @Value("${cloud.server.url}")
   private String serverUrl;
+
   @Value("${company.email}")
   private String companyEmail;
+
   @Value("${company.phone}")
   private String companyPhone;
+
   @Value("${front.url}")
   private String frontUrl;
+
   @Value("${company.email}")
   private String fromEmail;
+
   @Value("${spring.mail.password}")
   private String emailPassword;
 
   private final String clasName = this.getClass().getSimpleName();
-  public static final String SUB_REGISTRATION = "Ласкаво просимо до BookMyEvent – завершіть реєстрацію!";
-  public static final String SUB_UNBLOCKING_MESSAGE = "Інформація про розблокування на сайті BookMyEvent.";
-  public static final String SUB_BLOCKING_MESSAGE = "Інформація про блокування на сайті BookMyEvent.";
+  public static final String SUB_REGISTRATION =
+      "Ласкаво просимо до BookMyEvent – завершіть реєстрацію!";
+  public static final String SUB_UNBLOCKING_MESSAGE =
+      "Інформація про розблокування на сайті BookMyEvent.";
+  public static final String SUB_BLOCKING_MESSAGE =
+      "Інформація про блокування на сайті BookMyEvent.";
   public static final String UTF_8_ENCODING = "UTF-8";
   public static final String TEMPLATE_TITLE_4_LINE_TEXT = "email-template-title-4linetext";
   public static final String TEMPLATE_TITLE_6_LINE_TEXT = "email-template-title-6linetext";
@@ -72,21 +81,20 @@ public class GmailSMTServiceImp implements MailService {
   private final TaskScheduler taskScheduler;
 
   @Override
-  public void sendSimpleHtmlMailMessage4Line(String emailTo,
-                                             String subject,
-                                             String title,
-                                             String messageText1,
-                                             String messageText2,
-                                             String messageText3,
-                                             String messageText4) {
-    log.info("{}::sendSimpleMailMessage - Preparation for sending the email to: {}", clasName, emailTo);
+  public void sendSimpleHtmlMailMessage4Line(
+      String emailTo,
+      String subject,
+      String title,
+      String messageText1,
+      String messageText2,
+      String messageText3,
+      String messageText4) {
+    log.info(
+        "{}::sendSimpleMailMessage - Preparation for sending the email to: {}", clasName, emailTo);
     try {
-      String text = createHtmlTemplateTitle4Line(
-          title,
-          messageText1,
-          messageText2,
-          messageText3,
-          messageText4);
+      String text =
+          createHtmlTemplateTitle4Line(
+              title, messageText1, messageText2, messageText3, messageText4);
       MimeMessage message = getMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, true, UTF_8_ENCODING);
       helper.setPriority(1);
@@ -97,33 +105,39 @@ public class GmailSMTServiceImp implements MailService {
       emailSender.send(message);
       log.info("{}::sendSimpleMailMessage. - Email sent successfully to: {}", clasName, emailTo);
     } catch (Exception exception) {
-      log.error("{}::sendSimpleMailMessage. - Error sending email to: {}. Exception: {}", clasName, emailTo, exception.getMessage());
+      log.error(
+          "{}::sendSimpleMailMessage. - Error sending email to: {}. Exception: {}",
+          clasName,
+          emailTo,
+          exception.getMessage());
       exception.printStackTrace();
       throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
 
   @Override
-  public void sendSimpleHtmlMailMessage6Line(String emailTo,
-                                        String subject,
-                                        String title,
-                                        String messageText1,
-                                        String messageText2,
-                                        String messageText3,
-                                        String messageText4,
-                                        String messageText5,
-                                        String messageText6) {
+  public void sendSimpleHtmlMailMessage6Line(
+      String emailTo,
+      String subject,
+      String title,
+      String messageText1,
+      String messageText2,
+      String messageText3,
+      String messageText4,
+      String messageText5,
+      String messageText6) {
 
     log.info("{}}::sendSimpleMailMessage - Sending email to: {}", clasName, emailTo);
     try {
-      String text = createHtmlTemplateTitle6Line(
-          title,
-          messageText1,
-          messageText2,
-          messageText3,
-          messageText4,
-          messageText5,
-          messageText6);
+      String text =
+          createHtmlTemplateTitle6Line(
+              title,
+              messageText1,
+              messageText2,
+              messageText3,
+              messageText4,
+              messageText5,
+              messageText6);
       MimeMessage message = getMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, true, UTF_8_ENCODING);
       helper.setPriority(1);
@@ -134,38 +148,46 @@ public class GmailSMTServiceImp implements MailService {
       emailSender.send(message);
       log.info("{}::sendSimpleMailMessage. - Email sent successfully to: {}", clasName, emailTo);
     } catch (Exception exception) {
-      log.error("{}::sendSimpleMailMessage. - Error sending email to: {}. Exception: {}", clasName, emailTo, exception.getMessage());
+      log.error(
+          "{}::sendSimpleMailMessage. - Error sending email to: {}. Exception: {}",
+          clasName,
+          emailTo,
+          exception.getMessage());
       exception.printStackTrace();
       throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
 
-//  public void sendPasswordResetConfirmationEmail(String email) {
-//    log.info("EmailServiceImpl::sendPasswordResetConfirmationEmail - Sending password reset confirmation email to: {}", email);
-//    String message = String.format("Привіт!\n\n" +
-//        "Ваш пароль було успішно оновлено.\n" +
-//        "Тепер ви можете увійти до свого облікового запису за допомогою нового пароля: (%s).\n\n" +
-//        "Якщо ви не запитували зміну пароля, будь ласка, зверніться до нашої служби підтримки.\n\n" +
-//        "З повагою,\n"
-//        + "Команда підтримки BookMyEvent.", frontUrl);
-//
-//
-//    sendSimpleMessage(email, "Пароль оновлено", message);
-//  }
+  //  public void sendPasswordResetConfirmationEmail(String email) {
+  //    log.info("EmailServiceImpl::sendPasswordResetConfirmationEmail - Sending password reset
+  // confirmation email to: {}", email);
+  //    String message = String.format("Привіт!\n\n" +
+  //        "Ваш пароль було успішно оновлено.\n" +
+  //        "Тепер ви можете увійти до свого облікового запису за допомогою нового пароля:
+  // (%s).\n\n" +
+  //        "Якщо ви не запитували зміну пароля, будь ласка, зверніться до нашої служби
+  // підтримки.\n\n" +
+  //        "З повагою,\n"
+  //        + "Команда підтримки BookMyEvent.", frontUrl);
+  //
+  //
+  //    sendSimpleMessage(email, "Пароль оновлено", message);
+  //  }
 
   @Override
   public void sendHtmlEmailAfterRegistration(String emailTo) {
     try {
       var password = randomPasswordGenerator();
-      var baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+      var baseUrl =
+          request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
       var url = serverUrl + "/api/v1/authorize/mail-confirmation/" + emailTo + "/" + password;
       log.info("sendHtmlEmailAfterRegistration : baseUrl - {}", baseUrl);
       log.info("sendHtmlEmailAfterRegistration - serverUrl : {}", serverUrl);
       log.info("sendHtmlEmailAfterRegistration - verify url : {}", url);
-//      Context context = new Context();
-//      context.setVariables(Map.of("link", url));
+      //      Context context = new Context();
+      //      context.setVariables(Map.of("link", url));
       String text = createHtmlTemplateRegistration(url);
-//      String text = templateEngine.process(TEMPLATE_REGISTRATION, context);
+      //      String text = templateEngine.process(TEMPLATE_REGISTRATION, context);
       MimeMessage message = getMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, true, UTF_8_ENCODING);
       helper.setPriority(1);
@@ -181,7 +203,11 @@ public class GmailSMTServiceImp implements MailService {
       mailRepository.save(new UserEmailData(emailTo, hashedPassword));
 
     } catch (Exception exception) {
-      log.error("{}::mailSender. Error occurred while retrieving messages({}) for user: {}", clasName, exception.getMessage(), emailTo);
+      log.error(
+          "{}::mailSender. Error occurred while retrieving messages({}) for user: {}",
+          clasName,
+          exception.getMessage(),
+          emailTo);
       exception.printStackTrace();
       throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
@@ -210,7 +236,8 @@ public class GmailSMTServiceImp implements MailService {
       emailFolder.open(Folder.READ_ONLY);
 
       Message[] messages = emailFolder.getMessages();
-      String searchText = "Привіт!🎉\n Дякуємо, що приєднався до BookMyEvent! Щоб завершити реєстрацію, просто натисни на цей лінк:";
+      String searchText =
+          "Привіт!🎉\n Дякуємо, що приєднався до BookMyEvent! Щоб завершити реєстрацію, просто натисни на цей лінк:";
       for (Message message : messages) {
         Object content = message.getContent();
 
@@ -238,7 +265,8 @@ public class GmailSMTServiceImp implements MailService {
 
     } catch (Exception e) {
 
-      log.error("{}::getMessagesFromUser. Error occurred while retrieving messages({}) for user: {}",
+      log.error(
+          "{}::getMessagesFromUser. Error occurred while retrieving messages({}) for user: {}",
           clasName,
           e.getMessage(),
           emailTo);
@@ -250,23 +278,27 @@ public class GmailSMTServiceImp implements MailService {
 
   @Override
   public void deleteOldEmails(String emailTo) {
-    taskScheduler.schedule(() -> {
-      var emailData = mailRepository.findByEmail(emailTo);
-      if (emailData.isPresent()) {
-        mailRepository.delete(emailData.get());
-        log.info("Email entry for {} deleted after {} days", emailTo, 5);
-      }
-    }, Instant.now().plus(5, ChronoUnit.DAYS));
+    taskScheduler.schedule(
+        () -> {
+          var emailData = mailRepository.findByEmail(emailTo);
+          if (emailData.isPresent()) {
+            mailRepository.delete(emailData.get());
+            log.info("Email entry for {} deleted after {} days", emailTo, 5);
+          }
+        },
+        Instant.now().plus(5, ChronoUnit.DAYS));
   }
 
   @Override
   public void blockingMessage(String emailTo) {
     try {
-      String text = createHtmlTemplateTitle4Line("",
-          "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
-          "Якщо у вас є питання, зателефонуйте на нашу гарячу лінію.",
-          "\uD83D\uDCF2 " + companyPhone,
-          "");
+      String text =
+          createHtmlTemplateTitle4Line(
+              "",
+              "Ваш акаунт заблоковано, доступ обмежено у зв’язку з недотриманням правил платформи.",
+              "Якщо у вас є питання, зателефонуйте на нашу гарячу лінію.",
+              "\uD83D\uDCF2 " + companyPhone,
+              "");
       MimeMessage message = getMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, true, UTF_8_ENCODING);
       ;
@@ -277,7 +309,11 @@ public class GmailSMTServiceImp implements MailService {
       helper.setText(text, true);
       emailSender.send(message);
     } catch (Exception exception) {
-      log.error("{}::mailSender. Error occurred while retrieving messages({}) for user: {}", clasName, exception.getMessage(), emailTo);
+      log.error(
+          "{}::mailSender. Error occurred while retrieving messages({}) for user: {}",
+          clasName,
+          exception.getMessage(),
+          emailTo);
       exception.printStackTrace();
       throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
@@ -286,14 +322,16 @@ public class GmailSMTServiceImp implements MailService {
   @Override
   public void unblockingMessage(String emailTo) {
     try {
-//      Context context = new Context();
-//      context.setVariables(Map.of("linkInEnd", frontUrl));
-//      String text = templateEngine.process(TEMPLATE_UNBLOCKING_MESSAGE, context);
-      String text = createHtmlTemplateTitle4Line("Вітаємо!",
-          "Ваш акаунт розблоковано, і ви знову можете користуватися всіма можливостями нашого сайту. Насолоджуйтесь!",
-          "",
-          "",
-          "");
+      //      Context context = new Context();
+      //      context.setVariables(Map.of("linkInEnd", frontUrl));
+      //      String text = templateEngine.process(TEMPLATE_UNBLOCKING_MESSAGE, context);
+      String text =
+          createHtmlTemplateTitle4Line(
+              "Вітаємо!",
+              "Ваш акаунт розблоковано, і ви знову можете користуватися всіма можливостями нашого сайту. Насолоджуйтесь!",
+              "",
+              "",
+              "");
       MimeMessage message = getMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, true, UTF_8_ENCODING);
 
@@ -304,36 +342,45 @@ public class GmailSMTServiceImp implements MailService {
       helper.setText(text, true);
       emailSender.send(message);
     } catch (Exception exception) {
-      log.error("{}::mailSender. Error occurred while retrieving messages({}) for user: {}", clasName, exception.getMessage(), emailTo);
+      log.error(
+          "{}::mailSender. Error occurred while retrieving messages({}) for user: {}",
+          clasName,
+          exception.getMessage(),
+          emailTo);
       exception.printStackTrace();
       throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
 
   @Override
-  public void sendSimpleHtmlMailMessageAfterBuyTicket(String emailTo,
-                                             String subject,
-                                             String title,
-                                             String messageText1,
-                                             String messageText2,
-                                             String messageText3,
-                                             String messageText4,
-                                             String messageText5,
-                                             String imageUrl,
-                                             String userCabinetUrl) {
-    String methodName = new Object() {
-    }.getClass().getEnclosingMethod().getName();
+  public void sendSimpleHtmlMailMessageAfterBuyTicket(
+      String emailTo,
+      String subject,
+      String title,
+      String messageText1,
+      String messageText2,
+      String messageText3,
+      String messageText4,
+      String messageText5,
+      String messageText6,
+      String messageText7,
+      String imageUrl,
+      String userCabinetUrl) {
+    String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     log.info("{}::{} - Sending email to: {}", clasName, methodName, emailTo);
     try {
-      String text = createHtmlTemplateAfterBuyTicket(
-          title,
-          messageText1,
-          messageText2,
-          messageText3,
-          messageText4,
-          messageText5,
-          imageUrl,
-          userCabinetUrl);
+      String text =
+          createHtmlTemplateAfterBuyTicket(
+              title,
+              messageText1,
+              messageText2,
+              messageText3,
+              messageText4,
+              messageText5,
+              messageText6,
+              messageText7,
+              imageUrl,
+              userCabinetUrl);
       MimeMessage message = getMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, true, UTF_8_ENCODING);
       helper.setPriority(1);
@@ -344,82 +391,129 @@ public class GmailSMTServiceImp implements MailService {
       emailSender.send(message);
       log.info("{}::{}. - Email sent successfully to: {}", clasName, methodName, emailTo);
     } catch (Exception exception) {
-      log.error("{}::{}. - Error sending email to: {}. Exception: {}", clasName, methodName, emailTo, exception.getMessage());
+      log.error(
+          "{}::{}. - Error sending email to: {}. Exception: {}",
+          clasName,
+          methodName,
+          emailTo,
+          exception.getMessage());
       exception.printStackTrace();
       throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
 
-  public String createHtmlTemplateTitle4Line(String title, String messageText1, String messageText2, String messageText3, String messageText4) {
+  public String createHtmlTemplateTitle4Line(
+      String title,
+      String messageText1,
+      String messageText2,
+      String messageText3,
+      String messageText4) {
     try {
       Context context = new Context();
-      context.setVariables(Map.of("title", title,
-          "messageText1", messageText1,
-          "messageText2", messageText2,
-          "messageText3", messageText3,
-          "messageText4", messageText4,
-          "linkInEnd", frontUrl));
+      context.setVariables(
+          Map.of(
+              "title",
+              title,
+              "messageText1",
+              messageText1,
+              "messageText2",
+              messageText2,
+              "messageText3",
+              messageText3,
+              "messageText4",
+              messageText4,
+              "linkInEnd",
+              frontUrl));
       String text = templateEngine.process(TEMPLATE_TITLE_4_LINE_TEXT, context);
       return text;
     } catch (Exception exception) {
-      log.error("{}::mailSender. Error occurred while retrieving messages({})", clasName, exception.getMessage());
+      log.error(
+          "{}::mailSender. Error occurred while retrieving messages({})",
+          clasName,
+          exception.getMessage());
       exception.printStackTrace();
       throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
-  public String createHtmlTemplateTitle6Line(String title,
-                                             String messageText1,
-                                             String messageText2,
-                                             String messageText3,
-                                             String messageText4,
-                                             String messageText5,
-                                             String messageText6) {
+
+  public String createHtmlTemplateTitle6Line(
+      String title,
+      String messageText1,
+      String messageText2,
+      String messageText3,
+      String messageText4,
+      String messageText5,
+      String messageText6) {
     try {
       Context context = new Context();
-      context.setVariables(Map.of("title", title,
-          "messageText1", replaceLinksWithHtml(messageText1),
-          "messageText2", replaceLinksWithHtml(messageText2),
-          "messageText3", replaceLinksWithHtml(messageText3),
-          "messageText4", replaceLinksWithHtml(messageText4),
-          "messageText5", replaceLinksWithHtml(messageText5),
-          "messageText6", replaceLinksWithHtml(messageText6),
-          "linkInEnd", frontUrl));
+      context.setVariables(
+          Map.of(
+              "title",
+              title,
+              "messageText1",
+              replaceLinksWithHtml(messageText1),
+              "messageText2",
+              replaceLinksWithHtml(messageText2),
+              "messageText3",
+              replaceLinksWithHtml(messageText3),
+              "messageText4",
+              replaceLinksWithHtml(messageText4),
+              "messageText5",
+              replaceLinksWithHtml(messageText5),
+              "messageText6",
+              replaceLinksWithHtml(messageText6),
+              "linkInEnd",
+              frontUrl));
       String text = templateEngine.process(TEMPLATE_TITLE_6_LINE_TEXT, context);
       log.info("{}::createHtmlTemplateTitle6Line. create Html Template Title 6 Line", clasName);
       return text;
     } catch (Exception exception) {
-      log.error("{}::mailSender. Error occurred while retrieving messages({})", clasName, exception.getMessage());
+      log.error(
+          "{}::mailSender. Error occurred while retrieving messages({})",
+          clasName,
+          exception.getMessage());
       exception.printStackTrace();
       throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
 
-  public String createHtmlTemplateAfterBuyTicket(String title,
-                                             String messageText1,
-                                             String messageText2,
-                                             String messageText3,
-                                             String messageText4,
-                                             String messageText5,
-                                             String imageUrl,
-                                             String userCabinetUrl) {
-    String methodName = new Object() {
-    }.getClass().getEnclosingMethod().getName();
+  public String createHtmlTemplateAfterBuyTicket(
+      String title,
+      String messageText1,
+      String messageText2,
+      String messageText3,
+      String messageText4,
+      String messageText5,
+      String messageText6,
+      String messageText7,
+      String imageUrl,
+      String userCabinetUrl) {
+    String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     try {
+      Map<String, Object> variables = new HashMap<>();
+      variables.put("title", title);
+      variables.put("messageText1", messageText1);
+      variables.put("messageText2", messageText2);
+      variables.put("messageText3", messageText3);
+      variables.put("messageText4", messageText4);
+      variables.put("messageText5", messageText5);
+      variables.put("messageText6", messageText6);
+      variables.put("messageText7", messageText7);
+      variables.put("imageUrl", imageUrl);
+      variables.put("userCabinetUrl", userCabinetUrl);
+      variables.put("linkInEnd", frontUrl);
+
       Context context = new Context();
-      context.setVariables(Map.of("title", title,
-          "messageText1", messageText1,
-          "messageText2", messageText2,
-          "messageText3", messageText3,
-          "messageText4", messageText4,
-          "messageText5", messageText5,
-          "imageUrl",imageUrl,
-          "userCabinetUrl", userCabinetUrl,
-          "linkInEnd", frontUrl));
+      context.setVariables(variables);
       String text = templateEngine.process(TEMPLATE_AFTER_BUY_TICKET, context);
       log.info("{}::{}. create Html Template AFTER BUY TICKET", clasName, methodName);
       return text;
     } catch (Exception exception) {
-      log.error("{}::{}. Error occurred while retrieving messages({})", clasName, methodName, exception.getMessage());
+      log.error(
+          "{}::{}. Error occurred while retrieving messages({})",
+          clasName,
+          methodName,
+          exception.getMessage());
       exception.printStackTrace();
       throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
@@ -428,13 +522,15 @@ public class GmailSMTServiceImp implements MailService {
   public String createHtmlTemplateRegistration(String url) {
     try {
       Context context = new Context();
-      context.setVariables(Map.of("link", url,
-              "linkInEnd", frontUrl));
+      context.setVariables(Map.of("link", url, "linkInEnd", frontUrl));
       String text = templateEngine.process(TEMPLATE_REGISTRATION, context);
       log.info("{}::createHtmlTemplateRegistration. creat eHtml Template Registration", clasName);
       return text;
     } catch (Exception exception) {
-      log.error("{}::mailSender. Error occurred while retrieving messages({})", clasName, exception.getMessage());
+      log.error(
+          "{}::mailSender. Error occurred while retrieving messages({})",
+          clasName,
+          exception.getMessage());
       exception.printStackTrace();
       throw new GeneralException(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
@@ -474,9 +570,7 @@ public class GmailSMTServiceImp implements MailService {
     StringBuffer result = new StringBuffer();
     while (matcher.find()) {
       String url = matcher.group(1);
-      String replacement = String.format(
-          "<a href=\"%s\" target=\"_blank\">%s</a>", url, url
-      );
+      String replacement = String.format("<a href=\"%s\" target=\"_blank\">%s</a>", url, url);
       matcher.appendReplacement(result, replacement);
     }
     matcher.appendTail(result);
@@ -485,12 +579,11 @@ public class GmailSMTServiceImp implements MailService {
 
   @Override
   public String replaceTextToLinkWithHtml(String text, String urlToEvent) {
-      String replacement = String.format(
-          "<a href=\"%s\" target=\"_blank\">%s</a>", urlToEvent, text
-      );
-    log.info("{}::replaceTextToLinkWithHtml. Created active links to Template Html to title ({})", clasName, text);
+    String replacement = String.format("<a href=\"%s\" target=\"_blank\">%s</a>", urlToEvent, text);
+    log.info(
+        "{}::replaceTextToLinkWithHtml. Created active links to Template Html to title ({})",
+        clasName,
+        text);
     return replacement;
   }
 }
-
-
