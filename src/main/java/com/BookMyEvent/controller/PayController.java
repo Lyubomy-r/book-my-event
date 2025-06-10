@@ -1,5 +1,6 @@
 package com.BookMyEvent.controller;
 
+import com.BookMyEvent.entity.FundsRequest;
 import com.BookMyEvent.entity.OrderDetails;
 import com.BookMyEvent.entity.PromoCode;
 import com.BookMyEvent.entity.dto.AppResponse;
@@ -30,6 +31,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -89,7 +91,8 @@ public class PayController {
   @PostMapping(
       value = "/status/verification",
       consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-  public ResponseEntity<Map<String, String>> paymentVerification(HttpServletRequest request) throws IOException {
+  public ResponseEntity<Map<String, String>> paymentVerification(HttpServletRequest request)
+      throws IOException {
     String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
     log.info("Class: {}, Method: paymentVerification - raw body: {}", className, body);
 
@@ -185,6 +188,18 @@ public class PayController {
         new AppResponse(200, "The promo code has been processed successfully.", promoCodeInfo);
     log.info("Class: {}, Method: getPromoCode - return promo code info.", promoCodeInfo);
 
+    return ResponseEntity.ok(response);
+  }
+
+  @PostMapping("/funds/{userId}")
+  @PreAuthorize("#userId == authentication.principal['id']")
+  public ResponseEntity<AppResponse> createFundsRequest(
+      @PathVariable("userId") String userId, @RequestBody FundsRequest fundsRequest) {
+    String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    log.info("Class: {}, Method: {} - createFundsRequest.", className, methodName);
+    String message = paymentService.saveFundsRequest(userId, fundsRequest);
+    AppResponse response =
+        new AppResponse(200, "The promo code has been processed successfully.", message);
     return ResponseEntity.ok(response);
   }
 

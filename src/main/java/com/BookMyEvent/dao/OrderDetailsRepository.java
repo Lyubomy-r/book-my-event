@@ -1,5 +1,6 @@
 package com.BookMyEvent.dao;
 
+import com.BookMyEvent.entity.Enums.OrderStatus;
 import com.BookMyEvent.entity.OrderDetails;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -12,7 +13,7 @@ public interface OrderDetailsRepository extends MongoRepository<OrderDetails, Ob
 
   Optional<OrderDetails> findByOrderReference(String orderReference);
 
-  List<OrderDetails> findByEvent_Id(ObjectId eventId);
+  List<OrderDetails> findByEvent_IdAndStatus(ObjectId eventId, OrderStatus status);
 
   List<OrderDetails> findByUser_Id(ObjectId eventId);
 }

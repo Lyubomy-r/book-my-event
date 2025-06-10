@@ -1,24 +1,15 @@
 package com.BookMyEvent.service.serviceImp;
 
 import com.BookMyEvent.dao.EventRepository;
+import com.BookMyEvent.dao.FundsRequestRepository;
 import com.BookMyEvent.dao.OrderDetailsRepository;
 import com.BookMyEvent.dao.PromoCodeRepository;
-import com.BookMyEvent.dao.UserRepository;
+import com.BookMyEvent.entity.*;
 import com.BookMyEvent.entity.Enums.EventFormat;
-import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Enums.OrderStatus;
-import com.BookMyEvent.entity.Event;
-import com.BookMyEvent.entity.OrderDetails;
-import com.BookMyEvent.entity.PaymentDetails;
-import com.BookMyEvent.entity.PromoCode;
-import com.BookMyEvent.entity.User;
-import com.BookMyEvent.entity.dto.PaymentRequestDTO;
-import com.BookMyEvent.entity.dto.PaymentResponseDTO;
-import com.BookMyEvent.entity.dto.PaymentStatusResponseDTO;
-import com.BookMyEvent.entity.dto.ProductDTO;
+import com.BookMyEvent.entity.dto.*;
 import com.BookMyEvent.exception.GeneralException;
 import com.BookMyEvent.mapper.PaymentDetailsMapper;
-import com.BookMyEvent.service.EventService;
 import com.BookMyEvent.service.MailService;
 import com.BookMyEvent.service.PaymentService;
 import java.math.BigDecimal;
@@ -28,16 +19,14 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+
+import com.BookMyEvent.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -53,8 +42,9 @@ public class PaymentServiceImp implements PaymentService {
   private final OrderDetailsRepository orderDetailsRepository;
   private final PaymentDetailsMapper paymentDetailsMapper;
   private final EventRepository eventRepository;
-  private final UserRepository userRepository;
+  private final UserService userService;
   private final MailService mailService;
+  private final FundsRequestRepository fundsRequestRepository;
   private final ConcurrentHashMap<ObjectId, ReentrantLock> eventLocks = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<String, ReentrantLock> eventOrderReferenceLocks =
       new ConcurrentHashMap<>();
@@ -90,14 +80,7 @@ public class PaymentServiceImp implements PaymentService {
                 () ->
                     new GeneralException(
                         String.format("Event not exist by id %s", eventId), HttpStatus.NOT_FOUND));
-    User user =
-        userRepository
-            .findById(new ObjectId(paymentRequest.userId()))
-            .orElseThrow(
-                () ->
-                    new GeneralException(
-                        String.format("User not exist by id %s", paymentRequest.userId()),
-                        HttpStatus.NOT_FOUND));
+    User user = userService.findUserById(paymentRequest.userId());
     Integer availableTickets =
         event.getAvailableTickets() - Integer.parseInt(paymentRequest.product().productCount());
     if (availableTickets < 0) {
@@ -577,14 +560,7 @@ public class PaymentServiceImp implements PaymentService {
       Event savedEvent = eventRepository.save(exsistEvent);
       log.info(
           "{}::{} - Event was saved  {}", className, methodName, savedEvent.getAvailableTickets());
-      User user =
-          userRepository
-              .findById(new ObjectId(paymentRequest.userId()))
-              .orElseThrow(
-                  () ->
-                      new GeneralException(
-                          String.format("User not exist by id %s", paymentRequest.userId()),
-                          HttpStatus.NOT_FOUND));
+      User user = userService.findUserById(paymentRequest.userId());
       String orderReference = "ON" + random();
       Instant orderDateInInstant = Instant.now();
       PaymentDetails paymentDetails =
@@ -805,7 +781,6 @@ public class PaymentServiceImp implements PaymentService {
 
   @Override
   public PromoCode getPromoCode(String promoCode) {
-    //    try {
     PromoCode exsistPromoCode =
         promoCodeRepository
             .findByName(promoCode)
@@ -819,8 +794,51 @@ public class PaymentServiceImp implements PaymentService {
         exsistPromoCode);
 
     return exsistPromoCode;
-    //    } catch (Exception e) {
-    //      throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
-    //    }
+  }
+
+  public String saveFundsRequest(String userId, FundsRequest fundsRequest) {
+    String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    User user = userService.findUserById(userId);
+    List<Event> events =
+        eventRepository.findByOrganizers_IdAndIsCompleted(user.getId(), true);
+    log.info("events list size {}", events.size());
+    List<FundsRequest> fundsRequests =
+        fundsRequestRepository.findByUserIdAndStatusIn(
+            user.getId().toHexString(), List.of(FundsStatus.PENDING, FundsStatus.COMPLETED));
+    Set<String> alreadyFundsRequestsEventId =
+        fundsRequests.stream()
+            .flatMap(funds -> funds.getEventIds().stream())
+            .collect(Collectors.toSet());
+    List<Event> newEventsToFundsRequest =
+        events.stream()
+            .filter(event -> !alreadyFundsRequestsEventId.contains(event.getId().toHexString()))
+            .toList();
+    if (newEventsToFundsRequest.isEmpty()) {
+      log.warn("{}::{} - Return error message.", className, methodName);
+      throw new GeneralException("No funds available for withdrawal", HttpStatus.CONFLICT);
+    }
+    BigDecimal totalAvailable = newEventsToFundsRequest.stream()
+            .map(Event::getProfit)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    if (totalAvailable.compareTo(fundsRequest.getAmount()) >= 0) {
+      FundsRequest newFundsRequest =
+          FundsRequest.builder()
+              .amount(fundsRequest.getAmount())
+              .cartNumber(fundsRequest.getCartNumber())
+              .creationDate(Instant.now())
+              .status(FundsStatus.PENDING)
+              .userId(user.getId().toHexString())
+              .eventIds(
+                  newEventsToFundsRequest.stream()
+                      .map(event -> event.getId().toHexString())
+                      .toList())
+              .build();
+      fundsRequestRepository.save(newFundsRequest);
+      log.info("{}::{} - return successfully message.", className, methodName);
+      return "The Funds request saved successfully.";
+    }else{
+      log.warn("{}::{} - Return error message.", className, methodName);
+      throw new GeneralException("Request amount is bigger than available amount ", HttpStatus.CONFLICT);
+    }
   }
 }

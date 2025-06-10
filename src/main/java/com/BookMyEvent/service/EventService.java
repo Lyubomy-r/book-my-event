@@ -25,6 +25,8 @@ public interface EventService {
 
     Page<EventResponseDto> getApprovedEvents(Pageable pageable);
 
+    Page<EventResponseDto> getTopEvents(Pageable pageable);
+
     String createDeleteEventRequest(String eventId, EventDeleteRequest eventDeleteRequest, String userId);
 
     void deleteEvent(String eventId, String eventDeleteRequestId);
@@ -60,7 +62,4 @@ public interface EventService {
 
     void userDeleteEvent(String eventId, String userId);
 
-//    void chdb();
-
-    void chdbConrdinatis();
 }

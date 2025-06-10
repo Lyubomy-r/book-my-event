@@ -1,5 +1,6 @@
 package com.BookMyEvent.dao;
 
+import com.BookMyEvent.entity.Enums.EventCategory;
 import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Enums.EventType;
 import com.BookMyEvent.entity.Event;
@@ -27,11 +28,15 @@ public interface EventRepository extends MongoRepository<Event, ObjectId>, Event
 
   Page<Event> findEventByEventStatus(EventStatus eventStatus, Pageable pageable);
 
+  Page<Event> findEventByEventCategory(EventCategory eventCategory, Pageable pageable);
+
   List<Event> findEventByEventStatus(EventStatus eventStatus);
 
   List<Event> findByEventTypeIn(List<EventType> types);
 
   @Query(value = "{'organizers.id' : ?0 }", fields = "{ 'organizers': 0}")
   Page<Event> findByOrganizersId(ObjectId organizerId, Pageable pageable);
+
+  List<Event> findByOrganizers_IdAndIsCompleted(ObjectId userId, boolean completed);
 
 }

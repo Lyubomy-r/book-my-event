@@ -97,6 +97,7 @@ public class EventServiceImpl implements EventService {
         event.setProfit(BigDecimal.ZERO);
         event.setHasUpdateRequest(false);
         event.setHasCancelRequest(false);
+        event.setCompleted(false);
         User user = userService.findUserById(eventDTO.getOrganizers().getId());
         event.linkUserWithEvent(user);
         Event savedEvent = eventRepository.save(event);
@@ -133,9 +134,6 @@ public class EventServiceImpl implements EventService {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     log.info("{}::{} - Approving event with ID: {}", className, methodName, id);
     Event existingEvent = findEventById(id);
-    //        eventRepository.findById(new ObjectId(id))
-    //        .orElseThrow(() -> new GeneralException("Event not found with ID " + id,
-    // HttpStatus.NOT_FOUND));
     if (existingEvent.getHasUpdateRequest() || existingEvent.getHasCancelRequest()) {
       log.warn("{}::{} - Send error massage.", className, methodName);
       throw new GeneralException(
@@ -159,9 +157,6 @@ public class EventServiceImpl implements EventService {
     log.info("{}::{} - Updating event ID: {} with data: {}", className, methodName, id, eventDTO);
 
     Event existingEvent = findEventById(id);
-    //        eventRepository.findById(new ObjectId(id))
-    //        .orElseThrow(() -> new GeneralException("Event not found with ID " + id,
-    // HttpStatus.NOT_FOUND));
     if (!userId.equals(existingEvent.getOrganizers().getId().toHexString())) {
       log.warn(
           "{}::{} - Send error message. Authentication user id {} don't equal organizers id {} ",
@@ -225,15 +220,6 @@ public class EventServiceImpl implements EventService {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     log.info("{}::{} - Updating event ID: {}", className, methodName, eventId);
     Event existingEvent = findEventById(eventId);
-    //        eventRepository.findById(new ObjectId(eventId))
-    //        .orElseThrow(() -> new GeneralException("Event not found with ID " + eventId,
-    // HttpStatus.NOT_FOUND));
-    //    if (!userId.equals(existingEvent.getOrganizers().getId().toHexString())) {
-    //      log.warn("Send error message. Authentication user id {} don't equal organizers id {} ",
-    // userId, existingEvent.getOrganizers().getId().toHexString());
-    //      throw new GeneralException("It's not your event you can't edit it.",
-    // HttpStatus.FORBIDDEN);
-    //    }
     EventUpdateRequest updatedEventRequest =
         eventUpdateRepository
             .findById(eventUpdateRequestId)
@@ -244,7 +230,6 @@ public class EventServiceImpl implements EventService {
 
     Event mappedEvent =
         eventMapper.toEventFromEventUpdateRequest(existingEvent, updatedEventRequest);
-    //    mappedEvent.setEventStatus(EventStatus.APPROVED);
     Event updatedEvent = eventRepository.save(mappedEvent);
     eventUpdateRepository.delete(updatedEventRequest);
     log.info("{}::{} - Event updated successfully: {}", className, methodName, updatedEvent);
@@ -282,13 +267,13 @@ public class EventServiceImpl implements EventService {
     mailService.sendSimpleHtmlMailMessage6Line(
         existingEvent.getOrganizers().getEmail(),
         String.format("Твоя подія [%s] поки не пройшла модерацію", existingEvent.getTitle()),
-            "Привіт! \uD83D\uDC4B",
-            "Дякуємо, що створюєш події разом із BookMyEvent!",
-            "Але цього разу ми не можемо опублікувати зміни, які ти надіслав(-ла).",
-            "Можливо, щось не відповідає нашим простим правилам. А може, просто треба трохи уточнень.",
-            "Якщо хочеш розібратись або щось уточнити — пиши на:",
-            " \uD83D\uDCE9 bookmyevent@gmail.com",
-            " Aбо дзвони: \uD83D\uDD7D +380(99) 574 56 76");
+        "Привіт! \uD83D\uDC4B",
+        "Дякуємо, що створюєш події разом із BookMyEvent!",
+        "Але цього разу ми не можемо опублікувати зміни, які ти надіслав(-ла).",
+        "Можливо, щось не відповідає нашим простим правилам. А може, просто треба трохи уточнень.",
+        "Якщо хочеш розібратись або щось уточнити — пиши на:",
+        " \uD83D\uDCE9 bookmyevent@gmail.com",
+        " Aбо дзвони: \uD83D\uDD7D +380(99) 574 56 76");
     log.info(
         "{}::{} - Cancel event update request was successfully: {}",
         className,
@@ -345,9 +330,6 @@ public class EventServiceImpl implements EventService {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     log.info("{}::{} - Updating Img event ID: {}", className, methodName, eventId);
     Event existingEvent = findEventById(eventId);
-    //    eventRepository.findById(new ObjectId(eventId))
-    //        .orElseThrow(() -> new GeneralException("Event not found with ID " + eventId,
-    // HttpStatus.NOT_FOUND));
     Image newImage = mediaService.saveEventImage(eventImage, existingEvent.getTitle());
     existingEvent.linkImageWithEvent(newImage);
     Event updatedEvent = eventRepository.save(existingEvent);
@@ -361,24 +343,10 @@ public class EventServiceImpl implements EventService {
   @Override
   public Page<EventResponseDto> getApprovedEvents(Pageable pageable) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
-
     Page<Event> events = eventRepository.findEventByEventStatus(EventStatus.APPROVED, pageable);
     try {
-      //            List<EventResponseDto> eventDTOs = events.stream()
-      //                .map(eventMapper::toEventResponseDtoFromEventWithoutUser)
-      //                .toList();
       List<EventResponseDto> sortedList =
           events.stream()
-              //                .sorted((e1, e2) -> {
-              //                    if (e1.getEventCategory() == EventCategory.TOP_EVENTS
-              //                        && e2.getEventCategory() != EventCategory.TOP_EVENTS) {
-              //                        return -1;
-              //                    } else if (e1.getEventCategory() != EventCategory.TOP_EVENTS
-              //                        && e2.getEventCategory() == EventCategory.TOP_EVENTS) {
-              //                        return 1;
-              //                    }
-              //                    return e1.getCreationDate().compareTo(e2.getCreationDate());
-              //                })
               .sorted(this::sortEventByCategoryTopEvents)
               .map(eventMapper::toEventResponseDtoFromEventWithoutUser)
               .toList();
@@ -389,7 +357,21 @@ public class EventServiceImpl implements EventService {
       new PageImpl<>(sortedList, events.getPageable(), events.getTotalElements());
     } catch (Exception e) {
 
-      log.info("{}::{} - Exception {} events", className, methodName, e.getMessage());
+      log.warn("{}::{} - Return error message.", className, methodName);
+      throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @Override
+  public Page<EventResponseDto> getTopEvents(Pageable pageable) {
+    String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    Page<Event> events =
+        eventRepository.findEventByEventCategory(EventCategory.TOP_EVENTS, pageable);
+    try {
+      log.info("{}::{} - Found {} events", className, methodName, events.getContent().size());
+      return events.map(eventMapper::toEventResponseDtoFromEventWithoutUser);
+    } catch (Exception e) {
+      log.warn("{}::{} - Return error message.", className, methodName);
       throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
@@ -397,17 +379,10 @@ public class EventServiceImpl implements EventService {
   @Override
   public Page<EventResponseDto> getByOrganizersId(String organizerId, Pageable pageable) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
-
     Page<Event> events = eventRepository.findByOrganizersId(new ObjectId(organizerId), pageable);
     try {
-      //      List<EventResponseDto> sortedList = events.stream()
-      //          .sorted(event-(event.getCreationDate()))
-      //          .map(eventMapper::toEventResponseDtoFromEventWithoutUser)
-      //          .toList();
-
       log.info("{}::{} - Found {} events", className, methodName, events.getContent().size());
-      //      return
-      //          new PageImpl<>(sortedList, events.getPageable(), events.getTotalElements());
+
       return events.map(eventMapper::toEventResponseDtoFromEventWithoutUser);
     } catch (Exception e) {
       log.info("{}::{} - Exception  {} events", className, methodName, e.getMessage());
@@ -482,9 +457,6 @@ public class EventServiceImpl implements EventService {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     log.info("{}::{} - Deleting request event ID: {}", className, methodName, eventId);
     Event existingEvent = findEventById(eventId);
-    //    eventRepository.findById(new ObjectId(eventId))
-    //        .orElseThrow(() -> new GeneralException("Event not found with ID " + eventId,
-    // HttpStatus.NOT_FOUND));
     if (!userId.equals(existingEvent.getOrganizers().getId().toHexString())) {
       log.warn(
           "{}::{} - Send error message. Authentication user id {} don't equal organizers id {} ",
@@ -524,9 +496,6 @@ public class EventServiceImpl implements EventService {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     log.info("{}::{} - Deleting event ID: {}", className, methodName, eventId);
     Event event = findEventById(eventId);
-    //    eventRepository.findById(new ObjectId(eventId))
-    //        .orElseThrow(() -> new GeneralException("Event not found with ID " + eventId,
-    // HttpStatus.NOT_FOUND));
     EventDeleteRequest existDeleteRequest =
         eventDeleteRepository
             .findByEventId(eventId)
@@ -599,14 +568,10 @@ public class EventServiceImpl implements EventService {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     log.info("{}::{} - Fetching event ID: {}", className, methodName, eventId);
     Event event = findEventById(eventId);
-    //    eventRepository.findById(new ObjectId(eventId))
-    //        .orElseThrow(() -> new GeneralException("Event not found with ID " + eventId,
-    // HttpStatus.NOT_FOUND));
-
     EventResponseDto eventDTO =
         eventMapper.toEventResponseDtoFromEvent(
             event, userMapper.toUserResponseDto(event.getOrganizers()));
-    //        log.info("EventServiceImpl::getEventById - Found event: {}", eventDTO);
+    log.info("{}::{} - Found event by id: {}",className, methodName, eventDTO.getId());
     return eventDTO;
   }
 
@@ -615,14 +580,11 @@ public class EventServiceImpl implements EventService {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     log.info("{}::{} - Fetching event ID: {}", className, methodName, eventId);
     Event event = findEventById(eventId);
-    //    eventRepository.findById(new ObjectId(eventId))
-    //        .orElseThrow(() -> new GeneralException("Event not found with ID " + eventId,
-    // HttpStatus.NOT_FOUND));
     if (event.getEventStatus().equals(EventStatus.APPROVED)) {
       EventResponseDto eventDTO =
           eventMapper.toEventResponseDtoFromEvent(
               event, userMapper.toUserResponseDto(event.getOrganizers()));
-      //        log.info("EventServiceImpl::getEventById - Found event: {}", eventDTO);
+      log.info("{}::{} - Found event by id: {}",className, methodName, eventDTO.getId());
       return eventDTO;
     } else {
       log.warn("{}::{} - Send error message.", className, methodName);
@@ -631,14 +593,11 @@ public class EventServiceImpl implements EventService {
   }
 
   @Override
-  @Transactional
   public void deletePastEvents() {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     log.info("{}::{} - Deleting past events...", className, methodName);
     LocalDate now = LocalDate.now().minusDays(1);
     List<Event> pastEvents = eventRepository.findByDateDay(now.toString());
-    //        LocalDateTime now = LocalDateTime.now();
-    //        List<Event> pastEvents = eventRepository.findByEndDateBefore(now);
     if (pastEvents.isEmpty()) {
       log.info("{}::{} - No past events found for deletion.", className, methodName);
     } else {
@@ -665,9 +624,6 @@ public class EventServiceImpl implements EventService {
     log.info(
         "{}::{} - Updating event ID: {} with new status: {}", className, methodName, id, status);
     Event existingEvent = findEventById(id);
-    //    eventRepository.findById(new ObjectId(id))
-    //        .orElseThrow(() -> new GeneralException("Event not found with ID " + id,
-    // HttpStatus.NOT_FOUND));
     if (existingEvent.getHasUpdateRequest() || existingEvent.getHasCancelRequest()) {
       log.warn("{}::{} - Send error massage.", className, methodName);
       throw new GeneralException(
@@ -694,15 +650,15 @@ public class EventServiceImpl implements EventService {
     }
     if (updatedEvent.getEventStatus().equals(EventStatus.CANCELLED)) {
       mailService.sendSimpleHtmlMailMessage6Line(
-              existingEvent.getOrganizers().getEmail(),
-              String.format("Твоя подія [%s] поки не пройшла модерацію", existingEvent.getTitle()),
-              "Привіт! \uD83D\uDC4B",
-              "Дякуємо, що створюєш події разом із BookMyEvent!",
-              "Але цього разу ми не можемо опублікувати подію, яку ти надіслав(-ла).",
-              "Можливо, щось не відповідає нашим простим правилам. А може, просто треба трохи уточнень.",
-              "Якщо хочеш розібратись або щось уточнити — пиши на:",
-              " \uD83D\uDCE9 bookmyevent@gmail.com",
-              " Aбо дзвони: \uD83D\uDD7D +380(99) 574 56 76");
+          existingEvent.getOrganizers().getEmail(),
+          String.format("Твоя подія [%s] поки не пройшла модерацію", existingEvent.getTitle()),
+          "Привіт! \uD83D\uDC4B",
+          "Дякуємо, що створюєш події разом із BookMyEvent!",
+          "Але цього разу ми не можемо опублікувати подію, яку ти надіслав(-ла).",
+          "Можливо, щось не відповідає нашим простим правилам. А може, просто треба трохи уточнень.",
+          "Якщо хочеш розібратись або щось уточнити — пиши на:",
+          " \uD83D\uDCE9 bookmyevent@gmail.com",
+          " Aбо дзвони: \uD83D\uDD7D +380(99) 574 56 76");
     }
 
     return eventMapper.toEventResponseDtoFromEventWithoutUser(updatedEvent);
@@ -724,83 +680,6 @@ public class EventServiceImpl implements EventService {
         event ->
             eventMapper.toEventResponseDtoFromEvent(
                 event, userMapper.toUserResponseDtoWithoutEvents(event.getOrganizers())));
-  }
-
-  //  @Override
-  //  @Transactional
-  //  public void chdb() {
-  //    log.info("EventServiceImpl::updateEvent - Updating event url ");
-  //
-  //    List<Event> existingEvent = eventRepository.findAll();
-  //
-  //    existingEvent.forEach(event -> {
-  //      if (event.getPhotoUrl() != null && !event.getPhotoUrl().isEmpty()) {
-  //        if (event.getImages() != null && event.getImages().size() > 0) {
-  //
-  //          event.getImages().get(0).setUrl(event.getPhotoUrl());
-  //          Image saveImage = imageRepository.save(event.getImages().get(0));
-  //
-  //          eventRepository.save(event);
-  //        } else {
-  //          Image newImage = Image.builder()
-  //              .url(event.getPhotoUrl())
-  //              .creationDate(LocalDateTime.now())
-  //              .isMain(true)
-  //              .name(event.getTitle())
-  //              .build();
-  //          Image saveImage = imageRepository.save(newImage);
-  //          event.linkImageWithEvent(saveImage);
-  //          eventRepository.save(event);
-  //        }
-  //      } else {
-  //        if (event.getImages() == null) {
-  //          Image newImage = Image.builder()
-  //              .creationDate(LocalDateTime.now())
-  //              .isMain(true)
-  //              .name(event.getTitle())
-  //              .build();
-  //          Image saveImage = imageRepository.save(newImage);
-  //          event.linkImageWithEvent(saveImage);
-  //          eventRepository.save(event);
-  //        }
-  //
-  //      }
-  //    });
-  //
-  //    log.info("EventServiceImpl::updateEventStatus - Event url updated successfully");
-  //  }
-
-  @Override
-  @Transactional
-  public void chdbConrdinatis() {
-    String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    log.info("{}::{} - Updating event url", className, methodName);
-    List<Event> existingEvent = eventRepository.findAll();
-    existingEvent.forEach(
-        event -> {
-          if (event.getLocation() != null
-              && event.getLocation().latitude() != null
-              && event.getLocation().longitude() != null
-              && !event.getLocation().longitude().isEmpty()
-              && !event.getLocation().latitude().isEmpty()) {
-            if (event.getCoordinates() == null) {
-              event.setCoordinates(
-                  new GeoJsonPoint(
-                      Double.parseDouble(event.getLocation().longitude()),
-                      Double.parseDouble(event.getLocation().latitude())));
-              eventRepository.save(event);
-            } else {
-              log.info(
-                  "{}::{} - Updating event Conrdinatis  has chdbConrdinatis",
-                  className,
-                  methodName);
-            }
-          } else {
-            log.info(
-                "{}::{} - Updating event Conrdinatis  not has getLocation ", className, methodName);
-          }
-        });
-    log.info("{}::{} - Event url updated successfully", className, methodName);
   }
 
   private EventStatus parseEventStatus(String status) {
@@ -906,22 +785,7 @@ public class EventServiceImpl implements EventService {
       Event existingEvent, MultipartFile secondImage, MultipartFile thirdImage) {
     log.info("EventServiceImpl::validateImageAdd - Updating event image");
     List<Image> list = new ArrayList<>();
-    //      if(secondImage !=null && !secondImage.isEmpty()){
-    //        list.add(secondImage);
-    //      }
-    //    if(thirdImage !=null && !thirdImage.isEmpty()){
-    //      list.add(thirdImage);
-    //    }
-    //     if(existingEvent.getImages().size()>list.size()){
-    ////       log.error("all photos are already uploaded");
-    ////       throw new GeneralException("all photos are already uploaded ",
-    // HttpStatus.BAD_REQUEST);
-    //       return existingEvent.getImages();
-    //     }
     if (existingEvent.getImages().size() == 3) {
-      ////       log.error("all photos are already uploaded");
-      ////       throw new GeneralException("all photos are already uploaded ",
-      // HttpStatus.BAD_REQUEST);
       return existingEvent.getImages();
     }
     if (existingEvent.getImages().size() == 1) {

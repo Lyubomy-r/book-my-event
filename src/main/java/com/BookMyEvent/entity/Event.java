@@ -30,7 +30,6 @@ public class Event {
   private ObjectId id;
   private String title;
   private String description;
-//  private String photoUrl;
   @JsonProperty("date")
   private DateDetails date;
   private LocalDateTime creationDate;
@@ -44,7 +43,6 @@ public class Event {
   private BigDecimal profit;
   private Location location;
   private GeoJsonPoint coordinates;
-//    private String userId;
   private String aboutOrganizer;
   private double rating;
   @JsonProperty("type")
@@ -60,6 +58,7 @@ public class Event {
   private User organizers;
   private Boolean hasUpdateRequest;
   private Boolean hasCancelRequest;
+  private boolean isCompleted;
 
   public void linkUserWithEvent(User user) {
     user.getCreatedEvents().add(this);
