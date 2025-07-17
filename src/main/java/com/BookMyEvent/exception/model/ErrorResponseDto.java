@@ -15,7 +15,7 @@ import java.util.Map;
 @Setter
 public class ErrorResponseDto {
 
-  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ssa")
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss")
   private LocalDateTime timestamp;
 
   @JsonProperty("status")

@@ -1,18 +1,15 @@
 package com.BookMyEvent.service.serviceImp;
 
+import com.BookMyEvent.entity.CityList;
 import com.BookMyEvent.dao.EventDeleteRequestRepository;
 import com.BookMyEvent.dao.EventRepository;
 import com.BookMyEvent.dao.EventUpdateRequestRepository;
 import com.BookMyEvent.dao.ImageRepository;
 import com.BookMyEvent.dao.UserRepository;
+import com.BookMyEvent.entity.*;
 import com.BookMyEvent.entity.Enums.EventCategory;
 import com.BookMyEvent.entity.Enums.EventFormat;
 import com.BookMyEvent.entity.Enums.EventStatus;
-import com.BookMyEvent.entity.Event;
-import com.BookMyEvent.entity.EventDeleteRequest;
-import com.BookMyEvent.entity.EventUpdateRequest;
-import com.BookMyEvent.entity.Image;
-import com.BookMyEvent.entity.User;
 import com.BookMyEvent.entity.dto.*;
 import com.BookMyEvent.exception.FieldValidationException;
 import com.BookMyEvent.exception.GeneralException;
@@ -62,6 +59,9 @@ public class EventServiceImpl implements EventService {
   private final EventUpdateRequestRepository eventUpdateRepository;
   private final EventDeleteRequestRepository eventDeleteRepository;
   private final String className = this.getClass().getSimpleName();
+  private final CityList cityList;
+
+
 
   @Override
   @Transactional
@@ -341,35 +341,81 @@ public class EventServiceImpl implements EventService {
   }
 
   @Override
-  public Page<EventResponseDto> getApprovedEvents(Pageable pageable) {
+  public Page<EventResponseDto> getApprovedEvents(Pageable pageable, String city) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    Page<Event> events = eventRepository.findEventByEventStatus(EventStatus.APPROVED, pageable);
+    //    Page<Event> events = eventRepository.findEventByEventStatus(EventStatus.APPROVED, city,
+    // pageable);
+    log.info("{}::{} - events with filter city ({}).", className, methodName, city);
+    if (city == null) {
+      Page<Event> events = eventRepository.findEventByEventStatus(EventStatus.APPROVED, pageable);
+      if (events.getContent().isEmpty()) {
+        return new PageImpl<>(List.of(), events.getPageable(), events.getTotalElements());
+      }
+      log.info(
+          "{}::{} - Found {} events without filter city.",
+          className,
+          methodName,
+          events.getTotalElements());
+
+      return getPageSortedByCategoryTopEvents(events);
+    } else if (cityList.getCityList().contains(city)) {
+      Page<Event> events =
+          eventRepository.findEventByEventStatusAndLocation_City(
+              EventStatus.APPROVED, city, pageable);
+      //      if (events.getContent().isEmpty()) {
+      //        return new PageImpl<>(List.of(), events.getPageable(), events.getTotalElements());
+      //      }
+      log.info(
+          "{}::{} - Found {} events with filter city ({}).",
+          className,
+          methodName,
+          events.getTotalElements(),
+          city);
+
+      return getPageSortedByCategoryTopEvents(events);
+    } else {
+      log.error("{}::{} - Return error message.", className, methodName);
+      throw new GeneralException("The city name was entered incorrectly.", HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @Override
+  public List<EventResponseDto> getTopEvents(Integer size) {
+    String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    List<Event> events = eventRepository.findRandomEventsByCategory(EventCategory.TOP_EVENTS, EventStatus.APPROVED, size);
     try {
-      List<EventResponseDto> sortedList =
-          events.stream()
-              .sorted(this::sortEventByCategoryTopEvents)
-              .map(eventMapper::toEventResponseDtoFromEventWithoutUser)
-              .toList();
-
-      log.info("{}::{} - Found {} events", className, methodName, events.getContent().size());
-      return
-      //                events.map(eventMapper::toEventResponseDtoFromEventWithoutUser)
-      new PageImpl<>(sortedList, events.getPageable(), events.getTotalElements());
+      log.info("{}::{} - Found {} events", className, methodName, events.size());
+      return events.stream().map(eventMapper::toEventResponseDtoFromEventWithoutUser).toList();
     } catch (Exception e) {
-
-      log.warn("{}::{} - Return error message.", className, methodName);
+      log.error("{}::{} - Return error message.", className, methodName);
       throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
 
   @Override
-  public Page<EventResponseDto> getTopEvents(Pageable pageable) {
+  public List<EventResponseDto> getNewEvents(Integer size, String cityName) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    Page<Event> events =
-        eventRepository.findEventByEventCategory(EventCategory.TOP_EVENTS, pageable);
+//    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    LocalDateTime toDate = LocalDateTime.now();
+    LocalDateTime fromDate= toDate.minusDays(7);
+    List<Event> events = new ArrayList<>();
+    if (cityName == null) {
+      events =
+          eventRepository.findRandomEventsByCreationDate(
+              fromDate, toDate, EventStatus.APPROVED, size);
+      log.info("{}::{} - Found {} events", className, methodName, events.size());
+    } else if (cityList.getCityList().contains(cityName)) {
+      events =
+          eventRepository.findRandomEventsByCreationDateByCity(
+              fromDate, toDate, cityName, EventStatus.APPROVED, size);
+      log.info("{}::{} - Found {} events", className, methodName, events.size());
+    } else {
+      log.error("{}::{} - Return error message.", className, methodName);
+      throw new GeneralException("The city name was entered incorrectly.", HttpStatus.BAD_REQUEST);
+    }
     try {
-      log.info("{}::{} - Found {} events", className, methodName, events.getContent().size());
-      return events.map(eventMapper::toEventResponseDtoFromEventWithoutUser);
+      log.info("{}::{} - Found {} events", className, methodName, events.size());
+      return events.stream().map(eventMapper::toEventResponseDtoFromEventWithoutUser).toList();
     } catch (Exception e) {
       log.warn("{}::{} - Return error message.", className, methodName);
       throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -571,7 +617,7 @@ public class EventServiceImpl implements EventService {
     EventResponseDto eventDTO =
         eventMapper.toEventResponseDtoFromEvent(
             event, userMapper.toUserResponseDto(event.getOrganizers()));
-    log.info("{}::{} - Found event by id: {}",className, methodName, eventDTO.getId());
+    log.info("{}::{} - Found event by id: {}", className, methodName, eventDTO.getId());
     return eventDTO;
   }
 
@@ -584,7 +630,7 @@ public class EventServiceImpl implements EventService {
       EventResponseDto eventDTO =
           eventMapper.toEventResponseDtoFromEvent(
               event, userMapper.toUserResponseDto(event.getOrganizers()));
-      log.info("{}::{} - Found event by id: {}",className, methodName, eventDTO.getId());
+      log.info("{}::{} - Found event by id: {}", className, methodName, eventDTO.getId());
       return eventDTO;
     } else {
       log.warn("{}::{} - Send error message.", className, methodName);
@@ -819,5 +865,22 @@ public class EventServiceImpl implements EventService {
         .findById(new ObjectId(eventId))
         .orElseThrow(
             () -> new GeneralException("Event not found with ID " + eventId, HttpStatus.NOT_FOUND));
+  }
+
+  private PageImpl<EventResponseDto> getPageSortedByCategoryTopEvents(Page<Event> events) {
+    String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    try {
+      List<EventResponseDto> sortedList =
+          events.stream()
+              .sorted(this::sortEventByCategoryTopEvents)
+              .map(eventMapper::toEventResponseDtoFromEventWithoutUser)
+              .toList();
+      log.info("{}::{} - Found {} events", className, methodName, events.getContent().size());
+
+      return new PageImpl<>(sortedList, events.getPageable(), events.getTotalElements());
+    } catch (Exception e) {
+      log.error("{}::{} - Return error message.", className, methodName);
+      throw new GeneralException(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
   }
 }

@@ -1,10 +1,9 @@
 package com.BookMyEvent.dao;
 
-import com.BookMyEvent.dao.EventRepositoryCustom;
+import com.BookMyEvent.entity.CityList;
 import com.BookMyEvent.entity.Enums.EventCategory;
 import com.BookMyEvent.entity.Enums.EventStatus;
 import com.BookMyEvent.entity.Event;
-//import com.mongodb.client.model.geojson.Point;
 import com.BookMyEvent.entity.dto.DateRange;
 import com.BookMyEvent.entity.dto.EventFilterRequest;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +18,9 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 
+import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAdjusters;
@@ -35,6 +33,8 @@ import java.util.List;
 public class EventRepositoryCustomImpl implements EventRepositoryCustom {
 
   private final MongoTemplate mongoTemplate;
+  private final Clock clock;
+  private final CityList cityList;
 
   private final String className = this.getClass().getSimpleName();
 
@@ -52,6 +52,11 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
 
     criteriaList.add(Criteria.where("eventStatus").in(EventStatus.APPROVED));
     log.info("Class: {}, Method: filterEvents - used filter EventStatus APPROVED.", className);
+
+    if (filter.cityName() != null && cityList.getCityList().contains(filter.cityName())) {
+      criteriaList.add(Criteria.where("location.city").in(filter.cityName()));
+      log.info("Class: {}, Method: filterEvents - used filter cityName {}.", className, filter.cityName());
+    }
 
     // Location filter (під домом)
     if (Boolean.TRUE.equals(filter.isNearby()) && filter.latitude() != null && filter.longitude() != null) {
@@ -114,9 +119,9 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
   }
 
   private void addDateCriteria(EventFilterRequest filter, List<Criteria> criteriaList) {
-    LocalDate now = LocalDate.now();
+    LocalDate now = getCurrentDate();
     DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
+    log.info("Class: {}, Method: addDateCriteria - LocalDate now {}", className, now);
     if (Boolean.TRUE.equals(filter.isToday())) {
 //      LocalDateTime startOfDay = now.with(LocalTime.MIN);
 //      LocalDateTime endOfDay = now.with(LocalTime.MAX);
@@ -129,13 +134,21 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
     }
 
     if (Boolean.TRUE.equals(filter.isOnTheWeekend())) {
-      LocalDate startOfWeekend = getNextSaturday(now);
-      LocalDate endOfWeekend = getNextSunday(now);
+      LocalDate saturday = getNextSaturday(now);
+//      LocalDate endOfWeekend = getNextSunday(now);
+
+//      LocalDate saturday = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.SATURDAY));
+      LocalDate sunday = now.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+
+//      criteriaList.add(Criteria.where("date.day")
+//          .gte(startOfWeekend.format(dateFormatter))
+//          .lte(endOfWeekend.format(dateFormatter)));
+
       criteriaList.add(Criteria.where("date.day")
-          .gte(startOfWeekend.format(dateFormatter))
-          .lte(endOfWeekend.format(dateFormatter)));
+              .gte(saturday.format(dateFormatter))
+              .lte(sunday.format(dateFormatter)));
       log.info("Class: {}, Method: addDateCriteria - used DateCriteria filter OnTheWeekend. ({}/{})",
-          className, startOfWeekend, endOfWeekend);
+          className, saturday, sunday);
     }
 
     if (Boolean.TRUE.equals(filter.isThisWeek())) {
@@ -146,6 +159,14 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
           .lte(endOfWeek.format(dateFormatter)));
       log.info("Class: {}, Method: addDateCriteria - used DateCriteria filter ThisWeek. ({}/{})",
           className, now, endOfWeek);
+
+//      LocalDate startOfWeek = getPreviousMonday(now);
+//      LocalDate endOfWeek = getNextSunday(now);
+//      criteriaList.add(Criteria.where("date.day")
+//              .gte(startOfWeek.format(dateFormatter))
+//              .lte(endOfWeek.format(dateFormatter)));
+//      log.info("Class: {}, Method: addDateCriteria - used DateCriteria filter ThisWeek. ({}/{})",
+//              className, now, endOfWeek);
     }
 
 //    if (filter.dateFrom() != null && filter.dateTo() != null) {
@@ -220,10 +241,21 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
   }
 
   public LocalDate getNextSaturday(LocalDate date) {
+    if(date.getDayOfWeek() == DayOfWeek.SUNDAY){
+      return date;
+    }
     return date.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
   }
 
   public LocalDate getNextSunday(LocalDate date) {
     return date.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+  }
+
+  public LocalDate getPreviousMonday(LocalDate date) {
+    return date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+  }
+
+  public LocalDate getCurrentDate() {
+    return LocalDate.now(clock);
   }
 }

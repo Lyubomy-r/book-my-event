@@ -8,10 +8,12 @@ import com.BookMyEvent.entity.Event;
 import org.bson.types.ObjectId;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,7 +30,34 @@ public interface EventRepository extends MongoRepository<Event, ObjectId>, Event
 
   Page<Event> findEventByEventStatus(EventStatus eventStatus, Pageable pageable);
 
+  Page<Event> findEventByEventStatusAndLocation_City(
+      EventStatus eventStatus, String city, Pageable pageable);
+
   Page<Event> findEventByEventCategory(EventCategory eventCategory, Pageable pageable);
+
+  @Aggregation(
+      pipeline = {"{ '$match': { 'eventCategory': ?0, 'eventStatus': ?1 }}", "{ '$sample': { 'size': ?2 } }"})
+  List<Event> findRandomEventsByCategory(EventCategory category, EventStatus eventStatus, int size);
+
+  @Aggregation(
+      pipeline = {
+        "{ '$match': { 'creationDate': { $gte: ?0, $lte: ?1 }, 'location.city': ?2, 'eventStatus': ?3 } }",
+        "{ '$sample': { 'size': ?4 } }"
+      })
+  List<Event> findRandomEventsByCreationDateByCity(
+      LocalDateTime fromDate,
+      LocalDateTime toDate,
+      String cityName,
+      EventStatus eventStatus,
+      int size);
+
+  @Aggregation(
+      pipeline = {
+        "{ '$match': { 'creationDate': { $gte: ?0, $lte: ?1 }, 'eventStatus': ?2 } }",
+        "{ '$sample': { 'size': ?3 } }"
+      })
+  List<Event> findRandomEventsByCreationDate(
+      LocalDateTime fromDate, LocalDateTime toDate, EventStatus eventStatus, int size);
 
   List<Event> findEventByEventStatus(EventStatus eventStatus);
 
@@ -38,5 +67,4 @@ public interface EventRepository extends MongoRepository<Event, ObjectId>, Event
   Page<Event> findByOrganizersId(ObjectId organizerId, Pageable pageable);
 
   List<Event> findByOrganizers_IdAndIsCompleted(ObjectId userId, boolean completed);
-
 }

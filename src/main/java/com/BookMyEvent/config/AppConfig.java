@@ -2,6 +2,7 @@ package com.BookMyEvent.config;
 
 import com.BookMyEvent.converter.LocalTimeToStringConverter;
 import com.BookMyEvent.converter.StringToLocalTimeConverter;
+import com.BookMyEvent.entity.CityList;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,12 +15,12 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Clock;
 import java.util.Arrays;
 
 @Configuration
 @EnableSpringDataWebSupport(
-    pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO
-)
+    pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
 public class AppConfig {
   @Value("${cloudinary.cloud-name}")
   private String cloudinaryCloudName;
@@ -32,7 +33,8 @@ public class AppConfig {
 
   @Bean
   public MongoCustomConversions mongoCustomConversions() {
-    return new MongoCustomConversions(Arrays.asList(new StringToLocalTimeConverter(), new LocalTimeToStringConverter()));
+    return new MongoCustomConversions(
+        Arrays.asList(new StringToLocalTimeConverter(), new LocalTimeToStringConverter()));
   }
 
   @Bean
@@ -57,5 +59,10 @@ public class AppConfig {
             "api_key", cloudinaryApiKey,
             "api_secret", cloudinaryApiSecret,
             "secure", true));
+  }
+
+  @Bean
+  public Clock clock() {
+    return Clock.systemUTC();
   }
 }

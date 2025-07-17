@@ -25,6 +25,7 @@ public record EventFilterRequest(
      Boolean isUnder500,
      PriceRange priceRange,
      String latitude,
-     String longitude
+     String longitude,
+     String cityName
 ) {
 }

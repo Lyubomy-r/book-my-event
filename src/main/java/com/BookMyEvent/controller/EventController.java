@@ -1,16 +1,12 @@
 package com.BookMyEvent.controller;
 
 import com.BookMyEvent.entity.EventDeleteRequest;
-import com.BookMyEvent.entity.dto.AppResponse;
-import com.BookMyEvent.entity.dto.EventDTO;
-import com.BookMyEvent.entity.dto.EventFilterRequest;
-import com.BookMyEvent.entity.dto.EventResponseDto;
-import com.BookMyEvent.entity.dto.EventUpdateDTO;
-import com.BookMyEvent.entity.dto.UserResponseDto;
+import com.BookMyEvent.entity.dto.*;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
 import com.BookMyEvent.service.EventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -21,6 +17,7 @@ import jakarta.validation.Valid;
 import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -33,6 +30,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 import static com.BookMyEvent.config.SwaggerConfig.CREATED_EVENT_PAYLOAD_SCHEMA;
@@ -259,15 +257,18 @@ public class EventController {
       })
   @GetMapping
   public ResponseEntity<Page<EventResponseDto>> getAllApprovedEvents(
+      @RequestParam(value = "cityName", required = false) String cityName,
       @PageableDefault(page = 0, size = 6, sort = "creationDate", direction = Sort.Direction.DESC)
           Pageable pageable) {
-    log.info("Class: {}, Method: getAllEventsUA - Fetching all APPROVED events.", className);
-    Page<EventResponseDto> events = eventService.getApprovedEvents(pageable);
+    log.info("Class: {}, Method: getAllEventsUA - Fetching all APPROVED events. City - {}", className, cityName);
+
+    Page<EventResponseDto> events = eventService.getApprovedEvents(pageable, cityName);
+    log.info("Class: {}, Method: getAllEventsUA - Fetching all APPROVED events ({})", className, events.getContent().size());
     return ResponseEntity.ok(events);
   }
 
   @Operation(
-      summary = "Get Top Events",
+      summary = "Get random Top Events",
       responses = {
         @ApiResponse(
             responseCode = "200",
@@ -275,17 +276,36 @@ public class EventController {
             content = {
               @Content(
                   mediaType = APPLICATION_JSON_VALUE,
-                  schema = @Schema(implementation = Page.class))
+                  array = @ArraySchema(schema = @Schema(implementation = EventResponseDto.class)))
             })
       })
   @GetMapping("/top")
-  public ResponseEntity<Page<EventResponseDto>> getTopEvents(
-      @PageableDefault(page = 0, size = 6, sort = "creationDate", direction = Sort.Direction.DESC)
-          Pageable pageable) {
+  public ResponseEntity<List<EventResponseDto>> getTopEvents(@PathParam("size") Integer size,
+                                                             @RequestParam(value = "cityName", required = false) String cityName) {
     log.info("Class: {}, Method: getTopEvents - Fetching top events.", className);
-    Page<EventResponseDto> events = eventService.getTopEvents(pageable);
+    List<EventResponseDto> events = eventService.getTopEvents(size);
     return ResponseEntity.ok(events);
   }
+
+    @Operation(
+            summary = "Get random new Events",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Get new Events.",
+                            content = {
+                                    @Content(
+                                            mediaType = APPLICATION_JSON_VALUE,
+                                            array = @ArraySchema(schema = @Schema(implementation = EventResponseDto.class)))
+                            })
+            })
+    @GetMapping("/new")
+    public ResponseEntity<List<EventResponseDto>> getNewEvents(@RequestParam("size") Integer size,
+                                                               @RequestParam(value = "cityName", required = false) String cityName) {
+        log.info("Class: {}, Method: getNewEvents - Fetching new events. City filter {}", className, cityName);
+        List<EventResponseDto> events = eventService.getNewEvents(size, cityName);
+        return ResponseEntity.ok(events);
+    }
 
   @Operation(
       summary = "Get filtered approved events",

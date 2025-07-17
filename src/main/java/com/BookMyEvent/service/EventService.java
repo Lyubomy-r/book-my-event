@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 public interface EventService {
@@ -23,9 +24,11 @@ public interface EventService {
 
     String cancelEventUpdateRequest(String eventId, String eventUpdateRequestId);
 
-    Page<EventResponseDto> getApprovedEvents(Pageable pageable);
+    Page<EventResponseDto> getApprovedEvents(Pageable pageable, String city);
 
-    Page<EventResponseDto> getTopEvents(Pageable pageable);
+    List<EventResponseDto> getTopEvents(Integer size);
+
+    List<EventResponseDto> getNewEvents(Integer size, String cityName);
 
     String createDeleteEventRequest(String eventId, EventDeleteRequest eventDeleteRequest, String userId);
 

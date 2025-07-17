@@ -25,6 +25,8 @@ import com.BookMyEvent.exception.FieldValidationException;
 import com.BookMyEvent.service.MailService;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -66,20 +68,13 @@ public class EventServiceImplTestIntegret {
     registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
   }
 
-  @Autowired
-  private EventServiceImpl eventServiceImpl;
-  @Autowired
-  private EventRepository eventRepository;
-  @Autowired
-  private UserRepository userRepository;
-  @Autowired
-  private EventUpdateRequestRepository eventUpdateRepository;
-  @Autowired
-  private EventDeleteRequestRepository eventCancelRepository;
-  @Autowired
-  private ImageRepository imageRepository;
-  @MockBean
-  private MailService mailService;
+  @Autowired private EventServiceImpl eventServiceImpl;
+  @Autowired private EventRepository eventRepository;
+  @Autowired private UserRepository userRepository;
+  @Autowired private EventUpdateRequestRepository eventUpdateRepository;
+  @Autowired private EventDeleteRequestRepository eventCancelRepository;
+  @Autowired private ImageRepository imageRepository;
+  @MockBean private MailService mailService;
 
   private Event event;
   private DateDetails dateDetails;
@@ -95,21 +90,21 @@ public class EventServiceImplTestIntegret {
     eventUpdateRepository.deleteAll();
     eventCancelRepository.deleteAll();
     LocalTime localTime = LocalTime.now();
-    List<Image> imageList = Arrays.asList(Image.builder()
-        .id(new ObjectId("66c648b600179737a3d5c212")).build()
-    );
+    List<Image> imageList =
+        Arrays.asList(Image.builder().id(new ObjectId("66c648b600179737a3d5c212")).build());
 
-    userOne = User.builder()
-        .id(new ObjectId("66c648b600179737a3d5c235"))
-        .name("Ronald")
-        .email("sewewt@code.com")
-        .password("As123ertyuer")
-        .location("Kyiv")
-        .mailConfirmation(true)
-        .status(Status.ACTIVE)
-        .role(Role.VISITOR)
-        .creationDate(LocalDateTime.now())
-        .build();
+    userOne =
+        User.builder()
+            .id(new ObjectId("66c648b600179737a3d5c235"))
+            .name("Ronald")
+            .email("sewewt@code.com")
+            .password("As123ertyuer")
+            .location("Kyiv")
+            .mailConfirmation(true)
+            .status(Status.ACTIVE)
+            .role(Role.VISITOR)
+            .creationDate(LocalDateTime.now())
+            .build();
 
     event = new Event();
     event.setId(new ObjectId("66c648b600179737a3d5c235"));
@@ -124,37 +119,31 @@ public class EventServiceImplTestIntegret {
     event.setUnlimitedTickets(false);
     event.setPhoneNumber("+380961232456");
     event.setTicketPrice(800L);
-    event.setLocation(new Location(
-        "Київ",
-        "вул. Успішна, 1",
-        "",
-        "50.426129",
-        "30.514067"));
+    event.setLocation(new Location("Київ", "вул. Успішна, 1", "", "50.426129", "30.514067"));
     event.setAboutOrganizer("Text About Organizer");
     event.setRating(4.2D);
     event.setImages(imageList);
-//    event.setOrganizers(User.builder().id(new ObjectId("66c648b600179737a3d5c211"))
-//        .email("test@email.com")
-//        .createdEvents(new ArrayList<>())
-//        .build());
+    //    event.setOrganizers(User.builder().id(new ObjectId("66c648b600179737a3d5c211"))
+    //        .email("test@email.com")
+    //        .createdEvents(new ArrayList<>())
+    //        .build());
     event.setOrganizers(userOne);
-    event.setDate(new DateDetails(
-        LocalDate.of(LocalDate.now().plusYears(1).getYear(),
-            10, 21
-        ).toString(),
-        localTime.toString(),
-        localTime.plusHours(2L).toString()));
+    event.setDate(
+        new DateDetails(
+            LocalDate.of(LocalDate.now().plusYears(1).getYear(), 10, 21).toString(),
+            localTime.toString(),
+            localTime.plusHours(2L).toString()));
     event.setHasUpdateRequest(false);
     event.setHasCancelRequest(false);
 
     userRepository.save(userOne);
     eventRepository.save(event);
 
-    dateDetails = new DateDetails(LocalDate.parse(
-        event.getDate().day()).format(dayFormatter),
-        LocalTime.parse(event.getDate().time()).format(timeFormatter),
-        LocalTime.parse(event.getDate().endTime()).format(timeFormatter));
-
+    dateDetails =
+        new DateDetails(
+            LocalDate.parse(event.getDate().day()).format(dayFormatter),
+            LocalTime.parse(event.getDate().time()).format(timeFormatter),
+            LocalTime.parse(event.getDate().endTime()).format(timeFormatter));
 
     eventResponseDto = new EventResponseDto();
     eventResponseDto.setId(event.getId().toHexString());
@@ -174,7 +163,6 @@ public class EventServiceImplTestIntegret {
     eventResponseDto.setRating(event.getRating());
     eventResponseDto.setImages(event.getImages());
     eventResponseDto.setDate(event.getDate());
-
   }
 
   @Test
@@ -184,7 +172,7 @@ public class EventServiceImplTestIntegret {
   }
 
   @Test
-  public void makeUpdateEventRequest(){
+  public void makeUpdateEventRequest() {
 
     EventUpdateDTO eventDTO = new EventUpdateDTO();
     eventDTO.setTitle("new Title");
@@ -196,7 +184,8 @@ public class EventServiceImplTestIntegret {
 
     String expectedMessage = "Request for update event is created successfully.";
     String responseMessage = helpMethodMakeUpdateEventRequest(eventDTO);
-    Optional<EventUpdateRequest> existingUpdateRequest = eventUpdateRepository.findEventUpdateRequestByEventId(event.getId().toHexString());
+    Optional<EventUpdateRequest> existingUpdateRequest =
+        eventUpdateRepository.findEventUpdateRequestByEventId(event.getId().toHexString());
     Optional<Event> existingEvent = eventRepository.findById(event.getId());
 
     assertEquals(expectedMessage, responseMessage);
@@ -210,9 +199,9 @@ public class EventServiceImplTestIntegret {
   }
 
   @Test
-  public void makeUpdateEventRequestNegativeScenTicketPrice(){
+  public void makeUpdateEventRequestNegativeScenarioTicketPrice() {
     event.setSoldTickets(1);
-    event.setAvailableTickets(event.getAvailableTickets()-1);
+    event.setAvailableTickets(event.getAvailableTickets() - 1);
     eventRepository.save(event);
     EventUpdateDTO eventDTO = new EventUpdateDTO();
     eventDTO.setTitle("new Title");
@@ -223,14 +212,18 @@ public class EventServiceImplTestIntegret {
     eventDTO.setEventType(EventType.OTHER);
     String expectedMessage = "The ticket price can no longer be changed.";
 
-    FieldValidationException fieldValidationException = assertThrows(FieldValidationException.class,
-        ()->eventServiceImpl.createUpdateEventRequest(event.getId().toHexString(),
-            eventDTO,
-            userOne.getId().toHexString(),
-            null,
-            null
-        ));
-    Optional<EventUpdateRequest> existingUpdateRequest = eventUpdateRepository.findEventUpdateRequestByEventId(event.getId().toHexString());
+    FieldValidationException fieldValidationException =
+        assertThrows(
+            FieldValidationException.class,
+            () ->
+                eventServiceImpl.createUpdateEventRequest(
+                    event.getId().toHexString(),
+                    eventDTO,
+                    userOne.getId().toHexString(),
+                    null,
+                    null));
+    Optional<EventUpdateRequest> existingUpdateRequest =
+        eventUpdateRepository.findEventUpdateRequestByEventId(event.getId().toHexString());
     Optional<Event> existingEvent = eventRepository.findById(event.getId());
 
     assertEquals(expectedMessage, fieldValidationException.getDetails().get("ticketPrice"));
@@ -241,9 +234,9 @@ public class EventServiceImplTestIntegret {
   }
 
   @Test
-  public void makeUpdateEventRequestNegativeScenNumberOfTickets(){
+  public void makeUpdateEventRequestNegativeScenarioNumberOfTickets() {
     event.setSoldTickets(1);
-    event.setAvailableTickets(event.getAvailableTickets()-1);
+    event.setAvailableTickets(event.getAvailableTickets() - 1);
     eventRepository.save(event);
     EventUpdateDTO eventDTO = new EventUpdateDTO();
     eventDTO.setTitle("new Title");
@@ -253,14 +246,18 @@ public class EventServiceImplTestIntegret {
     eventDTO.setEventType(EventType.OTHER);
     String expectedMessage = "The number of tickets can no longer be changed.";
 
-    FieldValidationException fieldValidationException = assertThrows(FieldValidationException.class,
-        ()->eventServiceImpl.createUpdateEventRequest(event.getId().toHexString(),
-            eventDTO,
-            userOne.getId().toHexString(),
-            null,
-            null
-        ));
-    Optional<EventUpdateRequest> existingUpdateRequest = eventUpdateRepository.findEventUpdateRequestByEventId(event.getId().toHexString());
+    FieldValidationException fieldValidationException =
+        assertThrows(
+            FieldValidationException.class,
+            () ->
+                eventServiceImpl.createUpdateEventRequest(
+                    event.getId().toHexString(),
+                    eventDTO,
+                    userOne.getId().toHexString(),
+                    null,
+                    null));
+    Optional<EventUpdateRequest> existingUpdateRequest =
+        eventUpdateRepository.findEventUpdateRequestByEventId(event.getId().toHexString());
     Optional<Event> existingEvent = eventRepository.findById(event.getId());
 
     assertEquals(expectedMessage, fieldValidationException.getDetails().get("numberOfTickets"));
@@ -272,21 +269,24 @@ public class EventServiceImplTestIntegret {
 
   @Test
   void updateEvent() {
-    EventUpdateRequest eventUpdateRequest = EventUpdateRequest.builder()
-        .id("66c648b600179737a3d5c277")
-        .eventId(event.getId().toHexString())
-        .title("new Title")
-        .description("Description about event info")
-        .ticketPrice(500L)
-        .numberOfTickets(2000)
-        .aboutOrganizer(event.getAboutOrganizer())
-        .eventType(EventType.OTHER)
-        .images(null)
-        .build();
+    EventUpdateRequest eventUpdateRequest =
+        EventUpdateRequest.builder()
+            .id("66c648b600179737a3d5c277")
+            .eventId(event.getId().toHexString())
+            .title("new Title")
+            .description("Description about event info")
+            .ticketPrice(500L)
+            .numberOfTickets(2000)
+            .aboutOrganizer(event.getAboutOrganizer())
+            .eventType(EventType.OTHER)
+            .images(null)
+            .build();
     event.setHasUpdateRequest(true);
     eventRepository.save(event);
     eventUpdateRepository.save(eventUpdateRequest);
-    doNothing().when(mailService).sendSimpleHtmlMailMessage4Line(
+    doNothing()
+        .when(mailService)
+        .sendSimpleHtmlMailMessage4Line(
             anyString(),
             anyString(),
             anyString(),
@@ -295,7 +295,8 @@ public class EventServiceImplTestIntegret {
             anyString(),
             anyString());
 
-    EventResponseDto updateEvent = eventServiceImpl.updateEvent(event.getId().toHexString(), eventUpdateRequest.getId());
+    EventResponseDto updateEvent =
+        eventServiceImpl.updateEvent(event.getId().toHexString(), eventUpdateRequest.getId());
     Optional<Event> existingEvent = eventRepository.findById(event.getId());
 
     assertNotNull(updateEvent);
@@ -310,7 +311,9 @@ public class EventServiceImplTestIntegret {
     assertFalse(existingEvent.get().getHasUpdateRequest());
     assertFalse(existingEvent.get().getHasCancelRequest());
 
-    verify(mailService, times(1)).sendSimpleHtmlMailMessage4Line(anyString(),
+    verify(mailService, times(1))
+        .sendSimpleHtmlMailMessage4Line(
+            anyString(),
             anyString(),
             anyString(),
             anyString(),
@@ -321,30 +324,32 @@ public class EventServiceImplTestIntegret {
 
   @Test
   void getEventUpdateRequestById() {
-    EventUpdateRequest eventUpdateRequest = EventUpdateRequest.builder()
-        .id("66c648b600179737a3d5c277")
-        .eventId(event.getId().toHexString())
-        .title("new Title")
-        .description("Description about event info")
-        .ticketPrice(500L)
-        .numberOfTickets(2000)
-        .aboutOrganizer(event.getAboutOrganizer())
-        .eventType(EventType.OTHER)
-        .images(null)
-        .build();
+    EventUpdateRequest eventUpdateRequest =
+        EventUpdateRequest.builder()
+            .id("66c648b600179737a3d5c277")
+            .eventId(event.getId().toHexString())
+            .title("new Title")
+            .description("Description about event info")
+            .ticketPrice(500L)
+            .numberOfTickets(2000)
+            .aboutOrganizer(event.getAboutOrganizer())
+            .eventType(EventType.OTHER)
+            .images(null)
+            .build();
     eventUpdateRepository.save(eventUpdateRequest);
 
-    EventUpdateRequestDTO existedUpdateRequest = eventServiceImpl.getEventUpdateRequestById(eventUpdateRequest.getEventId());
+    EventUpdateRequestDTO existedUpdateRequest =
+        eventServiceImpl.getEventUpdateRequestById(eventUpdateRequest.getEventId());
 
     assertNotNull(existedUpdateRequest);
     assertEquals(eventUpdateRequest.getId(), existedUpdateRequest.id());
     assertEquals(eventUpdateRequest.getTitle(), existedUpdateRequest.title());
-    assertEquals(eventUpdateRequest.getEventType().getUkrainianName(), existedUpdateRequest.eventType());
+    assertEquals(
+        eventUpdateRequest.getEventType().getUkrainianName(), existedUpdateRequest.eventType());
   }
 
   @Test
-  void getEventCancelRequestById() {
-  }
+  void getEventCancelRequestById() {}
 
   @Test
   void getAllEvents() {
@@ -368,7 +373,7 @@ public class EventServiceImplTestIntegret {
   }
 
   @Test
-  public void createDeleteEventRequest(){
+  public void createDeleteEventRequest() {
     eventRepository.save(event);
     String reasonMessage = "Some reasons";
     String contact = "0923456326";
@@ -377,10 +382,11 @@ public class EventServiceImplTestIntegret {
     eventDTO.setReason(reasonMessage);
     String expectedMessage = "Request for canceling event is created successfully.";
 
-    String responseMessage = eventServiceImpl.createDeleteEventRequest(
-        event.getId().toHexString(), eventDTO, userOne.getId().toHexString()
-          );
-    Optional<EventDeleteRequest> existingDeleteRequest = eventCancelRepository.findByEventId(event.getId().toHexString());
+    String responseMessage =
+        eventServiceImpl.createDeleteEventRequest(
+            event.getId().toHexString(), eventDTO, userOne.getId().toHexString());
+    Optional<EventDeleteRequest> existingDeleteRequest =
+        eventCancelRepository.findByEventId(event.getId().toHexString());
     Optional<Event> existingEvent = eventRepository.findById(event.getId());
 
     assertEquals(expectedMessage, responseMessage);
@@ -395,15 +401,12 @@ public class EventServiceImplTestIntegret {
   }
 
   @Test
-  public void deleteEvent(){
+  public void deleteEvent() {
     String reasonMessage = "Some reasons";
     String contact = "0923456326";
-    Image image = new Image(new ObjectId("66c648b600179737a3d5c543"),
-        "imageTestname",
-        null,
-        null,
-        null,
-        false);
+    Image image =
+        new Image(
+            new ObjectId("66c648b600179737a3d5c543"), "imageTestname", null, null, null, false);
     EventDeleteRequest eventDTO = new EventDeleteRequest();
     eventDTO.setId("66c648b600179737a3d5c123");
     eventDTO.setUserId(userOne.getId().toHexString());
@@ -418,24 +421,84 @@ public class EventServiceImplTestIntegret {
     eventCancelRepository.save(eventDTO);
 
     eventServiceImpl.deleteEvent(event.getId().toHexString(), eventDTO.getId());
-    Optional<EventDeleteRequest> existingDeleteRequest = eventCancelRepository.findByEventId(event.getId().toHexString());
+    Optional<EventDeleteRequest> existingDeleteRequest =
+        eventCancelRepository.findByEventId(event.getId().toHexString());
     Optional<Event> existingEvent = eventRepository.findById(event.getId());
 
     assertFalse(existingDeleteRequest.isPresent());
     assertFalse(existingEvent.isPresent());
   }
 
-  public String helpMethodMakeUpdateEventRequest(EventUpdateDTO eventDTO){
+  @Test
+  @DisplayName("Test EventServiceImpl method getEvents")
+  void testMethodGetEvents() {
+    String cityName = "Київ";
+    Pageable pageable = PageRequest.of(0, 6);
+    event.setEventStatus(EventStatus.APPROVED);
+    eventRepository.save(event);
+
+    Page<EventResponseDto> result = eventServiceImpl.getApprovedEvents(pageable, cityName);
+    assertAll(
+        () -> assertFalse(result.isEmpty()),
+        () -> assertEquals(1, result.getContent().size()),
+        () -> assertEquals(event.getId().toHexString(), result.getContent().get(0).getId()),
+        () -> assertNull(result.getContent().get(0).getOrganizers()));
+  }
+
+  @Nested
+  @DisplayName("Test EventServiceImpl method getNewEvents.")
+  class testGetNewEvents {
+    @Test
+    @DisplayName(
+        "Test EventServiceImpl method getNewEvents without param city name. Positive Scenario return random list of events. Positive Scenario return random list of events.")
+    public void testGetNewEventsPositiveScenarioWithoutCity() {
+      Integer size = 2;
+      String cityName = null;
+      LocalDateTime date = LocalDateTime.now();
+      event.setEventStatus(EventStatus.APPROVED);
+      event.setCreationDate(date.minusDays(1));
+      eventRepository.save(event);
+
+      List<EventResponseDto> result = eventServiceImpl.getNewEvents(size, cityName);
+
+      assertAll(
+          () -> assertFalse(result.isEmpty()),
+          () -> assertEquals(1, result.size()),
+          () -> assertEquals(event.getId().toHexString(), result.get(0).getId()),
+          () -> assertNull(result.get(0).getOrganizers()));
+    }
+
+    @Test
+    @DisplayName(
+        "Test EventServiceImpl method getNewEvents with param city name. Positive Scenario return random list of events.")
+    public void testGetNewEventsPositiveScenarioWithCity() {
+      Integer size = 2;
+      String cityName = "Київ";
+      LocalDateTime date = LocalDateTime.now();
+      event.setEventStatus(EventStatus.APPROVED);
+      event.setCreationDate(date.minusDays(1));
+
+      eventRepository.save(event);
+
+      List<EventResponseDto> result = eventServiceImpl.getNewEvents(size, cityName);
+
+      assertAll(
+          () -> assertFalse(result.isEmpty()),
+          () -> assertEquals(1, result.size()),
+          () -> assertEquals(event.getId().toHexString(), result.get(0).getId()),
+          () -> assertNull(result.get(0).getOrganizers()),
+          () -> assertEquals(cityName, result.get(0).getLocation().city()));
+    }
+  }
+
+  public String helpMethodMakeUpdateEventRequest(EventUpdateDTO eventDTO) {
     MultipartFile firstImage = mock(MultipartFile.class);
     MultipartFile secondImage = mock(MultipartFile.class);
     MultipartFile thirdImage = mock(MultipartFile.class);
 
-    String responseMessage = eventServiceImpl.createUpdateEventRequest(event.getId().toHexString(),
-        eventDTO,
-        userOne.getId().toHexString(),
-        null,
-        null
-    );
+    String responseMessage =
+        eventServiceImpl.createUpdateEventRequest(
+            event.getId().toHexString(), eventDTO, userOne.getId().toHexString(), null, null);
     return responseMessage;
   }
 }
