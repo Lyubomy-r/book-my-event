@@ -3,12 +3,7 @@ package com.BookMyEvent.controller;
 import com.BookMyEvent.entity.FundsRequest;
 import com.BookMyEvent.entity.OrderDetails;
 import com.BookMyEvent.entity.PromoCode;
-import com.BookMyEvent.entity.dto.AppResponse;
-import com.BookMyEvent.entity.dto.PaymentRequestDTO;
-import com.BookMyEvent.entity.dto.PaymentResponseDTO;
-import com.BookMyEvent.entity.dto.PaymentStatusResponseDTO;
-import com.BookMyEvent.entity.dto.ProductDTO;
-import com.BookMyEvent.entity.dto.WayforpayRequest;
+import com.BookMyEvent.entity.dto.*;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
 import com.BookMyEvent.service.PaymentService;
 import com.fasterxml.jackson.core.util.RequestPayload;
@@ -194,12 +189,12 @@ public class PayController {
   @PostMapping("/funds/{userId}")
   @PreAuthorize("#userId == authentication.principal['id']")
   public ResponseEntity<AppResponse> createFundsRequest(
-      @PathVariable("userId") String userId, @RequestBody FundsRequest fundsRequest) {
+      @PathVariable("userId") String userId, @RequestBody CreateFundsRequestDTO fundsRequest) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     log.info("Class: {}, Method: {} - createFundsRequest.", className, methodName);
     String message = paymentService.saveFundsRequest(userId, fundsRequest);
     AppResponse response =
-        new AppResponse(200, "The promo code has been processed successfully.", message);
+        new AppResponse(200, message);
     return ResponseEntity.ok(response);
   }
 

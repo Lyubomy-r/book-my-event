@@ -45,6 +45,7 @@ public class OrderDetailsServiceImp implements OrderDetailsService {
                   eventResponseDto.setTicketPrice(order.getEvent().getTicketPrice());
                   eventResponseDto.setTitle(order.getEvent().getTitle());
                   eventResponseDto.setLocation(order.getEvent().getLocation());
+                  eventResponseDto.setImages(order.getEvent().getImages());
                   return new OrderDetailsDto(
                       order.getId().toHexString(),
                       order.getOrderReference(),
@@ -68,11 +69,13 @@ public class OrderDetailsServiceImp implements OrderDetailsService {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     BigDecimal totalAmount =
         listEvents.stream()
-            .map(
-                event ->
-                        calculateUserProfitByEvent(event.getId()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    log.info("{}::{} - calculate the total user profit by all events : {} .", className, methodName, totalAmount);
+            .map(event -> calculateUserProfitByEvent(event.getId()))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    log.info(
+        "{}::{} - calculate the total user profit by all events : {} .",
+        className,
+        methodName,
+        totalAmount);
 
     return totalAmount.setScale(2, RoundingMode.DOWN);
   }

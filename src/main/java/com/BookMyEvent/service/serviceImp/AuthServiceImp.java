@@ -106,6 +106,7 @@ public class AuthServiceImp implements AuthService {
             return response;
         }
     }
+
     @Override
     public EmailVerificationResponseDTO checkExistEmailAndIsAccessible(String email) {
         if (deletedUsersService.emailExist(email)) {
@@ -126,6 +127,7 @@ public class AuthServiceImp implements AuthService {
             return response ;
         }
     }
+
     @Override
     public String emailVerificationCheck(String email, String password) {
 

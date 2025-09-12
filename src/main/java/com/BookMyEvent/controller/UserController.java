@@ -4,6 +4,7 @@ import com.BookMyEvent.entity.dto.*;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
 import com.BookMyEvent.service.EventService;
 import com.BookMyEvent.service.OrderDetailsService;
+import com.BookMyEvent.service.PaymentService;
 import com.BookMyEvent.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -46,6 +48,7 @@ public class UserController {
 
   private final UserService userService;
   private final OrderDetailsService orderDetailsService;
+  private final PaymentService paymentService;
 
   private String className = this.getClass().getSimpleName();
 
@@ -363,4 +366,116 @@ public class UserController {
         "UserController::deleteUserAvatar - /users/{userId}/avatar - Return deletion message.");
     return ResponseEntity.ok(response);
   }
+
+    @Operation(
+            summary = "Get organizer's available balance by user id.",
+            description =
+                    "Get organizer's available balance by user id. The id in the parameters must match the id of the authorized user.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = " Return organizer's available balance.",
+                            content = {
+                                    @Content(
+                                            mediaType = APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = AppResponse.class))
+                            }),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Bad request or not Validation failed. User ID cannot be null or empty",
+                            content = {
+                                    @Content(
+                                            mediaType = APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = ErrorResponseDto.class))
+                            }),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "User with ID not found.",
+                            content = {
+                                    @Content(
+                                            mediaType = APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = ErrorResponseDto.class))
+                            }),
+                    @ApiResponse(
+                            responseCode = "403",
+                            description = "Access forbidden. User ID does not match token ID",
+                            content =
+                            @Content(
+                                    mediaType = APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(
+                                            example =
+                                                    "{\n"
+                                                            + "    \"timestamp\": \"2024-12-19T16:40:54.575+00:00\",\n"
+                                                            + "    \"status\": 403,\n"
+                                                            + "    \"error\": \"Forbidden\",\n"
+                                                            + "    \"path\": \"/api/v1/users/674cb373e84f0654529647c4\"\n"
+                                                            + "}")))
+            })
+    @GetMapping("/organizers/funds/{userId}")
+    @PreAuthorize("#userId == authentication.principal['id']")
+    public ResponseEntity<AppResponse> findOrganizerFunds(@PathVariable("userId") String userId) {
+        BigDecimal organizerFunds = paymentService.getOrganizerFunds(userId);
+        AppResponse response =
+                new AppResponse(HttpStatus.OK.value(), "The organizer's available balance has been successfully received.", organizerFunds);
+    log.info(
+        "UserController::findOrganizerFunds - /organizers/funds/{userId} - Return available balance.");
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Get organizer's withdrawn balance by user id.",
+            description =
+                    "Get organizer's withdrawn balance by user id. The id in the parameters must match the id of the authorized user.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = " Return organizer's withdrawn balance.",
+                            content = {
+                                    @Content(
+                                            mediaType = APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = AppResponse.class))
+                            }),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Bad request or not Validation failed. User ID cannot be null or empty",
+                            content = {
+                                    @Content(
+                                            mediaType = APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = ErrorResponseDto.class))
+                            }),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "User with ID not found.",
+                            content = {
+                                    @Content(
+                                            mediaType = APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = ErrorResponseDto.class))
+                            }),
+                    @ApiResponse(
+                            responseCode = "403",
+                            description = "Access forbidden. User ID does not match token ID",
+                            content =
+                            @Content(
+                                    mediaType = APPLICATION_JSON_VALUE,
+                                    schema =
+                                    @Schema(
+                                            example =
+                                                    "{\n"
+                                                            + "    \"timestamp\": \"2024-12-19T16:40:54.575+00:00\",\n"
+                                                            + "    \"status\": 403,\n"
+                                                            + "    \"error\": \"Forbidden\",\n"
+                                                            + "    \"path\": \"/api/v1/users/674cb373e84f0654529647c4\"\n"
+                                                            + "}")))
+            })
+    @GetMapping("/organizers/funds/withdrawn/{userId}")
+    @PreAuthorize("#userId == authentication.principal['id']")
+    public ResponseEntity<AppResponse> findOrganizerWithdrawnFunds(@PathVariable("userId") String userId) {
+        BigDecimal withdrawnFunds = paymentService.getOrganizerWithdrawnFunds(userId);
+        AppResponse response =
+                new AppResponse(HttpStatus.OK.value(), "The organizer's withdrawn balance has been successfully received.", withdrawnFunds);
+        log.info(
+                "UserController::getOrganizerFunds - /organizers/funds/withdrawn/{userId} - Return withdrawn balance.");
+        return ResponseEntity.ok(response);
+    }
 }

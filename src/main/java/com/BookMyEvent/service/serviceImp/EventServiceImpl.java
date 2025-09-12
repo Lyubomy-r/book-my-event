@@ -61,8 +61,6 @@ public class EventServiceImpl implements EventService {
   private final String className = this.getClass().getSimpleName();
   private final CityList cityList;
 
-
-
   @Override
   @Transactional
   public EventResponseDto createEvent(
@@ -348,9 +346,6 @@ public class EventServiceImpl implements EventService {
     log.info("{}::{} - events with filter city ({}).", className, methodName, city);
     if (city == null) {
       Page<Event> events = eventRepository.findEventByEventStatus(EventStatus.APPROVED, pageable);
-      if (events.getContent().isEmpty()) {
-        return new PageImpl<>(List.of(), events.getPageable(), events.getTotalElements());
-      }
       log.info(
           "{}::{} - Found {} events without filter city.",
           className,
@@ -362,15 +357,16 @@ public class EventServiceImpl implements EventService {
       Page<Event> events =
           eventRepository.findEventByEventStatusAndLocation_City(
               EventStatus.APPROVED, city, pageable);
-      //      if (events.getContent().isEmpty()) {
-      //        return new PageImpl<>(List.of(), events.getPageable(), events.getTotalElements());
-      //      }
       log.info(
           "{}::{} - Found {} events with filter city ({}).",
           className,
           methodName,
           events.getTotalElements(),
           city);
+      if (events.getContent().size() <= 0) {
+       events = eventRepository.findEventByEventStatus(EventStatus.APPROVED, pageable);
+        log.info("{}::{} - The second query found {} events. By city search results 0.", className, methodName, events.getContent().size());
+      }
 
       return getPageSortedByCategoryTopEvents(events);
     } else {
@@ -382,7 +378,9 @@ public class EventServiceImpl implements EventService {
   @Override
   public List<EventResponseDto> getTopEvents(Integer size) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    List<Event> events = eventRepository.findRandomEventsByCategory(EventCategory.TOP_EVENTS, EventStatus.APPROVED, size);
+    List<Event> events =
+        eventRepository.findRandomEventsByCategory(
+            EventCategory.TOP_EVENTS, EventStatus.APPROVED, size);
     try {
       log.info("{}::{} - Found {} events", className, methodName, events.size());
       return events.stream().map(eventMapper::toEventResponseDtoFromEventWithoutUser).toList();
@@ -395,9 +393,10 @@ public class EventServiceImpl implements EventService {
   @Override
   public List<EventResponseDto> getNewEvents(Integer size, String cityName) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
-//    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    //    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     LocalDateTime toDate = LocalDateTime.now();
-    LocalDateTime fromDate= toDate.minusDays(7);
+    LocalDateTime fromDate = toDate.minusDays(7);
+    log.info("{}::{} - LocalDateTime fromDate {} - toDate {} events", className, methodName, fromDate, toDate);
     List<Event> events = new ArrayList<>();
     if (cityName == null) {
       events =
@@ -409,6 +408,12 @@ public class EventServiceImpl implements EventService {
           eventRepository.findRandomEventsByCreationDateByCity(
               fromDate, toDate, cityName, EventStatus.APPROVED, size);
       log.info("{}::{} - Found {} events", className, methodName, events.size());
+      if(events.size()<=0){
+        events =
+                eventRepository.findRandomEventsByCreationDate(
+                        fromDate, toDate, EventStatus.APPROVED, size);
+        log.info("{}::{} - The second query found {} events. By city search results 0.", className, methodName, events.size());
+      }
     } else {
       log.error("{}::{} - Return error message.", className, methodName);
       throw new GeneralException("The city name was entered incorrectly.", HttpStatus.BAD_REQUEST);

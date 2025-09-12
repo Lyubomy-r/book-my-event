@@ -36,37 +36,42 @@ public class CloudinaryServiceImp implements CloudinaryService {
   public static final String USERS_FOLDER_NAME = "users";
 
   private final Cloudinary cloudinary;
-
-  final static long MAX_SIZE_MB =1024 * 1024;
+  static final int MAX_SIZE_MB = 10;
+  static final long MAX_FILE_SIZE_BYTES = (MAX_SIZE_MB + 1) * 1024 * 1024;
 
   @Override
   public List<Image> savedEventImages(List<MultipartFile> images, String title) {
     List<Image> existingImages = new ArrayList<>();
     try {
       title = getString(title);
-      boolean main=true;
-      int counter=1;
+      boolean main = true;
+      int counter = 1;
       for (MultipartFile imageFile : images) {
-        String nameImg= title+"-"+counter;
-        while (imageRepository.existsByName(nameImg)){
-          nameImg= UUID.randomUUID()+"-"+nameImg;
+        String nameImg = title + "-" + counter;
+        while (imageRepository.existsByName(nameImg)) {
+          nameImg = UUID.randomUUID() + "-" + nameImg;
         }
-        String stringUrl = uploadFile(imageFile,nameImg,Event_FOLDER_NAME);
-        Image newImage = Image.builder()
-            .url(stringUrl)
-            .creationDate(LocalDateTime.now())
-            .isMain(main)
-            .name(nameImg)
-            .build();
+        String stringUrl = uploadFile(imageFile, nameImg, Event_FOLDER_NAME);
+        Image newImage =
+            Image.builder()
+                .url(stringUrl)
+                .creationDate(LocalDateTime.now())
+                .isMain(main)
+                .name(nameImg)
+                .build();
         Image saveImage = imageRepository.save(newImage);
-        main=false;
+        main = false;
         counter++;
-        log.info("{}::savedEventImg. Return all existing Event Images. bytes - {} ", clasName, saveImage.getId());
+        log.info(
+            "{}::savedEventImg. Return all existing Event Images. bytes - {} ",
+            clasName,
+            saveImage.getId());
         existingImages.add(saveImage);
       }
       return existingImages;
     } catch (Exception e) {
-      throw new GeneralException("Failed to process image files: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+      throw new GeneralException(
+          "Failed to process image files: " + e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -74,34 +79,39 @@ public class CloudinaryServiceImp implements CloudinaryService {
   public Image saveEventImage(MultipartFile image, String title) {
     try {
       title = getString(title);
-      String nameImg = title+"/"+image.getOriginalFilename();
-      while (imageRepository.existsByName(nameImg)){
-        nameImg= UUID.randomUUID()+"-"+nameImg;
+      String nameImg = title + "/" + image.getOriginalFilename();
+      while (imageRepository.existsByName(nameImg)) {
+        nameImg = UUID.randomUUID() + "-" + nameImg;
       }
       String stringUrl = uploadFile(image, nameImg, Event_FOLDER_NAME);
-      Image newImage = Image.builder()
-          .url(stringUrl)
-          .creationDate(LocalDateTime.now())
-          .isMain(false)
-          .name(nameImg)
-          .build();
+      Image newImage =
+          Image.builder()
+              .url(stringUrl)
+              .creationDate(LocalDateTime.now())
+              .isMain(false)
+              .name(nameImg)
+              .build();
       Image saveImage = imageRepository.save(newImage);
-      log.info("{}::savedEventImg. Return all existing Event Images. Id - {} ", clasName, saveImage.getId());
+      log.info(
+          "{}::savedEventImg. Return all existing Event Images. Id - {} ",
+          clasName,
+          saveImage.getId());
 
       return saveImage;
     } catch (Exception e) {
-      throw new GeneralException("Failed to process image files: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+      throw new GeneralException(
+          "Failed to process image files: " + e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
 
   private static String getString(String title) {
-    if(title.length()>20){
+    if (title.length() > 20) {
       String[] titleSplit = title.split(" ");
-      if(titleSplit.length>=2){
-      title = titleSplit[0]+" "+titleSplit[1];
-      return title;
-      }else {
-        title =  title.substring(0, 20);
+      if (titleSplit.length >= 2) {
+        title = titleSplit[0] + " " + titleSplit[1];
+        return title;
+      } else {
+        title = title.substring(0, 20);
         return title;
       }
     }
@@ -111,41 +121,52 @@ public class CloudinaryServiceImp implements CloudinaryService {
   @Override
   public Image savedUserImage(MultipartFile image, String userId) {
     try {
-      String nameImg = userId+"/"+image.getOriginalFilename();
-      while (imageRepository.existsByName(nameImg)){
-        nameImg= UUID.randomUUID()+"-"+nameImg;
+      String nameImg = userId + "/" + image.getOriginalFilename();
+      while (imageRepository.existsByName(nameImg)) {
+        nameImg = UUID.randomUUID() + "-" + nameImg;
       }
       String stringUrl = uploadFile(image, nameImg, USERS_FOLDER_NAME);
-      Image newImage = Image.builder()
-          .url(stringUrl)
-          .creationDate(LocalDateTime.now())
-          .isMain(true)
-          .name(nameImg)
-          .build();
+      Image newImage =
+          Image.builder()
+              .url(stringUrl)
+              .creationDate(LocalDateTime.now())
+              .isMain(true)
+              .name(nameImg)
+              .build();
       Image saveImage = imageRepository.save(newImage);
-      log.info("{}::savedEventImg. Return all existing Event Images. Id - {} ", clasName, saveImage.getId());
+      log.info(
+          "{}::savedEventImg. Return all existing Event Images. Id - {} ",
+          clasName,
+          saveImage.getId());
 
       return saveImage;
     } catch (Exception e) {
-      throw new GeneralException("Failed to process image files: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+      throw new GeneralException(
+          "Failed to process image files: " + e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
 
   @Override
   public String updateImageById(MultipartFile image, String imageId, String folderName) {
-    var imageOptional = imageRepository.findById(new ObjectId(imageId)).orElseThrow(
-        () -> new GeneralException("Image not found with ID: " + imageId, HttpStatus.NOT_FOUND));
+    var imageOptional =
+        imageRepository
+            .findById(new ObjectId(imageId))
+            .orElseThrow(
+                () ->
+                    new GeneralException(
+                        "Image not found with ID: " + imageId, HttpStatus.NOT_FOUND));
     try {
-        String nameImg= image.getName();
-        while (imageRepository.existsByName(nameImg)){
-          nameImg= UUID.randomUUID()+"-"+nameImg;
-        }
-        String stringUrl = uploadFile(image,nameImg,Event_FOLDER_NAME);
+      String nameImg = image.getName();
+      while (imageRepository.existsByName(nameImg)) {
+        nameImg = UUID.randomUUID() + "-" + nameImg;
+      }
+      String stringUrl = uploadFile(image, nameImg, Event_FOLDER_NAME);
 
       imageOptional.setUrl(stringUrl);
       imageRepository.save(imageOptional);
     } catch (Exception e) {
-      throw new GeneralException("Failed to process image file: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+      throw new GeneralException(
+          "Failed to process image file: " + e.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     return "Image updated successfully";
@@ -153,13 +174,16 @@ public class CloudinaryServiceImp implements CloudinaryService {
 
   @Override
   public void deleteAllEventImg(List<Image> images) {
-    if(!images.isEmpty()){
+    if (!images.isEmpty()) {
       for (Image imageFile : images) {
-        String imgName = Event_FOLDER_NAME+"/"+imageFile.getName();
-       boolean deletionResult = deleteFile(imgName);
-        log.info("{}::deleteAll. cloudinary deletion imageFile.getName() {} ", clasName, imageFile.getName());
+        String imgName = Event_FOLDER_NAME + "/" + imageFile.getName();
+        boolean deletionResult = deleteFile(imgName);
+        log.info(
+            "{}::deleteAll. cloudinary deletion imageFile.getName() {} ",
+            clasName,
+            imageFile.getName());
         log.info("{}::deleteAll. cloudinary deletion result {} ", clasName, deletionResult);
-        }
+      }
       imageRepository.deleteAll(images);
       log.info("{}::deleteAll. delete all existing Event Images by id. ", clasName);
     }
@@ -167,11 +191,14 @@ public class CloudinaryServiceImp implements CloudinaryService {
 
   @Override
   public void deleteUserImg(Image image) {
-    if(image!=null){
-        String imgName = USERS_FOLDER_NAME+"/"+image.getName();
-        boolean deletionResult = deleteFile(imgName);
-        log.info("{}::deleteUserImg. cloudinary deletion imageFile.getName() {} ", clasName, image.getName());
-        log.info("{}::deleteUserImg. cloudinary deletion result {} ", clasName, deletionResult);
+    if (image != null) {
+      String imgName = USERS_FOLDER_NAME + "/" + image.getName();
+      boolean deletionResult = deleteFile(imgName);
+      log.info(
+          "{}::deleteUserImg. cloudinary deletion imageFile.getName() {} ",
+          clasName,
+          image.getName());
+      log.info("{}::deleteUserImg. cloudinary deletion result {} ", clasName, deletionResult);
 
       imageRepository.delete(image);
       log.info("{}::deleteUserImg. delete  existing User Images  {}. ", clasName, image.getName());
@@ -180,36 +207,42 @@ public class CloudinaryServiceImp implements CloudinaryService {
 
   public String uploadFile(MultipartFile file, String fileName, String folderName) {
     if (!checkFileType(file)) {
-      throw new GeneralException("File type unsupported "+file.getContentType(), HttpStatus.BAD_REQUEST);
+      throw new GeneralException(
+          "File type unsupported " + file.getContentType(), HttpStatus.BAD_REQUEST);
     }
     try {
-        byte[] fileData = (file.getSize() > MAX_SIZE_MB) ? optimizeImage(file) : file.getBytes();
-        String stringUrl = cloudinary.uploader()
-            .upload(
-                fileData,
-                ObjectUtils.asMap("public_id", fileName, "overwrite", true, "folder", folderName))
-            .get("url")
-            .toString();
-        log.info("CloudinaryUtils::uploadFile. Upload File, new image and get image url.");
-        return stringUrl;
+      byte[] fileData =
+          (file.getSize() > MAX_FILE_SIZE_BYTES) ? optimizeImage(file) : file.getBytes();
+      String stringUrl =
+          cloudinary
+              .uploader()
+              .upload(
+                  fileData,
+                  ObjectUtils.asMap("public_id", fileName, "overwrite", true, "folder", folderName))
+              .get("url")
+              .toString();
+      log.info("CloudinaryUtils::uploadFile. Upload File, new image and get image url.");
+      return stringUrl;
 
     } catch (IOException e) {
       log.error("Failed to upload file: {}", file.getName(), e);
-      throw new GeneralException("Failed to upload file - "+e.getMessage(), HttpStatus.BAD_REQUEST);
+      throw new GeneralException(
+          "Failed to upload file - " + e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
 
   public boolean deleteFile(String fileName) {
     try {
       var result = cloudinary.uploader().destroy(fileName, ObjectUtils.emptyMap());
-      log.info("{}::deleteFile. delete img in cloudinary result. {} ", clasName, result) ;
+      log.info("{}::deleteFile. delete img in cloudinary result. {} ", clasName, result);
       if (result.containsKey("result") && result.get("result").equals("ok")) {
-        log.info("{}::deleteFile. delete img in cloudinary id. {} ", clasName, fileName) ;
+        log.info("{}::deleteFile. delete img in cloudinary id. {} ", clasName, fileName);
         return true;
       }
     } catch (IOException e) {
       log.error("Failed to delete a file: {}", fileName, e);
-      throw new GeneralException("Failed to delete file - "+e.getMessage(), HttpStatus.BAD_REQUEST);
+      throw new GeneralException(
+          "Failed to delete file - " + e.getMessage(), HttpStatus.BAD_REQUEST);
     }
     return false;
   }
@@ -217,7 +250,8 @@ public class CloudinaryServiceImp implements CloudinaryService {
   private boolean checkFileType(MultipartFile file) {
     Map<String, List<Byte>> signatures =
         Map.of(
-            "*.jpeg, *.jpg", List.of((byte) 0xFF, (byte) 0xD8),
+            "*.jpeg, *.jpg",
+            List.of((byte) 0xFF, (byte) 0xD8),
             "*.png",
             List.of(
                 (byte) 0x89,
@@ -228,8 +262,10 @@ public class CloudinaryServiceImp implements CloudinaryService {
                 (byte) 0x0A,
                 (byte) 0x1A,
                 (byte) 0x0A),
-            "*.webp", List.of((byte) 0x52, (byte) 0x49, (byte) 0x46, (byte) 0x46),
-            "*.svg+xml", List.of((byte) 0x3C, (byte) 0x73, (byte) 0x76, (byte) 0x67) );
+            "*.webp",
+            List.of((byte) 0x52, (byte) 0x49, (byte) 0x46, (byte) 0x46),
+            "*.svg+xml",
+            List.of((byte) 0x3C, (byte) 0x73, (byte) 0x76, (byte) 0x67));
     try {
       byte[] bytes = Arrays.copyOfRange(file.getBytes(), 0, 8);
       if (signatures.values().stream()
@@ -246,16 +282,20 @@ public class CloudinaryServiceImp implements CloudinaryService {
   }
 
   private byte[] optimizeImage(MultipartFile file) throws IOException {
+    log.info("{}::optimizeImage. optimize image file size get {}", clasName, file.getSize());
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     Thumbnails.of(file.getInputStream())
         .size(1024, 768)
         .outputQuality(0.7)
         .toOutputStream(outputStream);
     byte[] optimizedImage = outputStream.toByteArray();
-    if (optimizedImage.length > MAX_SIZE_MB) {
-      throw new GeneralException("Optimized image still exceeds the 1MB limit: " + file.getOriginalFilename(), HttpStatus.PAYLOAD_TOO_LARGE);
+    if (optimizedImage.length > MAX_FILE_SIZE_BYTES) {
+      throw new GeneralException(
+          "Optimized image still exceeds the " + MAX_SIZE_MB + " limit : " + file.getOriginalFilename(),
+          HttpStatus.PAYLOAD_TOO_LARGE);
     }
 
+    log.info("{}::optimizeImage. optimize image file size return {}", clasName, outputStream.size());
     return optimizedImage;
   }
 }

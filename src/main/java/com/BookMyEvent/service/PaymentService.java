@@ -1,13 +1,10 @@
 package com.BookMyEvent.service;
 
-import com.BookMyEvent.entity.FundsRequest;
 import com.BookMyEvent.entity.OrderDetails;
 import com.BookMyEvent.entity.PromoCode;
-import com.BookMyEvent.entity.dto.PaymentRequestDTO;
-import com.BookMyEvent.entity.dto.PaymentResponseDTO;
-import com.BookMyEvent.entity.dto.PaymentStatusResponseDTO;
-import com.BookMyEvent.entity.dto.ProductDTO;
+import com.BookMyEvent.entity.dto.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -26,5 +23,9 @@ public interface PaymentService {
 
   PromoCode getPromoCode(String promoCode);
 
-   String saveFundsRequest(String userId, FundsRequest fundsRequest);
+   String saveFundsRequest(String userId, CreateFundsRequestDTO fundsRequest);
+
+  BigDecimal getOrganizerWithdrawnFunds(String userId);
+
+  BigDecimal getOrganizerFunds(String userId);
 }

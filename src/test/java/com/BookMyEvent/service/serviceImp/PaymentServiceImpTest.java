@@ -325,8 +325,8 @@ class PaymentServiceImpTest {
   @DisplayName(
       "Test PaymentServiceImp method saveFundsRequest. Positive Scenario funds request saved.")
   public void testSaveFundsRequestPositiveScenarioFundsSaved() {
-    FundsRequest request =
-        FundsRequest.builder()
+    CreateFundsRequestDTO request =
+            CreateFundsRequestDTO.builder()
             .cartNumber("4563772990209409839902")
             .amount(BigDecimal.valueOf(700))
             .build();
@@ -354,5 +354,71 @@ class PaymentServiceImpTest {
         () -> assertTrue(existRequest.getEventIds().contains(event.getId().toHexString())),
         () -> assertEquals(FundsStatus.PENDING, existRequest.getStatus()),
         () -> assertTrue(existRequest.getCreationDate().isBefore(now)));
+  }
+
+  @Test
+  @DisplayName(
+          "Test PaymentServiceImp method getOrganizerFunds. Positive Scenario get Organizer Funds.")
+  public void testGetOrganizerFundsPositiveScenarioGetFunds() {
+    BigDecimal profit = BigDecimal.valueOf(700L);
+    event.setSoldTickets(1);
+    event.setProfit(profit);
+    event.setCompleted(true);
+    eventRepository.save(event);
+
+    BigDecimal existFunds =
+            paymentService.getOrganizerFunds(userOne.getId().toHexString());
+
+    assertEquals(profit, existFunds);
+  }
+
+  @Test
+  @DisplayName(
+          "Test PaymentServiceImp method getOrganizerFunds. Positive Scenario Get Zero Funds.")
+  public void testGetOrganizerFundsPositiveScenarioGetZeroFunds() {
+    BigDecimal profit = BigDecimal.valueOf(700L);
+    CreateFundsRequestDTO request =
+            CreateFundsRequestDTO.builder()
+                    .cartNumber("4563772990209409839902")
+                    .amount(profit)
+                    .build();
+    event.setSoldTickets(1);
+    event.setProfit(profit);
+    event.setCompleted(true);
+    eventRepository.save(event);
+
+    String message = paymentService.saveFundsRequest(userOne.getId().toHexString(), request);
+    BigDecimal existFunds =
+            paymentService.getOrganizerFunds(userOne.getId().toHexString());
+
+    assertEquals(BigDecimal.ZERO, existFunds);
+  }
+
+  @Test
+  @DisplayName(
+          "Test PaymentServiceImp method getOrganizerWithdrawnFunds. Positive Scenario get Organizer Withdrawn Funds.")
+  public void testGetOrganizerWithdrawnFundsPositiveScenarioFundsSaved() {
+    BigDecimal profit = BigDecimal.valueOf(700L);
+    CreateFundsRequestDTO request =
+            CreateFundsRequestDTO.builder()
+                    .cartNumber("4563772990209409839902")
+                    .amount(profit)
+                    .build();
+    event.setSoldTickets(1);
+    event.setProfit(profit);
+    event.setCompleted(true);
+    eventRepository.save(event);
+
+   paymentService.saveFundsRequest(userOne.getId().toHexString(), request);
+    List<FundsRequest> fundsRequests =
+            fundsRequestRepository.findByUserId(
+                    userOne.getId().toHexString());
+    FundsRequest existFundsRequest=  fundsRequests.get(0);
+    existFundsRequest.setStatus(FundsStatus.COMPLETED);
+    fundsRequestRepository.save(existFundsRequest);
+    BigDecimal existFunds =
+            paymentService.getOrganizerWithdrawnFunds(userOne.getId().toHexString());
+
+    assertEquals(profit, existFunds);
   }
 }

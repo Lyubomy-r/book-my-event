@@ -169,8 +169,35 @@ class EventServiceImplTest {
 
     @Test
     @DisplayName(
+            "Test EventServiceImpl method getApprovedEvents with param city name. Positive Scenario return events if city search results 0.")
+    public void testMethodGetApprovedEventsPositiveScenarioReturnAllApprovedEvents() {
+      String cityName = "Київ";
+      Pageable pageable = PageRequest.of(0, 6);
+      PageImpl<Event> eventPageNullContent = new PageImpl<>(List.of(), pageable, 1);
+      PageImpl<Event> eventPage = new PageImpl<>(List.of(event), pageable, 1);
+      when(eventRepository.findEventByEventStatusAndLocation_City(
+              EventStatus.APPROVED, cityName, pageable))
+              .thenReturn(eventPageNullContent);
+      when(eventRepository.findEventByEventStatus(EventStatus.APPROVED, pageable))
+              .thenReturn(eventPage);
+      when(eventMapper.toEventResponseDtoFromEventWithoutUser(event)).thenReturn(eventResponseDto);
+      when(cityList.getCityList()).thenReturn(List.of("Київ"));
+      Page<EventResponseDto> result = eventService.getApprovedEvents(pageable, cityName);
+      assertAll(
+              () -> assertFalse(result.isEmpty()),
+              () -> assertEquals(1, result.getContent().size()),
+              () -> assertEquals(event.getId().toHexString(), result.getContent().get(0).getId()),
+              () -> assertNull(result.getContent().get(0).getOrganizers()));
+
+      verify(eventRepository, times(1))
+              .findEventByEventStatusAndLocation_City(EventStatus.APPROVED, cityName, pageable);
+      verify(eventRepository, times(1)).findEventByEventStatus(EventStatus.APPROVED, pageable);
+    }
+
+    @Test
+    @DisplayName(
         "Test EventServiceImpl method getApprovedEvents without param city name. Positive Scenario return events.")
-    public void testMethodGetEventsPositiveScenarioWithoutParamCityName() {
+    public void testMethodApprovedGetEventsPositiveScenarioWithoutParamCityName() {
       String cityName = null;
       Pageable pageable = PageRequest.of(0, 6);
       PageImpl<Event> eventPage = new PageImpl<>(List.of(event), pageable, 1);
@@ -433,6 +460,41 @@ class EventServiceImplTest {
       verify(eventRepository, times(1))
           .findRandomEventsByCreationDateByCity(
                   any(LocalDateTime.class), any(LocalDateTime.class),eq(cityName), eq(EventStatus.APPROVED), eq(size));
+    }
+
+    @Test
+    @DisplayName(
+            "Test EventServiceImpl method getNewEvents with param city name. Positive Scenario return random list of all events if city search results 0.")
+    public void testGetNewEventsPositiveScenarioReturnAllApprovedEvents() {
+      Integer size = 2;
+      String cityName = "Київ";
+      LocalDateTime fromDate = LocalDateTime.now();
+      LocalDateTime toDate = fromDate.minusDays(7);
+      event.setEventStatus(EventStatus.APPROVED);
+
+      when(eventRepository.findRandomEventsByCreationDateByCity(
+              any(LocalDateTime.class), any(LocalDateTime.class),eq(cityName), eq(EventStatus.APPROVED), eq(size)))
+              .thenReturn(List.of());
+      when(eventRepository.findRandomEventsByCreationDate(
+              any(LocalDateTime.class), any(LocalDateTime.class), eq(EventStatus.APPROVED), eq(size)))
+              .thenReturn(List.of(event));
+      when(cityList.getCityList()).thenReturn(List.of("Київ"));
+      when(eventMapper.toEventResponseDtoFromEventWithoutUser(event)).thenReturn(eventResponseDto);
+
+      List<EventResponseDto> result = eventService.getNewEvents(size, cityName);
+
+      assertAll(
+              () -> assertFalse(result.isEmpty()),
+              () -> assertEquals(1, result.size()),
+              () -> assertEquals(event.getId().toHexString(), result.get(0).getId()),
+              () -> assertNull(result.get(0).getOrganizers()));
+
+      verify(eventRepository, times(1))
+              .findRandomEventsByCreationDate(
+                      any(LocalDateTime.class), any(LocalDateTime.class), eq(EventStatus.APPROVED), eq(size));
+      verify(eventRepository, times(1))
+              .findRandomEventsByCreationDateByCity(
+                      any(LocalDateTime.class), any(LocalDateTime.class),eq(cityName), eq(EventStatus.APPROVED), eq(size));
     }
   }
 }
