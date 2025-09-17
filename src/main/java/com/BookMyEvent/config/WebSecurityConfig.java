@@ -2,7 +2,6 @@ package com.BookMyEvent.config;
 
 import com.BookMyEvent.entity.Enums.Role;
 import com.BookMyEvent.security.JwtTokenFilter;
-import com.BookMyEvent.service.serviceImp.JwtAuthentication;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -40,15 +39,10 @@ import static org.springframework.http.HttpMethod.PUT;
 @RequiredArgsConstructor
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig {
-    //
-//    @Value("${jwt.signing.key}")
-//    private  String signingKey;
-//
-//    private final JwtAuthentication jwtAuthentication;
+
     @Value("${front.url}")
     private String frontUrl;
     private final JwtTokenFilter JwtTokenFilter;
-
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {

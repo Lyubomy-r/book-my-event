@@ -610,8 +610,9 @@ public class PaymentServiceImp implements PaymentService {
       ZoneId kyivZone = ZoneId.of("Europe/Kiev");
       ZonedDateTime kyivTime =
           ZonedDateTime.ofInstant(
-              Instant.ofEpochSecond(
-                  Long.parseLong(savedOrderDetails.getPaymentDetails().getProcessingDate())),
+                  Instant.now(),
+//              Instant.ofEpochSecond(
+//                  Long.parseLong(savedOrderDetails.getPaymentDetails().getProcessingDate())),
               kyivZone);
       mailService.sendSimpleHtmlMailMessageAfterBuyTicket(
           paymentRequest.clientEmail(),

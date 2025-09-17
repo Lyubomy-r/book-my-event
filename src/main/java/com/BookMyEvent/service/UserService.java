@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public interface UserService {
 
@@ -42,5 +43,13 @@ public interface UserService {
    String unbanned(String email);
 
    Map<String, BigDecimal> getUserTotalProfit(String userId);
+
+   Optional<User> findByGoogleId(String googleId);
+
+   User saveGoogleUser(User user);
+
+   Optional<User> findByEmail(String googleId);
+
+   Optional<User> findById(String userId);
 
 }

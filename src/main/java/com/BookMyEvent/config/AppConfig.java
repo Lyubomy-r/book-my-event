@@ -5,6 +5,9 @@ import com.BookMyEvent.converter.StringToLocalTimeConverter;
 import com.BookMyEvent.entity.CityList;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Clock;
 import java.util.Arrays;
+import java.util.Collections;
 
 @Configuration
 @EnableSpringDataWebSupport(
@@ -30,6 +34,9 @@ public class AppConfig {
 
   @Value("${cloudinary.api-secret}")
   private String cloudinaryApiSecret;
+
+  @Value("${google.oauth.client.id}")
+  private String googleOauthClientId;
 
   @Bean
   public MongoCustomConversions mongoCustomConversions() {
@@ -64,5 +71,12 @@ public class AppConfig {
   @Bean
   public Clock clock() {
     return Clock.systemUTC();
+  }
+
+  @Bean
+  public GoogleIdTokenVerifier googleVerifier(){
+          return  new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                  .setAudience(Collections.singletonList(googleOauthClientId))
+                  .build();
   }
 }

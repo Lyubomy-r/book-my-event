@@ -3,6 +3,7 @@ package com.BookMyEvent.service.serviceImp;
 import com.BookMyEvent.dao.FundsRequestRepository;
 import com.BookMyEvent.dao.UserRepository;
 import com.BookMyEvent.entity.Enums.EventStatus;
+import com.BookMyEvent.entity.Enums.Role;
 import com.BookMyEvent.entity.Enums.Status;
 import com.BookMyEvent.entity.Event;
 import com.BookMyEvent.entity.FundsRequest;
@@ -36,6 +37,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -436,6 +440,58 @@ public class UserServiceImp implements UserService {
     return Map.of(
         "totalProfit", totalProfitNotReceived, "receivedTotalProfit", totalProfitReceived);
   }
+
+  @Override
+  public Optional<User> findByGoogleId(String googleId) {
+      return userRepository.findByGoogleId(googleId);
+  }
+
+  @Override
+  public Optional<User> findByEmail(String googleId) {
+      return userRepository.findByEmail(googleId);
+  }
+
+  @Override
+  public Optional<User> findById(String userId) {
+    return userRepository.findById(new ObjectId(userId));
+  }
+
+  @Override
+  public User saveGoogleUser(User user) {
+    log.info("{}::saveGoogleUser. Start method", className);
+    if (deletedUsersService.emailExist(user.getEmail())) {
+      log.warn("{}::saveGoogleUser. Return error message: Email is not longer accessible", className);
+      throw new GeneralException(String.format("The email (%s) has been deleted and is no longer accessible.", user.getEmail()),
+              HttpStatus.FORBIDDEN);
+    }
+    var existGoogleUser = userRepository.findUserByEmail(user.getEmail());
+    if (existGoogleUser.isPresent()) {
+
+      return existGoogleUser.get();
+    } else {
+
+
+//      var hashedPassword = passwordEncoder.encode(userData.getPassword());
+//      userData.setPassword(hashedPassword);
+//      User newUser = userMapper.toUserFromUserSaveDto(userData);
+      LocalDateTime timeCreate = LocalDateTime.now();
+      ZonedDateTime kyivTime = ZonedDateTime.now(ZoneId.of("Europe/Kiev"));
+      log.info("timeCreate "+timeCreate);
+      log.info("kievTime "+kyivTime);
+      user.setCreationDate(timeCreate);
+      user.setMailConfirmation(false);
+      user.setRole(Role.VISITOR);
+      user.setStatus(Status.ACTIVE);
+      user.setMailConfirmation(Boolean.TRUE);
+      User newUser = userRepository.save(user);
+
+//      mailService.sendHtmlEmailAfterRegistration(userData.getEmail());
+//      mailService.deleteOldEmails(userData.getEmail());
+      log.info("{}::saveGoogleUser. Return newUser .", className);
+      return newUser;
+    }
+  }
+
 
   public String checkAndAddPasswordIfExist(UserUpdateDto userUpdateDto, User user) {
     if (userUpdateDto.getPassword() != null

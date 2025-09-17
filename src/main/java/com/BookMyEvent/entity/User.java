@@ -43,6 +43,7 @@ public class User {
   private Image avatarImage;
   private String location;
   private Status status;
+  private String googleId;
   @ToString.Exclude
   @DBRef
   private List<Event> createdEvents = new ArrayList<>();

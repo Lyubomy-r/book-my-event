@@ -35,4 +35,10 @@ public interface UserRepository extends MongoRepository<User, ObjectId> {
 
   boolean existsByEmail(String email);
 
+  @Query(value ="{ 'googleId': ?0 }", fields = "{'createdEvents': 0}")
+  Optional<User> findByGoogleId(String googleId);
+
+  @Query(value ="{ 'email': ?0 }", fields = "{'createdEvents': 0}")
+  Optional<User> findByEmail(String email);
+
 }

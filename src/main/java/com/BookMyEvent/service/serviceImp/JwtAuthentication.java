@@ -25,68 +25,68 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-
-
 @Component
 @NoArgsConstructor
 @AllArgsConstructor
 @Slf4j
-public class  JwtAuthentication {
+public class JwtAuthentication {
 
   @Value("${jwt.signing.key}")
-  private  String signingKey;
+  private String signingKey;
 
   private final String className = this.getClass().getSimpleName();
 
-//  @Override
-//  protected void doFilterInternal(HttpServletRequest request,
-//                                  HttpServletResponse response,
-//                                  FilterChain filterChain) throws ServletException, IOException {
-//    var jwt = extractJwtFromRequest(request);
-//    log.info("extractJwtFromRequest " + jwt);
-//    if (StringUtils.hasText(jwt) && validateToken(jwt)) {
-//      var username = getUsernameFromToken(jwt);
-//      var role = getRoleFromToken(jwt);
-//      log.info("getRoleFromToken " + role);
-//
-//      List<GrantedAuthority> authorities = new ArrayList<>();
-//      authorities.add(new SimpleGrantedAuthority(role));
-//
-//      UsernamePasswordAuthenticationToken authentication =
-//          new UsernamePasswordAuthenticationToken(username, null, authorities);
-//      SecurityContextHolder.getContext().setAuthentication(authentication);
-//    }
-//    filterChain.doFilter(request, response);
-//  }
+  //  @Override
+  //  protected void doFilterInternal(HttpServletRequest request,
+  //                                  HttpServletResponse response,
+  //                                  FilterChain filterChain) throws ServletException, IOException
+  // {
+  //    var jwt = extractJwtFromRequest(request);
+  //    log.info("extractJwtFromRequest " + jwt);
+  //    if (StringUtils.hasText(jwt) && validateToken(jwt)) {
+  //      var username = getUsernameFromToken(jwt);
+  //      var role = getRoleFromToken(jwt);
+  //      log.info("getRoleFromToken " + role);
+  //
+  //      List<GrantedAuthority> authorities = new ArrayList<>();
+  //      authorities.add(new SimpleGrantedAuthority(role));
+  //
+  //      UsernamePasswordAuthenticationToken authentication =
+  //          new UsernamePasswordAuthenticationToken(username, null, authorities);
+  //      SecurityContextHolder.getContext().setAuthentication(authentication);
+  //    }
+  //    filterChain.doFilter(request, response);
+  //  }
 
-  public String generateToken(String userId,String userEmail, Role role) {
-    var token = Jwts.builder()
-        .setSubject(userEmail)
-        .claim("role", role)
-        .claim("userId", userId)
-        .setIssuedAt(new Date())
-        .setExpiration(new Date((new Date()).getTime() + 1000 * 60 * 60 * 10))
-        .signWith(SignatureAlgorithm.HS512, signingKey)
-        .compact();
+  public String generateToken(String userId, String userEmail, Role role) {
+    var token =
+        Jwts.builder()
+            .setSubject(userEmail)
+            .claim("role", role)
+            .claim("userId", userId)
+            .setIssuer("https://accounts.evently-book.com")
+            .setIssuedAt(new Date())
+            .setExpiration(new Date((new Date()).getTime() + 1000 * 60 * 60 * 10))
+            .signWith(SignatureAlgorithm.HS512, signingKey)
+            .compact();
     log.info("AuthServiceImp::generateToken. Role JWT to Role ({}).", role);
     log.info("AuthServiceImp::generateToken. Generate JWT to user ({}).", userEmail);
     return token;
   }
 
   public String getRoleFromToken(String token) {
-    var claims = Jwts.parser()
-        .setSigningKey(signingKey)
-        .parseClaimsJws(token)
-        .getBody();
+    var claims = Jwts.parser().setSigningKey(signingKey).parseClaimsJws(token).getBody();
     return "ROLE_" + claims.get("role", String.class);
   }
 
   public String getUserIdFromToken(String token) {
-    var claims = Jwts.parser()
-        .setSigningKey(signingKey)
-        .parseClaimsJws(token)
-        .getBody();
+    var claims = Jwts.parser().setSigningKey(signingKey).parseClaimsJws(token).getBody();
     return claims.get("userId", String.class);
+  }
+
+  public String getIssuerFromToken(String token) {
+    var claims = Jwts.parser().setSigningKey(signingKey).parseClaimsJws(token).getBody();
+    return claims.getIssuer();
   }
 
   public String extractJwtFromRequest(HttpServletRequest request) {
@@ -100,17 +100,13 @@ public class  JwtAuthentication {
   public boolean validateToken(String token) {
     try {
 
-      var claims = Jwts.parser()
-          .setSigningKey(signingKey)
-          .parseClaimsJws(token)
-          .getBody();
+      var claims = Jwts.parser().setSigningKey(signingKey).parseClaimsJws(token).getBody();
 
       if (claims.getExpiration().before(new Date())) {
         return false;
       }
 
       var role = claims.get("role", String.class);
-
 
       return role != null && (checkRoleContains(role));
 

@@ -7,6 +7,7 @@ import com.BookMyEvent.entity.dto.LoginResponse;
 import com.BookMyEvent.entity.dto.UserSaveDto;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
 import com.BookMyEvent.service.AuthService;
+import com.BookMyEvent.service.GoogleAuthenticationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -21,14 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -44,10 +40,10 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class AuthController {
 
   private final AuthService service;
+    public final GoogleAuthenticationService googleAuthenticationService;
 
-  @Value("${front.url}")
+@Value("${front.url}")
   private String frontUrl;
-
   @Operation(
       summary = "User signup",
       requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -234,5 +230,46 @@ public class AuthController {
 
         log.info("Response created with status: {} and message: {}", HttpStatus.CREATED.value(), response.getMessage());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(
+            summary = "User login from google.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = APPLICATION_JSON_VALUE,
+                            examples = @ExampleObject(
+                                    name = "ExampleObject",
+                                    description = """
+                Example of User login:
+                - X-ID-Token: we put the corresponding token from Google in the request header.
+                - X-ACCESS-TOKEN: we put the corresponding token from Google in the request header.
+                """
+                            )
+                    )
+            ),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Login successful",
+                            content = {
+                                    @Content(
+                                            mediaType = APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = LoginResponse.class))
+                            }),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid user tokens.",
+                            content = {
+                                    @Content(
+                                            mediaType = APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = ErrorResponseDto.class))
+                            })
+            })
+    @PostMapping("/login/google")
+    public ResponseEntity<LoginResponse> googleLogin(   @RequestHeader(value = "X-ID-Token", required = false) String idToken,
+                                                        @RequestHeader(value = "X-ACCESS-TOKEN", required = false) String accessToken) throws IOException {
+        LoginResponse response = googleAuthenticationService.googleLogin(idToken, accessToken);
+        log.info("AuthController::googleLogin - /login/googleLogin - return jwt with id {}", response.getUserId());
+        return ResponseEntity.ok(response);
     }
 }

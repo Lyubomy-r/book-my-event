@@ -1,12 +1,10 @@
 package com.BookMyEvent.controller;
 
-import com.BookMyEvent.entity.FundsRequest;
 import com.BookMyEvent.entity.OrderDetails;
 import com.BookMyEvent.entity.PromoCode;
 import com.BookMyEvent.entity.dto.*;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
 import com.BookMyEvent.service.PaymentService;
-import com.fasterxml.jackson.core.util.RequestPayload;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,22 +13,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -39,13 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -62,7 +44,54 @@ public class PayController {
 
   private String className = this.getClass().getSimpleName();
 
+  @Operation(
+      summary = "Prepare order to payment services.",
+      description =
+          "Verifies the payment info to payment services."
+              + "Checks if the `userId` from the request matches the authenticated user.",
+      responses = {
+        @ApiResponse(
+            responseCode = "200",
+            description = " Return the payment info to payment services.",
+            content = {
+              @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(implementation = PaymentResponseDTO.class))
+            }),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad request or not Validation failed. User ID cannot be null or empty",
+            content = {
+              @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(implementation = ErrorResponseDto.class))
+            }),
+        @ApiResponse(
+            responseCode = "404",
+            description = "User or event/**/ with ID not found.",
+            content = {
+              @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(implementation = ErrorResponseDto.class))
+            }),
+        @ApiResponse(
+            responseCode = "403",
+            description = "Access forbidden. User ID does not match token ID",
+            content =
+                @Content(
+                    mediaType = APPLICATION_JSON_VALUE,
+                    schema =
+                        @Schema(
+                            example =
+                                "{\n"
+                                    + "    \"timestamp\": \"2024-12-19T16:40:54.575+00:00\",\n"
+                                    + "    \"status\": 403,\n"
+                                    + "    \"error\": \"Forbidden\",\n"
+                                    + "    \"path\": \"/api/v1/users/674cb373e84f0654529647c4\"\n"
+                                    + "}")))
+      })
   @PostMapping("/{eventId}")
+  @PreAuthorize("#paymentRequest.userId == authentication.principal['id']")
   public ResponseEntity<PaymentResponseDTO> prepareForPayment(
       @PathVariable("eventId") String eventId, @RequestBody PaymentRequestDTO paymentRequest) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -72,7 +101,54 @@ public class PayController {
     return ResponseEntity.ok(response);
   }
 
+  @Operation(
+      summary = "Free event payment verification",
+      description =
+          "Verifies the payment for free events. "
+              + "Checks if the `userId` from the request matches the authenticated user.",
+      responses = {
+        @ApiResponse(
+            responseCode = "200",
+            description = " Return successfully massage about order.",
+            content = {
+              @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(implementation = AppResponse.class))
+            }),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad request or not Validation failed. User ID cannot be null or empty",
+            content = {
+              @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(implementation = ErrorResponseDto.class))
+            }),
+        @ApiResponse(
+            responseCode = "404",
+            description = "User or event/**/ with ID not found.",
+            content = {
+              @Content(
+                  mediaType = APPLICATION_JSON_VALUE,
+                  schema = @Schema(implementation = ErrorResponseDto.class))
+            }),
+        @ApiResponse(
+            responseCode = "403",
+            description = "Access forbidden. User ID does not match token ID",
+            content =
+                @Content(
+                    mediaType = APPLICATION_JSON_VALUE,
+                    schema =
+                        @Schema(
+                            example =
+                                "{\n"
+                                    + "    \"timestamp\": \"2024-12-19T16:40:54.575+00:00\",\n"
+                                    + "    \"status\": 403,\n"
+                                    + "    \"error\": \"Forbidden\",\n"
+                                    + "    \"path\": \"/api/v1/users/674cb373e84f0654529647c4\"\n"
+                                    + "}")))
+      })
   @PostMapping("/free/{eventId}")
+  @PreAuthorize("#paymentRequest.userId == authentication.principal['id']")
   public ResponseEntity<AppResponse> paymentVerificationFreeEvents(
       @PathVariable("eventId") String eventId, @RequestBody PaymentRequestDTO paymentRequest) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -193,8 +269,7 @@ public class PayController {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     log.info("Class: {}, Method: {} - createFundsRequest.", className, methodName);
     String message = paymentService.saveFundsRequest(userId, fundsRequest);
-    AppResponse response =
-        new AppResponse(200, message);
+    AppResponse response = new AppResponse(200, message);
     return ResponseEntity.ok(response);
   }
 
