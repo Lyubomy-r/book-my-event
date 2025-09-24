@@ -35,74 +35,133 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
   @Override
   protected void doFilterInternal(
-          HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-          throws ServletException, IOException {
+      HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+      throws ServletException, IOException {
     var jwt = jwtAuthentication.extractJwtFromRequest(request);
     try {
-      log.info("{}::doFilterInternal.  try  pars jwt like GoogleIdToken.", className);
-      GoogleIdToken.Payload payload = googleAuthenticationServiceImp.validate(jwt);
-//      String accessTokenHeader = request.getHeader("X-ACCESS-TOKEN");
-      String email = payload.getEmail();
-      String sub = payload.getSubject();
-//      User googleUser = googleAuthenticationServiceImp.getUserInfo(accessTokenHeader);
-//      if (email.equals(googleUser.getEmail()) && sub.equals(googleUser.getGoogleId())) {
-      Optional<User> user =
-              userService.findByGoogleId(sub);
-      if(user.isPresent()){
-        log.info("{}::doFilterInternal. set authentication to contextHolder from findByGoogleId()/ id {} ",
-                className, user.get().getId().toString());
-        setAuthenticationToContextHolder(user.get());
-      }else {
-        Optional<User> userFromEmail = userService.findByEmail(email);
-        if(userFromEmail.isPresent()){
-          log.info("{}::doFilterInternal. set authentication to contextHolder from findByEmail()/ id {} ",
-                  className, userFromEmail.get().getId().toString());
-          setAuthenticationToContextHolder(userFromEmail.get());
-        }
-      }
-//      }
-    } catch (GeneralException e) {
-      log.info("{}::doFilterInternal. extractJwtFromRequest {}", className, jwt);
-      try {
-        if (StringUtils.hasText(jwt)
-                && jwtAuthentication.getIssuerFromToken(jwt).equals("https://accounts.evently-book.com")
-                && jwtAuthentication.validateToken(jwt)) {
+      if (jwt != null) {
+        log.info("{}::doFilterInternal. extractJwtFromRequest {}", className, jwt);
+        if (jwtAuthentication.hasIssuerFromToken(jwt)
+            && jwtAuthentication.getIssuerFromToken(jwt).equals("https://accounts.evently-book.com")
+            && jwtAuthentication.validateToken(jwt)) {
           var username = jwtAuthentication.getUsernameFromToken(jwt);
           var role = jwtAuthentication.getRoleFromToken(jwt);
           var userId = jwtAuthentication.getUserIdFromToken(jwt);
           log.info("{}::doFilterInternal.  getRoleFromToken {}", className, role);
-          Optional<User> existUser = userService.findById( userId);
-          if(existUser.isPresent()){
-            log.info("{}::doFilterInternal. set authentication to contextHolder from findById()/ id {} ",
-                    className, existUser.get().getId().toString());
+          Optional<User> existUser = userService.findById(userId);
+          if (existUser.isPresent()) {
+            log.info(
+                "{}::doFilterInternal. set authentication to contextHolder from findById()/ id {} ",
+                className,
+                existUser.get().getId().toString());
             setAuthenticationToContextHolder(existUser.get());
           }
-//          List<GrantedAuthority> authorities = new ArrayList<>();
-//          authorities.add(new SimpleGrantedAuthority(role));
-//
-//          Map<String, Object> principal = new HashMap<>();
-//          principal.put("username", username);
-//          principal.put("id", userId);
-//
-//          UsernamePasswordAuthenticationToken authentication =
-//              new UsernamePasswordAuthenticationToken(principal, null, authorities);
-//          SecurityContextHolder.getContext().setAuthentication(authentication);
+        } else {
+          log.info("{}::doFilterInternal.  try  pars jwt like GoogleIdToken.", className);
+          GoogleIdToken.Payload payload = googleAuthenticationServiceImp.validate(jwt);
+          String email = payload.getEmail();
+          String sub = payload.getSubject();
+          log.info(
+                  "{}::doFilterInternal. payload {} ",
+                  className,
+                  payload);
+          Optional<User> user = userService.findByGoogleId(sub);
+          if (user.isPresent()) {
+            log.info(
+                "{}::doFilterInternal. set authentication to contextHolder from findByGoogleId()/ id {} ",
+                className,
+                user.get().getId().toString());
+            setAuthenticationToContextHolder(user.get());
+          } else {
+            Optional<User> userFromEmail = userService.findByEmail(email);
+            if (userFromEmail.isPresent()) {
+              log.info(
+                  "{}::doFilterInternal. set authentication to contextHolder from findByEmail()/ id {} ",
+                  className,
+                  userFromEmail.get().getId().toString());
+              setAuthenticationToContextHolder(userFromEmail.get());
+            }
+          }
         }
-      } catch (Exception ex) {
-        log.error("{}::doFilterInternal.  error after jwtAuthentication.", className);
+      } else {
+        log.info("{}::doFilterInternal. jwtAuthentication token is null.", className);
       }
+
+    } catch (GeneralException e) {
+      log.info(
+          "{}::doFilterInternal.  error after jwtAuthentication  token is null or not correct. message ({})",
+          className,
+          e.getMessage());
     }
+    //    try {
+    //      log.info("{}::doFilterInternal.  try  pars jwt like GoogleIdToken.", className);
+    //      GoogleIdToken.Payload payload = googleAuthenticationServiceImp.validate(jwt);
+    ////      String accessTokenHeader = request.getHeader("X-ACCESS-TOKEN");
+    //      String email = payload.getEmail();
+    //      String sub = payload.getSubject();
+    ////      User googleUser = googleAuthenticationServiceImp.getUserInfo(accessTokenHeader);
+    ////      if (email.equals(googleUser.getEmail()) && sub.equals(googleUser.getGoogleId())) {
+    //      Optional<User> user =
+    //              userService.findByGoogleId(sub);
+    //      if(user.isPresent()){
+    //        log.info("{}::doFilterInternal. set authentication to contextHolder from
+    // findByGoogleId()/ id {} ",
+    //                className, user.get().getId().toString());
+    //        setAuthenticationToContextHolder(user.get());
+    //      }else {
+    //        Optional<User> userFromEmail = userService.findByEmail(email);
+    //        if(userFromEmail.isPresent()){
+    //          log.info("{}::doFilterInternal. set authentication to contextHolder from
+    // findByEmail()/ id {} ",
+    //                  className, userFromEmail.get().getId().toString());
+    //          setAuthenticationToContextHolder(userFromEmail.get());
+    //        }
+    //      }
+    ////      }
+    //    } catch (GeneralException e) {
+    //      log.info("{}::doFilterInternal. extractJwtFromRequest {}", className, jwt);
+    //      try {
+    //        if (StringUtils.hasText(jwt)
+    //                &&
+    // jwtAuthentication.getIssuerFromToken(jwt).equals("https://accounts.evently-book.com")
+    //                && jwtAuthentication.validateToken(jwt)) {
+    //          var username = jwtAuthentication.getUsernameFromToken(jwt);
+    //          var role = jwtAuthentication.getRoleFromToken(jwt);
+    //          var userId = jwtAuthentication.getUserIdFromToken(jwt);
+    //          log.info("{}::doFilterInternal.  getRoleFromToken {}", className, role);
+    //          Optional<User> existUser = userService.findById( userId);
+    //          if(existUser.isPresent()){
+    //            log.info("{}::doFilterInternal. set authentication to contextHolder from
+    // findById()/ id {} ",
+    //                    className, existUser.get().getId().toString());
+    //            setAuthenticationToContextHolder(existUser.get());
+    //          }
+    ////          List<GrantedAuthority> authorities = new ArrayList<>();
+    ////          authorities.add(new SimpleGrantedAuthority(role));
+    ////
+    ////          Map<String, Object> principal = new HashMap<>();
+    ////          principal.put("username", username);
+    ////          principal.put("id", userId);
+    ////
+    ////          UsernamePasswordAuthenticationToken authentication =
+    ////              new UsernamePasswordAuthenticationToken(principal, null, authorities);
+    ////          SecurityContextHolder.getContext().setAuthentication(authentication);
+    //        }
+    //      } catch (Exception ex) {
+    //        log.error("{}::doFilterInternal.  error after jwtAuthentication.", className);
+    //      }
+    //    }
 
     filterChain.doFilter(request, response);
   }
 
   private static void setAuthenticationToContextHolder(User user) {
     List<GrantedAuthority> authorities = new ArrayList<>();
-    String role ="ROLE_"+ user.getRole().toString();
+    String role = "ROLE_" + user.getRole().toString();
     authorities.add(new SimpleGrantedAuthority(role));
     SecurityUser principal = new SecurityUser(user);
     UsernamePasswordAuthenticationToken authentication =
-            new UsernamePasswordAuthenticationToken(principal, null, authorities);
+        new UsernamePasswordAuthenticationToken(principal, null, authorities);
     log.info("Principal id={} username={}", principal.getId(), principal.getUsername());
     SecurityContextHolder.getContext().setAuthentication(authentication);
   }

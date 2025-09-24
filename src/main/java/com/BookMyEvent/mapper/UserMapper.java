@@ -11,6 +11,7 @@ import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.Named;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -36,6 +37,7 @@ public interface UserMapper {
   @Mapping(target = "createdEvents", ignore = true)
   UserResponseDto toUserResponseDto(User user);
 
+  @Named("mapUserToDtoWithoutAvatarAndEvents")
   @Mapping(target = "id", expression = "java(convertToStringId(user.getId()))")
   @Mapping(target = "avatarImage", ignore = true)
   @Mapping(target = "createdEvents", ignore = true)

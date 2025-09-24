@@ -17,4 +17,5 @@ public interface CloudinaryService {
 
   void deleteUserImg(Image image);
 
+  byte[] downloadFile(String fileName);
 }

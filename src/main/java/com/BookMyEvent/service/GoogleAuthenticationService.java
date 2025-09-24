@@ -11,6 +11,6 @@ public interface GoogleAuthenticationService {
 
   User getUserInfo(String accessToken) throws IOException;
 
-  LoginResponse googleLogin(String idToken, String accessToken) throws IOException;
+  LoginResponse googleLogin(String idToken) throws IOException;
 
 }

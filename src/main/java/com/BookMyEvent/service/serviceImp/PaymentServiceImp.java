@@ -7,9 +7,12 @@ import com.BookMyEvent.dao.PromoCodeRepository;
 import com.BookMyEvent.entity.*;
 import com.BookMyEvent.entity.Enums.EventFormat;
 import com.BookMyEvent.entity.Enums.OrderStatus;
+import com.BookMyEvent.entity.OrderDetails;
 import com.BookMyEvent.entity.dto.*;
 import com.BookMyEvent.exception.GeneralException;
+import com.BookMyEvent.mapper.OrderDetailsMapper;
 import com.BookMyEvent.mapper.PaymentDetailsMapper;
+import com.BookMyEvent.mapper.PaymentMapper;
 import com.BookMyEvent.service.MailService;
 import com.BookMyEvent.service.PaymentService;
 import java.math.BigDecimal;
@@ -46,6 +49,8 @@ public class PaymentServiceImp implements PaymentService {
   private final UserService userService;
   private final MailService mailService;
   private final FundsRequestRepository fundsRequestRepository;
+  private final OrderDetailsMapper orderDetailsMapper;
+  private final PaymentMapper paymentMapper;
   private final ConcurrentHashMap<ObjectId, ReentrantLock> eventLocks = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<String, ReentrantLock> eventOrderReferenceLocks =
       new ConcurrentHashMap<>();
@@ -278,11 +283,11 @@ public class PaymentServiceImp implements PaymentService {
                     updatedOrderDetails.getOrderReference(),
                     kyivTime.toLocalDate().toString(),
                     String.format(
-                        "%02d:%02d",
+                        "%02d:%02d,",
                         kyivTime.toLocalTime().getHour(), kyivTime.toLocalTime().getMinute()),
                     String.format(
                         "%s грн.", updatedOrderDetails.getPaymentDetails().getProduct().amount()),
-                    savedEvent.getImages().get(0).getUrl(),
+                    savedEvent.getImages().get(0),
                     userCabinetUrl);
               } finally {
                 lock.unlock();
@@ -523,7 +528,8 @@ public class PaymentServiceImp implements PaymentService {
   }
 
   @Override
-  public String paymentVerificationFreeEvents(String eventId, PaymentRequestDTO paymentRequest) {
+  public OrderDetailsDto paymentVerificationFreeEvents(
+      String eventId, PaymentRequestDTO paymentRequest) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     ObjectId objectId = new ObjectId(eventId);
     ReentrantLock lock = eventLocks.computeIfAbsent(objectId, id -> new ReentrantLock());
@@ -544,18 +550,22 @@ public class PaymentServiceImp implements PaymentService {
           Optional.ofNullable(exsistEvent.getSoldTickets()).orElse(0) + productCount;
       Integer availableTickets =
           Optional.ofNullable(exsistEvent.getAvailableTickets()).orElse(0) - productCount;
-
-      if (availableTickets < 0) {
-        log.warn(
-            "{}::{} - Available tickets are sold out. availableTickets {} try buy {}",
-            className,
-            methodName,
-            exsistEvent.getAvailableTickets(),
-            paymentRequest.product().productCount());
-        throw new GeneralException("Available tickets are sold out.", HttpStatus.NOT_FOUND);
+      if (!exsistEvent.getUnlimitedTickets()) {
+        if (availableTickets < 0) {
+          log.warn(
+              "{}::{} - Available tickets are sold out. availableTickets {} try buy {}",
+              className,
+              methodName,
+              exsistEvent.getAvailableTickets(),
+              paymentRequest.product().productCount());
+          throw new GeneralException("Available tickets are sold out.", HttpStatus.NOT_FOUND);
+        } else {
+          log.info("{}::{} - tickets are available {}", className, methodName, availableTickets);
+          exsistEvent.setAvailableTickets(availableTickets);
+          exsistEvent.setSoldTickets(soldTickets);
+        }
       } else {
-        log.info("{}::{} - tickets are available {}", className, methodName, availableTickets);
-        exsistEvent.setAvailableTickets(availableTickets);
+        log.info("{}::{} - tickets sold {}", className, methodName, soldTickets);
         exsistEvent.setSoldTickets(soldTickets);
       }
       Event savedEvent = eventRepository.save(exsistEvent);
@@ -564,42 +574,38 @@ public class PaymentServiceImp implements PaymentService {
       User user = userService.findUserById(paymentRequest.userId());
       String orderReference = "ON" + random();
       Instant orderDateInInstant = Instant.now();
-      PaymentDetails paymentDetails =
-          PaymentDetails.builder()
-              .product(paymentRequest.product())
-              .clientFirstName(paymentRequest.clientFirstName())
-              .clientLastName(paymentRequest.clientLastName())
-              .clientEmail(paymentRequest.clientEmail())
-              .clientPhone(paymentRequest.clientPhone())
-              .transactionStatus("Approved")
-              .reason("Ok")
-              .build();
+      PaymentDetails paymentDetails = paymentMapper.toPaymentDetailsForFreePurchase(paymentRequest);
+      log.info("{}::{} - paymentDetails was created  {}", className, methodName, paymentDetails);
+      //          PaymentDetails.builder()
+      //              .product(paymentRequest.product())
+      //              .clientFirstName(paymentRequest.clientFirstName())
+      //              .clientLastName(paymentRequest.clientLastName())
+      //              .clientEmail(paymentRequest.clientEmail())
+      //              .clientPhone(paymentRequest.clientPhone())
+      //              .transactionStatus("Approved")
+      //              .reason("Ok")
+      //              .build();
       OrderDetails orderDetails =
-          OrderDetails.builder()
-              .orderReference(orderReference)
-              .orderDate(orderDateInInstant)
-              .event(savedEvent)
-              .user(user)
-              .paymentDetails(paymentDetails)
-              .status(OrderStatus.PAID)
-              .build();
+          orderDetailsMapper.toOrderDetailsForFreePurchase(
+              orderReference, orderDateInInstant, savedEvent, user, paymentDetails);
+      //          OrderDetails.builder()
+      //              .orderReference(orderReference)
+      //              .orderDate(orderDateInInstant)
+      //              .event(savedEvent)
+      //              .user(user)
+      //              .paymentDetails(paymentDetails)
+      //              .status(OrderStatus.PAID)
+      //              .build();
       log.info("{}::{} - Created order details {}", className, methodName, orderDetails);
       OrderDetails savedOrderDetails = orderDetailsRepository.save(orderDetails);
       log.info(
-          "{}::{} - get available tickets after saved order {}",
+          "{}::{} - get available tickets {} / get sold tickets {} / get profit {}, after saved order.",
           className,
           methodName,
-          savedOrderDetails.getEvent().getAvailableTickets());
-      log.info(
-          "{}::{} - get sold tickets after saved order {}",
-          className,
-          methodName,
-          savedOrderDetails.getEvent().getSoldTickets());
-      log.info(
-          "{}::{} - get profit after saved order {}",
-          className,
-          methodName,
+          savedOrderDetails.getEvent().getAvailableTickets(),
+          savedOrderDetails.getEvent().getSoldTickets(),
           savedOrderDetails.getEvent().getProfit());
+
       String location =
           savedOrderDetails.getEvent().getEventFormat().equals(EventFormat.ONLINE)
               ? "Online"
@@ -610,9 +616,7 @@ public class PaymentServiceImp implements PaymentService {
       ZoneId kyivZone = ZoneId.of("Europe/Kiev");
       ZonedDateTime kyivTime =
           ZonedDateTime.ofInstant(
-                  Instant.now(),
-//              Instant.ofEpochSecond(
-//                  Long.parseLong(savedOrderDetails.getPaymentDetails().getProcessingDate())),
+              Instant.now(),
               kyivZone);
       mailService.sendSimpleHtmlMailMessageAfterBuyTicket(
           paymentRequest.clientEmail(),
@@ -629,12 +633,13 @@ public class PaymentServiceImp implements PaymentService {
           savedOrderDetails.getOrderReference(),
           kyivTime.toLocalDate().toString(),
           String.format(
-              "%02d:%02d", kyivTime.toLocalTime().getHour(), kyivTime.toLocalTime().getMinute()),
-          String.format("%s грн.", savedOrderDetails.getPaymentDetails().getProduct().amount()),
-          savedEvent.getImages().get(0).getUrl(),
+              "%02d:%02d.", kyivTime.toLocalTime().getHour(), kyivTime.toLocalTime().getMinute()),
+"",
+//          String.format("%s грн.", Optional.ofNullable(savedOrderDetails.getPaymentDetails().getProduct().amount()).orElse(String.valueOf(0))),
+          savedEvent.getImages().get(0),
           userCabinetUrl);
 
-      return "Order paid successfully.";
+      return orderDetailsMapper.newOrderDetails(savedOrderDetails);
     } finally {
       lock.unlock();
       eventLocks.computeIfPresent(
@@ -802,8 +807,7 @@ public class PaymentServiceImp implements PaymentService {
   public String saveFundsRequest(String userId, CreateFundsRequestDTO fundsRequest) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     User user = userService.findUserById(userId);
-    List<Event> events =
-        eventRepository.findByOrganizers_IdAndIsCompleted(user.getId(), true);
+    List<Event> events = eventRepository.findByOrganizers_IdAndIsCompleted(user.getId(), true);
     log.info("events list size {}", events.size());
     List<FundsRequest> fundsRequests =
         fundsRequestRepository.findByUserIdAndStatusIn(
@@ -820,7 +824,8 @@ public class PaymentServiceImp implements PaymentService {
       log.warn("{}::{} - Return error message.", className, methodName);
       throw new GeneralException("No funds available for withdrawal", HttpStatus.CONFLICT);
     }
-    BigDecimal totalAvailable = newEventsToFundsRequest.stream()
+    BigDecimal totalAvailable =
+        newEventsToFundsRequest.stream()
             .map(Event::getProfit)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     if (totalAvailable.compareTo(fundsRequest.getAmount()) == 0) {
@@ -839,9 +844,11 @@ public class PaymentServiceImp implements PaymentService {
       fundsRequestRepository.save(newFundsRequest);
       log.info("{}::{} - return successfully message.", className, methodName);
       return "The Funds request saved successfully.";
-    }else{
+    } else {
       log.warn("{}::{} - Return error message.", className, methodName);
-      throw new GeneralException("Request amount is bigger than available amount. Withdrawals are permitted only for the full account balance and may not be made in partial amounts.", HttpStatus.CONFLICT);
+      throw new GeneralException(
+          "Request amount is bigger than available amount. Withdrawals are permitted only for the full account balance and may not be made in partial amounts.",
+          HttpStatus.CONFLICT);
     }
   }
 
@@ -849,25 +856,25 @@ public class PaymentServiceImp implements PaymentService {
   public BigDecimal getOrganizerFunds(String userId) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     User user = userService.findUserById(userId);
-    List<Event> events =
-            eventRepository.findByOrganizers_IdAndIsCompleted(user.getId(), true);
+    List<Event> events = eventRepository.findByOrganizers_IdAndIsCompleted(user.getId(), true);
     log.info("events list size {}", events.size());
     List<FundsRequest> fundsRequests =
-            fundsRequestRepository.findByUserIdAndStatusIn(
-                    user.getId().toHexString(), List.of(FundsStatus.PENDING, FundsStatus.COMPLETED));
+        fundsRequestRepository.findByUserIdAndStatusIn(
+            user.getId().toHexString(), List.of(FundsStatus.PENDING, FundsStatus.COMPLETED));
     Set<String> alreadyFundsRequestsEventId =
-            fundsRequests.stream()
-                    .flatMap(funds -> funds.getEventIds().stream())
-                    .collect(Collectors.toSet());
+        fundsRequests.stream()
+            .flatMap(funds -> funds.getEventIds().stream())
+            .collect(Collectors.toSet());
     List<Event> newEventsToFundsRequest =
-            events.stream()
-                    .filter(event -> !alreadyFundsRequestsEventId.contains(event.getId().toHexString()))
-                    .toList();
+        events.stream()
+            .filter(event -> !alreadyFundsRequestsEventId.contains(event.getId().toHexString()))
+            .toList();
     if (newEventsToFundsRequest.isEmpty()) {
       log.info("{}::{} - Return available balance (balance is empty).", className, methodName);
       return BigDecimal.ZERO;
     }
-    BigDecimal totalAvailable = newEventsToFundsRequest.stream()
+    BigDecimal totalAvailable =
+        newEventsToFundsRequest.stream()
             .map(Event::getProfit)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     log.info("{}::{} - Return available balance.", className, methodName);
@@ -878,63 +885,65 @@ public class PaymentServiceImp implements PaymentService {
   public BigDecimal getOrganizerWithdrawnFunds(String userId) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     User user = userService.findUserById(userId);
-    List<Event> events =
-            eventRepository.findByOrganizers_IdAndIsCompleted(user.getId(), true);
+    List<Event> events = eventRepository.findByOrganizers_IdAndIsCompleted(user.getId(), true);
     log.info("events list size {}", events.size());
     List<FundsRequest> fundsRequests =
-            fundsRequestRepository.findByUserIdAndStatusIn(
-                    user.getId().toHexString(), List.of(FundsStatus.COMPLETED));
+        fundsRequestRepository.findByUserIdAndStatusIn(
+            user.getId().toHexString(), List.of(FundsStatus.COMPLETED));
     Set<String> alreadyFundsRequestsEventId =
-            fundsRequests.stream()
-                    .flatMap(funds -> funds.getEventIds().stream())
-                    .collect(Collectors.toSet());
+        fundsRequests.stream()
+            .flatMap(funds -> funds.getEventIds().stream())
+            .collect(Collectors.toSet());
     List<Event> completedEventsToFundsRequest =
-            events.stream()
-                    .filter(event -> alreadyFundsRequestsEventId.contains(event.getId().toHexString()))
-                    .toList();
+        events.stream()
+            .filter(event -> alreadyFundsRequestsEventId.contains(event.getId().toHexString()))
+            .toList();
     if (completedEventsToFundsRequest.isEmpty()) {
       log.info("{}::{} - Return withdrawn balance (balance is empty).", className, methodName);
       return BigDecimal.ZERO;
     }
-    BigDecimal totalAvailable = completedEventsToFundsRequest.stream()
+    BigDecimal totalAvailable =
+        completedEventsToFundsRequest.stream()
             .map(Event::getProfit)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     log.info("{}::{} - Return withdrawn balance.", className, methodName);
     return totalAvailable;
   }
 
-//  public Map<String, String> getEventFungAfter( List<Event> events, List<FundsRequest> fundsRequests){
-//    Map<String, String> objectMap  = new HashMap<>();
-//    Set<String> alreadyFundsRequestsEventId =
-//            fundsRequests.stream()
-//                    .flatMap(funds -> funds.getEventIds().stream())
-//                    .collect(Collectors.toSet());
-//            events
-//            .forEach(event -> {
-//              if(alreadyFundsRequestsEventId.contains(event.getId().toHexString())){
-//               BigDecimal eventProfit =  event.getProfit();
-//                BigDecimal fundsReq = fundsRequests.stream()
-//                        .filter(funs-> isInList(funs, events) )
-//                        .map(FundsRequest::getAmount)
-//                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-//                BigDecimal last = eventProfit.subtract(fundsReq, new MathContext(1, RoundingMode.HALF_UP));
-//                if(last.compareTo(BigDecimal.ZERO)>0){
-//                  objectMap.put(event.getId().toHexString(), last.toString());
-//                }
-//
-//              }else{
-//                objectMap.put(event.getId().toHexString(), event.getProfit().toString());
-//              }
-//            });
-//    return objectMap;
-//  }
-//
-//  public Boolean isInList(FundsRequest request, List<Event> events) {
-//
-//    List <Event> eventList = events.stream()
-//            .filter(event -> request.getEventIds().contains(event.getId().toHexString() ) )
-//            .toList();
-//    return eventList.isEmpty();
-//  }
+  //  public Map<String, String> getEventFungAfter( List<Event> events, List<FundsRequest>
+  // fundsRequests){
+  //    Map<String, String> objectMap  = new HashMap<>();
+  //    Set<String> alreadyFundsRequestsEventId =
+  //            fundsRequests.stream()
+  //                    .flatMap(funds -> funds.getEventIds().stream())
+  //                    .collect(Collectors.toSet());
+  //            events
+  //            .forEach(event -> {
+  //              if(alreadyFundsRequestsEventId.contains(event.getId().toHexString())){
+  //               BigDecimal eventProfit =  event.getProfit();
+  //                BigDecimal fundsReq = fundsRequests.stream()
+  //                        .filter(funs-> isInList(funs, events) )
+  //                        .map(FundsRequest::getAmount)
+  //                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+  //                BigDecimal last = eventProfit.subtract(fundsReq, new MathContext(1,
+  // RoundingMode.HALF_UP));
+  //                if(last.compareTo(BigDecimal.ZERO)>0){
+  //                  objectMap.put(event.getId().toHexString(), last.toString());
+  //                }
+  //
+  //              }else{
+  //                objectMap.put(event.getId().toHexString(), event.getProfit().toString());
+  //              }
+  //            });
+  //    return objectMap;
+  //  }
+  //
+  //  public Boolean isInList(FundsRequest request, List<Event> events) {
+  //
+  //    List <Event> eventList = events.stream()
+  //            .filter(event -> request.getEventIds().contains(event.getId().toHexString() ) )
+  //            .toList();
+  //    return eventList.isEmpty();
+  //  }
 
 }

@@ -1,8 +1,10 @@
 package com.BookMyEvent.service.serviceImp;
 
 import com.BookMyEvent.dao.MailConfirmationRepository;
+import com.BookMyEvent.entity.Image;
 import com.BookMyEvent.entity.UserEmailData;
 import com.BookMyEvent.exception.GeneralException;
+import com.BookMyEvent.service.CloudinaryService;
 import com.BookMyEvent.service.MailService;
 import jakarta.mail.BodyPart;
 import jakarta.mail.Folder;
@@ -11,6 +13,7 @@ import jakarta.mail.Multipart;
 import jakarta.mail.Session;
 import jakarta.mail.Store;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.util.ByteArrayDataSource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,11 +28,14 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.io.ByteArrayInputStream;
+import java.net.URLConnection;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,6 +45,9 @@ import java.util.regex.Pattern;
 @Primary
 @Slf4j
 public class GmailSMTServiceImp implements MailService {
+
+  private final CloudinaryService cloudinaryService;
+
   @Value("${cloud.server.url}")
   private String serverUrl;
 
@@ -364,7 +373,7 @@ public class GmailSMTServiceImp implements MailService {
       String messageText5,
       String messageText6,
       String messageText7,
-      String imageUrl,
+      Image image,
       String userCabinetUrl) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     log.info("{}::{} - Sending email to: {}", clasName, methodName, emailTo);
@@ -379,7 +388,7 @@ public class GmailSMTServiceImp implements MailService {
               messageText5,
               messageText6,
               messageText7,
-              imageUrl,
+              image.getUrl(),
               userCabinetUrl);
       MimeMessage message = getMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, true, UTF_8_ENCODING);
@@ -388,6 +397,11 @@ public class GmailSMTServiceImp implements MailService {
       helper.setFrom(fromEmail);
       helper.setTo(emailTo);
       helper.setText(text, true);
+      byte[] imageBytes = cloudinaryService.downloadFile(image.getName());
+      String imageType = Optional.ofNullable(image.getContentType()).orElse("image/png");
+      log.info("{}::{}. - imageBytes mimeType {}", clasName, methodName, imageType);
+      ByteArrayDataSource dataSource = new ByteArrayDataSource(imageBytes, imageType);
+      helper.addInline("eventImage", dataSource);
       emailSender.send(message);
       log.info("{}::{}. - Email sent successfully to: {}", clasName, methodName, emailTo);
     } catch (Exception exception) {

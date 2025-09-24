@@ -6,4 +6,5 @@ public record OrderDetailsDto(String id,
                               String productCount,
                               String amount,
                               EventResponseDto event,
+                              UserResponseDto user,
                               String status){}

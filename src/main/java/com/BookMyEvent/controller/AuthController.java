@@ -242,7 +242,6 @@ public class AuthController {
                                     description = """
                 Example of User login:
                 - X-ID-Token: we put the corresponding token from Google in the request header.
-                - X-ACCESS-TOKEN: we put the corresponding token from Google in the request header.
                 """
                             )
                     )
@@ -266,9 +265,8 @@ public class AuthController {
                             })
             })
     @PostMapping("/login/google")
-    public ResponseEntity<LoginResponse> googleLogin(   @RequestHeader(value = "X-ID-Token", required = false) String idToken,
-                                                        @RequestHeader(value = "X-ACCESS-TOKEN", required = false) String accessToken) throws IOException {
-        LoginResponse response = googleAuthenticationService.googleLogin(idToken, accessToken);
+    public ResponseEntity<LoginResponse> googleLogin(   @RequestHeader(value = "X-ID-Token", required = false) String idToken) throws IOException {
+        LoginResponse response = googleAuthenticationService.googleLogin(idToken);
         log.info("AuthController::googleLogin - /login/googleLogin - return jwt with id {}", response.getUserId());
         return ResponseEntity.ok(response);
     }

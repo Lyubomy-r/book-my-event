@@ -36,6 +36,7 @@ public class GoogleAuthenticationServiceImp implements GoogleAuthenticationServi
             log.info("{}::validate.  start  message.", className);
             GoogleIdToken idToken = googleVerifier.verify(idTokenString);
             log.info("{}::validate.  finish  message.", className);
+            log.info("{}::validate.  finish  idToken {}.", className, idToken);
             if (idToken != null) {
                 return idToken.getPayload();
             } else {
@@ -96,15 +97,27 @@ public class GoogleAuthenticationServiceImp implements GoogleAuthenticationServi
         }
     }
 
-    public LoginResponse googleLogin(String idToken, String accessToken) throws IOException {
+    public LoginResponse googleLogin(String idToken) throws IOException {
         log.info("{}::googleLogin.  try  pars jwt like GoogleIdToken.", className);
         GoogleIdToken.Payload payload = validate(idToken);
         String email = payload.getEmail();
-        String sub = payload.getSubject();
-        User googleUser = getUserInfo(accessToken);
-        if (email.equals(googleUser.getEmail()) && sub.equals(googleUser.getGoogleId())) {
+        String socialIdentifier = payload.getSubject();
+        String name = payload.get("name").toString();
+        String avatarUrl = payload.get("picture").toString();;
+        log.info("fullName: " + name);
+        log.info("email: " + email);
+        log.info("picture: " + avatarUrl);
+        log.info("sub: " + socialIdentifier);
+        User googleUser =User.builder()
+                .googleId(socialIdentifier)
+                .email(email)
+                .name(name)
+//                        .surname(surname)
+                .build();
+//        User googleUser = getUserInfo(accessToken);
+//        if (email.equals(googleUser.getEmail()) && sub.equals(googleUser.getGoogleId())) {
             User user =
-                    userService.findByGoogleId(sub).orElseGet(() -> userService.saveGoogleUser(googleUser));
+                    userService.findByGoogleId(socialIdentifier).orElseGet(() -> userService.saveGoogleUser(googleUser));
             log.info("{}::doFilterInternal.  get or save google user", className);
             log.info(
                     "{}::doFilterInternal.  get or save google user {}", className, user.getId().toString());
@@ -115,13 +128,13 @@ public class GoogleAuthenticationServiceImp implements GoogleAuthenticationServi
                     HttpStatus.OK.value());
             log.info("AuthServiceImp::login. Verified  accessToken and return token to user ({}).", user.getEmail());
             return tokenPair;
-        }
-        LoginResponse tokenPair = new LoginResponse(null,
-                null, null,
-                String.format("Email (%s) is not confirmed",
-                        email),
-                HttpStatus.CONTINUE.value());
-        log.info("AuthServiceImp::login. Verified  accessToken and return token to user ({}).", email);
-        return tokenPair;
+//        }
+//        LoginResponse tokenPair = new LoginResponse(null,
+//                null, null,
+//                String.format("Email (%s) is not confirmed",
+//                        email),
+//                HttpStatus.CONTINUE.value());
+//        log.info("AuthServiceImp::login. Verified  accessToken and return token to user ({}).", email);
+//        return tokenPair;
     }
 }

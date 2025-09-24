@@ -77,7 +77,7 @@ public class WebSecurityConfig {
         cors.setAllowedOrigins(List.of("http://localhost:5173", frontUrl, "https://adjacent-lethia-sergiomail-580b8292.koyeb.app"));
         cors.setAllowedMethods(
             List.of(GET.name(), POST.name(), DELETE.name(), PATCH.name(), PUT.name(), OPTIONS.name()));
-        cors.setAllowedHeaders(List.of(ORIGIN, CONTENT_TYPE, ACCEPT, AUTHORIZATION));
+        cors.setAllowedHeaders(List.of(ORIGIN, CONTENT_TYPE, ACCEPT, AUTHORIZATION, "X-ID-Token"));
         cors.setExposedHeaders(
             List.of(CONTENT_TYPE, CACHE_CONTROL, CONTENT_LANGUAGE, CONTENT_LENGTH, LAST_MODIFIED));
         cors.setAllowCredentials(true);

@@ -5,6 +5,7 @@ import com.BookMyEvent.dao.OrderDetailsRepository;
 import com.BookMyEvent.dao.UserRepository;
 import com.BookMyEvent.entity.*;
 import com.BookMyEvent.entity.Enums.*;
+import com.BookMyEvent.entity.dto.EventResponseDto;
 import com.BookMyEvent.entity.dto.OrderDetailsDto;
 import com.BookMyEvent.entity.dto.PaymentStatusResponseDTO;
 import com.BookMyEvent.entity.dto.ProductDTO;
@@ -15,6 +16,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.time.*;
@@ -108,24 +112,54 @@ class OrderDetailsServiceImpTest {
         .event(event)
         .status(OrderStatus.PAID)
         .build();
-    List<OrderDetails> orderDetailsList = List.of(orderDetails);
-
-    ObjectId objectId = new ObjectId("66c648b600179737a3d5c235");
-    when(orderDetailsRepository.findByUser_Id(objectId)).thenReturn(orderDetailsList);
-
-    List<OrderDetailsDto> response = orderDetailsService.findAllUserOrders(objectId.toHexString());
-    response.forEach(System.out::println);
+    EventResponseDto eventResponseDto = new EventResponseDto();
+    eventResponseDto.setId(event.getId().toHexString());
+    eventResponseDto.setTitle(event.getTitle());
+    eventResponseDto.setDescription(event.getDescription());
+    eventResponseDto.setEventType(event.getEventType().getUkrainianName());
+    eventResponseDto.setEventCategory(event.getEventCategory().toString());
+    eventResponseDto.setEventStatus(event.getEventStatus().toString());
+    eventResponseDto.setEventFormat(event.getEventFormat().toString());
+    eventResponseDto.setAvailableTickets(event.getAvailableTickets());
+    eventResponseDto.setNumberOfTickets(event.getNumberOfTickets());
+    eventResponseDto.setUnlimitedTickets(event.getUnlimitedTickets());
+    eventResponseDto.setPhoneNumber(event.getPhoneNumber());
+    eventResponseDto.setTicketPrice(event.getTicketPrice());
+    eventResponseDto.setLocation(event.getLocation());
+    eventResponseDto.setAboutOrganizer(event.getAboutOrganizer());
+    eventResponseDto.setRating(event.getRating());
+    eventResponseDto.setImages(event.getImages());
+    eventResponseDto.setDate(event.getDate());
     ZoneId kyivZone = ZoneId.of("Europe/Kiev");
+    OrderDetailsDto orderDetailsDto =new OrderDetailsDto(
+            orderDetails.getId().toHexString(),
+            orderDetails.getOrderReference(),
+            orderDetails.getOrderDate().atZone(kyivZone).toString(),
+            paymentDetails.getProduct().productCount(),
+            paymentDetails.getProduct().amount(),
+            eventResponseDto,
+            null,
+            orderDetails.getStatus().getNameUa()
+    );
+
+    PageRequest pageRequest = PageRequest.of(0, 1);
+    Page<OrderDetails> orderDetailsList = new PageImpl<>(List.of(orderDetails), pageRequest, 1);
+    Page<OrderDetailsDto> orderDetailsDtoPage = new PageImpl<>(List.of(orderDetailsDto), pageRequest, 1);
+    ObjectId objectId = new ObjectId("66c648b600179737a3d5c235");
+    when(orderDetailsRepository.findByUser_Id(objectId, pageRequest)).thenReturn(orderDetailsList);
+
+    Page<OrderDetailsDto> response = orderDetailsService.findAllUserOrders(objectId.toHexString(), pageRequest);
+    response.forEach(System.out::println);
+
     ZonedDateTime kyivTime = orderDetails.getOrderDate().atZone(kyivZone);
     String orderDate = String.valueOf(kyivTime.toEpochSecond());
     assertFalse(response.isEmpty());
-    assertEquals(1, response.size());
-    assertEquals(orderDetails.getId().toHexString(), response.get(0).id());
-    assertEquals(orderDetails.getOrderReference(), response.get(0).orderReference());
-    assertEquals(kyivTime.toString(), response.get(0).orderDate());
-    assertEquals(event.getTicketPrice(), response.get(0).event().getTicketPrice());
-    assertEquals(orderDetails.getStatus().getNameUa(), response.get(0).status());
-    assertEquals(orderDetails.getOrderReference(), response.get(0).orderReference());
+    assertEquals(1, response.getContent().size());
+    assertEquals(orderDetailsDto.id(), response.getContent().get(0).id());
+    assertEquals(orderDetailsDto.orderReference(), response.getContent().get(0).orderReference());
+    assertEquals(orderDetailsDto.orderDate(), response.getContent().get(0).orderDate());
+    assertEquals(event.getTicketPrice(), response.getContent().get(0).event().getTicketPrice());
+    assertEquals(orderDetailsDto.status(), response.getContent().get(0).status());
   }
 
 }

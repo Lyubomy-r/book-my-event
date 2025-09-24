@@ -10,6 +10,8 @@ import com.BookMyEvent.service.OrderDetailsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -27,41 +29,65 @@ public class OrderDetailsServiceImp implements OrderDetailsService {
   private final String className = this.getClass().getSimpleName();
 
   @Override
-  public List<OrderDetailsDto> findAllUserOrders(String userId) {
+  public Page<OrderDetailsDto> findAllUserOrders(String userId, Pageable pageable) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     ObjectId objectId = new ObjectId(userId);
-    List<OrderDetails> orderDetailsList = orderDetailsRepository.findByUser_Id(objectId);
-    List<OrderDetailsDto> response =
-        orderDetailsList.stream()
-            .map(
-                order -> {
-                  ZoneId kyivZone = ZoneId.of("Europe/Kiev");
-                  ZonedDateTime kyivTime = order.getOrderDate().atZone(kyivZone);
-                  //            String orderDate = String.valueOf(kyivTime.toEpochSecond());
-                  EventResponseDto eventResponseDto = new EventResponseDto();
-                  eventResponseDto.setId(order.getEvent().getId().toHexString());
-                  eventResponseDto.setTitle(order.getEvent().getTitle());
-                  eventResponseDto.setDate(order.getEvent().getDate());
-                  eventResponseDto.setTicketPrice(order.getEvent().getTicketPrice());
-                  eventResponseDto.setTitle(order.getEvent().getTitle());
-                  eventResponseDto.setLocation(order.getEvent().getLocation());
-                  eventResponseDto.setImages(order.getEvent().getImages());
-                  return new OrderDetailsDto(
-                      order.getId().toHexString(),
-                      order.getOrderReference(),
-                      kyivTime.toString(),
-                      order.getPaymentDetails().getProduct().productCount(),
-                      order.getPaymentDetails().getProduct().productCount(),
-                      eventResponseDto,
-                      order.getStatus().getNameUa());
-                })
-            .toList();
+      Page<OrderDetails> orderDetailsList = orderDetailsRepository.findByUser_Id(objectId, pageable);
+
+//    List<OrderDetailsDto> response =
+//        orderDetailsList.stream()
+//            .map(
+//                order -> {
+//                  ZoneId kyivZone = ZoneId.of("Europe/Kiev");
+//                  ZonedDateTime kyivTime = order.getOrderDate().atZone(kyivZone);
+//                  //            String orderDate = String.valueOf(kyivTime.toEpochSecond());
+//                  EventResponseDto eventResponseDto = new EventResponseDto();
+//                  eventResponseDto.setId(order.getEvent().getId().toHexString());
+//                  eventResponseDto.setTitle(order.getEvent().getTitle());
+//                  eventResponseDto.setDate(order.getEvent().getDate());
+//                  eventResponseDto.setTicketPrice(order.getEvent().getTicketPrice());
+//                  eventResponseDto.setTitle(order.getEvent().getTitle());
+//                  eventResponseDto.setLocation(order.getEvent().getLocation());
+//                  eventResponseDto.setImages(order.getEvent().getImages());
+//                  return new OrderDetailsDto(
+//                      order.getId().toHexString(),
+//                      order.getOrderReference(),
+//                      kyivTime.toString(),
+//                      order.getPaymentDetails().getProduct().productCount(),
+//                      order.getPaymentDetails().getProduct().productCount(),
+//                      eventResponseDto,
+//                      order.getStatus().getNameUa());
+//                })
+//            .toList();
     log.info(
         "{}::{} - find all user orders return : {} orders.",
         className,
         methodName,
-        orderDetailsList.size());
-    return response;
+        orderDetailsList.getContent().size());
+    return orderDetailsList.map(order -> {
+        ZoneId kyivZone = ZoneId.of("Europe/Kiev");
+        ZonedDateTime kyivTime = order.getOrderDate().atZone(kyivZone);
+        //            String orderDate = String.valueOf(kyivTime.toEpochSecond());
+        EventResponseDto eventResponseDto = new EventResponseDto();
+        eventResponseDto.setId(order.getEvent().getId().toHexString());
+        eventResponseDto.setTitle(order.getEvent().getTitle());
+        eventResponseDto.setDate(order.getEvent().getDate());
+        eventResponseDto.setTicketPrice(order.getEvent().getTicketPrice());
+        eventResponseDto.setTitle(order.getEvent().getTitle());
+        eventResponseDto.setLocation(order.getEvent().getLocation());
+        eventResponseDto.setImages(order.getEvent().getImages());
+        eventResponseDto.setEventUrl(order.getEvent().getEventUrl());
+        eventResponseDto.setEventFormat(order.getEvent().getEventFormat().toString());
+        return new OrderDetailsDto(
+                order.getId().toHexString(),
+                order.getOrderReference(),
+                kyivTime.toString(),
+                order.getPaymentDetails().getProduct().productCount(),
+                order.getPaymentDetails().getProduct().productCount(),
+                eventResponseDto,
+                null,
+                order.getStatus().getNameUa());
+    });
   }
 
   @Override

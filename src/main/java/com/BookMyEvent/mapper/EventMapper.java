@@ -11,6 +11,7 @@ import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.Named;
 
 import static org.mapstruct.InjectionStrategy.CONSTRUCTOR;
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
@@ -56,22 +57,6 @@ public interface EventMapper {
     @Mapping(target = "images", ignore = true)
     EventDTO toEventDTO(Event event, UserResponseDto user);
 
-//    @Mapping(target = "id", expression = "java(convertToStringId(event.getId()))")
-//    @Mapping(target = "title", source = "event.title")
-//    @Mapping(target = "description", source = "event.description")
-//    @Mapping(target = "photoUrl", source = "event.photoUrl")
-//    @Mapping(target = "phoneNumber", source = "event.phoneNumber")
-//    @Mapping(target = "ticketPrice", source = "event.ticketPrice")
-//    @Mapping(target = "numberOfTickets", source = "event.numberOfTickets")
-//    @Mapping(target = "availableTickets", source = "event.availableTickets")
-//    @Mapping(target = "location", source = "event.location")
-//    @Mapping(target = "eventUrl", source = "event.eventUrl")
-//    @Mapping(target = "eventStatus", source = "event.eventStatus")
-//    @Mapping(target = "creationDate", source = "event.creationDate")
-//    @Mapping(target = "images", source = "event.images")
-//    @Mapping(target = "organizers", source = "user")
-//    EventDTO toEventDTOWithImages(Event event, UserResponseDto user);
-
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "creationDate", ignore = true)
     @Mapping(target = "images", ignore = true)
@@ -84,13 +69,13 @@ public interface EventMapper {
     @Mapping(target = "rating", ignore = true)
     @Mapping(target = "eventCategory", ignore = true)
     @Mapping(target = "eventStatus", ignore = true)
-//    @Mapping(target= "unlimitedTickets", ignore = true)
     void updateEventFromDTO(EventDTO eventDTO, @MappingTarget Event event);
 
     @Mapping(target = "hasUpdateRequest", constant = "false")
     @Mapping(target = "eventStatus", constant = "APPROVED")
     @Mapping(target = "id", ignore = true)
     Event toEventFromEventUpdateRequest(@MappingTarget Event event, EventUpdateRequest updatedEvent);
+
 
     @Mapping(target = "id", expression = "java(convertToStringId(event.getId()))")
     @Mapping(target = "title", source = "event.title")
@@ -116,6 +101,31 @@ public interface EventMapper {
     @Mapping(target = "profit", expression = "java(event.getProfit() != null ? event.getProfit().toString() : \"0\")")
     EventResponseDto toEventResponseDtoFromEvent(Event event,
                                                  UserResponseDto user);
+
+    @Named("mapToEventResponseDto")
+    @Mapping(target = "id", expression = "java(convertToStringId(event.getId()))")
+    @Mapping(target = "title", source = "event.title")
+    @Mapping(target = "description", source = "event.description")
+//    @Mapping(target = "photoUrl", source = "event.photoUrl")
+    @Mapping(target = "phoneNumber", source = "event.phoneNumber")
+    @Mapping(target = "ticketPrice", source = "event.ticketPrice")
+    @Mapping(target = "numberOfTickets", source = "event.numberOfTickets")
+    @Mapping(target = "availableTickets", source = "event.availableTickets")
+    @Mapping(target = "location", source = "event.location")
+//    @Mapping(target = "coordinates", source = "event.coordinates")
+    @Mapping(target = "eventUrl", source = "event.eventUrl")
+    @Mapping(target = "eventStatus", source = "event.eventStatus")
+    @Mapping(target = "creationDate", source = "event.creationDate")
+    @Mapping(target = "eventType", expression = "java(event.getEventType() != null ? event.getEventType().getUkrainianName() : null)")
+    @Mapping(target = "eventCategory", expression = "java(event.getEventCategory() != null ? event.getEventCategory().toString(): null)")
+    @Mapping(target = "images", source = "event.images")
+    @Mapping(target = "organizers", ignore = true)
+//    @Mapping(target = "eventUpdateRequest", ignore = true)
+    @Mapping(target = "hasUpdateRequest", expression = "java(event.getHasUpdateRequest() != null ? event.getHasUpdateRequest() : null)")
+    @Mapping(target = "hasCancelRequest", expression = "java(event.getHasCancelRequest() != null ? event.getHasCancelRequest() : null)")
+    @Mapping(target = "soldTickets", expression = "java(event.getSoldTickets() != null ? event.getSoldTickets().toString() : \"0\")")
+    @Mapping(target = "profit", expression = "java(event.getProfit() != null ? event.getProfit().toString() : \"0\")")
+    EventResponseDto mapToEventResponseDto(Event event);
 
     @Mapping(target = "id", expression = "java(convertToStringId(event.getId()))")
     @Mapping(target = "title", source = "event.title")

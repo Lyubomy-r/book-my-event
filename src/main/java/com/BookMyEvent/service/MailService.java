@@ -1,5 +1,7 @@
 package com.BookMyEvent.service;
 
+import com.BookMyEvent.entity.Image;
+
 public interface MailService {
 //    void mailSenderAfterRegistration(String emailTo);
     boolean getMessagesFromUser(String emailTo);
@@ -38,7 +40,7 @@ public interface MailService {
             String messageText5,
             String messageText6,
             String messageText7,
-            String imageUrl,
+            Image image,
             String userCabinetUrl);
 
     String replaceTextToLinkWithHtml(String text, String urlToEvent);

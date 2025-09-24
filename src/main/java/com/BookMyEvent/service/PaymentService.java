@@ -13,7 +13,7 @@ public interface PaymentService {
 
   Map<String, String> paymentVerification(PaymentStatusResponseDTO statusResponse);
 
-  String paymentVerificationFreeEvents(String eventId, PaymentRequestDTO paymentRequest);
+  OrderDetailsDto paymentVerificationFreeEvents(String eventId, PaymentRequestDTO paymentRequest);
 
   OrderDetails findByOrderReference(String orderReference);
 

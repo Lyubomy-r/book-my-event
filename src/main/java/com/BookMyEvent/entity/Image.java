@@ -27,4 +27,5 @@ public class Image {
   private String url;
   private LocalDateTime creationDate;
   private boolean isMain;
+  private String contentType;
 }

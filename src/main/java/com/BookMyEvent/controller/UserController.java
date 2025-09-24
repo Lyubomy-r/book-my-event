@@ -1,5 +1,6 @@
 package com.BookMyEvent.controller;
 
+import com.BookMyEvent.entity.OrderDetails;
 import com.BookMyEvent.entity.dto.*;
 import com.BookMyEvent.exception.model.ErrorResponseDto;
 import com.BookMyEvent.service.EventService;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -113,14 +115,16 @@ public class UserController {
 
   @GetMapping("/orders/{userId}")
 //  @PreAuthorize("#userId == authentication.principal['id']")
-  public ResponseEntity<List<OrderDetailsDto>> findAllUserOrders(
-      @PathVariable("userId") String userId) {
+  public ResponseEntity<Page<OrderDetailsDto>> findAllUserOrders(
+      @PathVariable("userId") String userId,
+      @PageableDefault(page = 0, size = 6,
+      sort = "orderDate", direction = Sort.Direction.DESC) Pageable pageable) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    List<OrderDetailsDto> userResponse = orderDetailsService.findAllUserOrders(userId);
+      Page<OrderDetailsDto> userResponse = orderDetailsService.findAllUserOrders(userId, pageable);
     log.info(
-        "{}::{} - /users/orders/{userId} - Return User order.",
+        "{}::{} - /users/orders/{userId} - Return User order. ({})",
         className,
-        methodName);
+        methodName, userResponse );
     return ResponseEntity.ok(userResponse);
   }
 

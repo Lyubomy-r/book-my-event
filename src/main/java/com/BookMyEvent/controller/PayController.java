@@ -153,8 +153,8 @@ public class PayController {
       @PathVariable("eventId") String eventId, @RequestBody PaymentRequestDTO paymentRequest) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     log.info("Class: {}, Method: {} - get request eventId {}", className, methodName, eventId);
-    String responseMessage = paymentService.paymentVerificationFreeEvents(eventId, paymentRequest);
-    AppResponse response = new AppResponse(200, responseMessage);
+    OrderDetailsDto responseOrderDetails = paymentService.paymentVerificationFreeEvents(eventId, paymentRequest);
+    AppResponse response = new AppResponse(200, "Order paid successfully.", responseOrderDetails);
     log.info("Class: {}, Method: {} - return {}", className, methodName, response);
     return ResponseEntity.ok(response);
   }

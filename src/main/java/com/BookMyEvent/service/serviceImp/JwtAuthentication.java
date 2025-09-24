@@ -89,6 +89,15 @@ public class JwtAuthentication {
     return claims.getIssuer();
   }
 
+  public boolean hasIssuerFromToken(String token) {
+    try{
+      var claims = Jwts.parser().setSigningKey(signingKey).parseClaimsJws(token).getBody().getIssuer();
+      return StringUtils.hasText(claims);
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
   public String extractJwtFromRequest(HttpServletRequest request) {
     var bearerToken = request.getHeader("Authorization");
     if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
