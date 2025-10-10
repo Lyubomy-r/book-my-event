@@ -121,7 +121,7 @@ public class TestValidException {
     Set<ConstraintViolation<LoginDto>> violations = validator.validate(dto);
 
     assertEquals(1, violations.size());
-    assertEquals("має відповідати шаблону \"^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[@$!%*?&]).+$\"",
+    assertEquals("Пароль повинен містити велику літеру, цифру і спеціальний символ",
         violations.iterator().next().getMessage());
   }
 }

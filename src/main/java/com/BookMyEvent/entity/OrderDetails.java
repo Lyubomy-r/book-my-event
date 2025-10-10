@@ -32,5 +32,7 @@ public class OrderDetails {
   private Event event;
   @DBRef
   private User user;
+  @DBRef
+  private List<Ticket> tickets;
   private OrderStatus status;
 }

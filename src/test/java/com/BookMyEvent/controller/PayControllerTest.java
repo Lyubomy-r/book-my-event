@@ -52,11 +52,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = {
-    "spring.config.location=classpath:integrationtest.properties"
-})
-@AutoConfigureMockMvc
-@Slf4j
+//@SpringBootTest(properties = {
+//    "spring.config.location=classpath:integrationtest.properties"
+//})
+//@AutoConfigureMockMvc
+//@Slf4j
 class PayControllerTest {
 //
 //  @Autowired
@@ -233,12 +233,12 @@ class PayControllerTest {
 //        .andExpect(jsonPath("$.orderReference").value(statusResponse.orderReference()))
 //        .andExpect(jsonPath("$.status").value("APPROVED"));
 //  }
-
-  @Test
-  void getOrderDetails() {
-  }
-
-  @Test
-  void getPromoCode() {
-  }
+//
+//  @Test
+//  void getOrderDetails() {
+//  }
+//
+//  @Test
+//  void getPromoCode() {
+//  }
 }

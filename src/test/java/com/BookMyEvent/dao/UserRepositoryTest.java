@@ -1,5 +1,6 @@
 package com.BookMyEvent.dao;
 
+import com.BookMyEvent.TestConfig;
 import com.BookMyEvent.entity.Enums.Role;
 import com.BookMyEvent.entity.Enums.Status;
 import com.BookMyEvent.entity.User;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalDateTime;
@@ -22,10 +24,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @DataMongoTest
 @TestPropertySource(
     locations = "classpath:integrationtest.properties")
+@Import(TestConfig.class)
 class UserRepositoryTest {
 
   @Autowired
   private UserRepository userRepository;
+
+
 
   private User userOne;
 

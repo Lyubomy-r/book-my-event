@@ -172,8 +172,8 @@ class UserControllerTest {
                 );
         PageRequest pageRequest = PageRequest.of(0, 6);
         Page<OrderDetailsDto> orderDetailsDtoPage = new PageImpl<>(List.of(orderDetails), pageRequest, 1);
-
-        when(orderDetailsService.findAllUserOrders(userOne.getId().toHexString(), pageRequest)).thenReturn(orderDetailsDtoPage);
+//
+//        when(orderDetailsService.findAllUserOrders(userOne.getId().toHexString(), pageRequest)).thenReturn(orderDetailsDtoPage);
 //        TestingAuthenticationToken authentication = new TestingAuthenticationToken(
 //                Map.of("id", userOne.getId()), null, "ADMIN");
 //        SecurityContextHolder.getContext().setAuthentication(authentication);

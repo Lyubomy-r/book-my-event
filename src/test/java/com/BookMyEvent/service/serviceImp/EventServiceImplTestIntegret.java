@@ -406,7 +406,7 @@ public class EventServiceImplTestIntegret {
     String contact = "0923456326";
     Image image =
         new Image(
-            new ObjectId("66c648b600179737a3d5c543"), "imageTestname", null, null, null, false);
+            new ObjectId("66c648b600179737a3d5c543"), "imageTestname", null, null, null, false, null);
     EventDeleteRequest eventDTO = new EventDeleteRequest();
     eventDTO.setId("66c648b600179737a3d5c123");
     eventDTO.setUserId(userOne.getId().toHexString());

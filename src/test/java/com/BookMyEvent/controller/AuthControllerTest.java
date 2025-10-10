@@ -472,7 +472,7 @@ class AuthControllerTest {
               .contentType(MediaType.APPLICATION_JSON)
               .content(requestBody))
           .andExpect(status().isBadRequest())
-          .andExpect(jsonPath("$.details.password").value("must match \"^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[@$!%*?&]).+$\""));
+          .andExpect(jsonPath("$.details.password").value("Пароль повинен містити велику літеру, цифру і спеціальний символ"));
     }
 
     @Test

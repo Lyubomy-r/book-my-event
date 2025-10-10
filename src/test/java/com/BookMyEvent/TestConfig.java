@@ -4,9 +4,12 @@ import com.BookMyEvent.converter.LocalTimeToStringConverter;
 import com.BookMyEvent.converter.StringToLocalTimeConverter;
 import com.BookMyEvent.entity.CityList;
 import com.BookMyEvent.mapper.EventMapperImpl;
+import com.BookMyEvent.mapper.TicketMapper;
+import com.BookMyEvent.mapper.TicketMapperImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -15,7 +18,7 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import java.time.Clock;
 import java.util.Properties;
 
-@Configuration
+@TestConfiguration
 public class TestConfig {
 //
 //  @Bean
@@ -67,6 +70,11 @@ public class TestConfig {
   @Bean
   public CityList cityList() {
     return new CityList();
+  }
+
+  @Bean
+  public TicketMapper ticketMapper() {
+    return new TicketMapperImpl();
   }
 
 

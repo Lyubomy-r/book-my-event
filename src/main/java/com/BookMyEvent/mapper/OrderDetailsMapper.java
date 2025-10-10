@@ -10,6 +10,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.time.Instant;
+import java.util.Objects;
 
 import static org.mapstruct.InjectionStrategy.CONSTRUCTOR;
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
@@ -28,7 +29,7 @@ public interface OrderDetailsMapper {
   OrderDetailsDto newOrderDetails(OrderDetails orderDetails);
 
 
-  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "id", expression = "java(createObjectId())")
   @Mapping(target = "reservationExpires", ignore = true)
   @Mapping(target = "row", ignore = true)
   @Mapping(target = "seat", ignore = true)
@@ -44,6 +45,22 @@ public interface OrderDetailsMapper {
                               User user,
                               PaymentDetails paymentDetails);
 
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "reservationExpires", ignore = true)
+  @Mapping(target = "row", ignore = true)
+  @Mapping(target = "seat", ignore = true)
+  @Mapping(target = "status", constant = "UNPAID")
+  @Mapping(target = "orderReference", source = "orderReference")
+  @Mapping(target = "orderDate", source = "orderDateInInstant")
+  @Mapping(target = "event", source = "savedEvent")
+  @Mapping(target = "user", source = "user")
+  @Mapping(target = "paymentDetails", source = "paymentDetails")
+  OrderDetails toOrderDetailsForPreparePayment(String orderReference,
+                                             Instant orderDateInInstant,
+                                             Event savedEvent,
+                                             User user,
+                                             PaymentDetails paymentDetails);
+
   default String asString(ObjectId id) {
     return id != null ? id.toHexString() : null;
   }
@@ -58,5 +75,9 @@ public interface OrderDetailsMapper {
     return orderDetails.getPaymentDetails().getProduct().amount() != null
         ? orderDetails.getPaymentDetails().getProduct().amount()
         : null;
+  }
+
+  default ObjectId createObjectId() {
+    return new ObjectId();
   }
 }

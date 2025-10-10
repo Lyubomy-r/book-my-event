@@ -32,7 +32,8 @@ public class BookingServiceImpl implements BookingService {
     private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
-    private  JavaMailSender mailSender;
+    private final  JavaMailSender mailSender;
+    private final TicketMapper ticketMapper;
 
     @Override
     public List<Event> getPaginatedEvents(int page, int size) {
@@ -80,8 +81,8 @@ public class BookingServiceImpl implements BookingService {
             throw new GeneralException("The selected seat is already booked.", HttpStatus.CONFLICT);
         }
 
-        Ticket newTicket = TicketMapper.INSTANCE.toTicket(eventId, userId, numberOfTickets, row, seat);
-        ticketRepository.save(newTicket);
+//        Ticket newTicket = ticketMapper.toTicket(eventId, userId, numberOfTickets, row, seat);
+//        ticketRepository.save(newTicket);
 
         updateEventAvailableTickets(event, numberOfTickets);
 
@@ -102,17 +103,17 @@ public class BookingServiceImpl implements BookingService {
     public void clearExpiredReservations() {
         log.info("BookingServiceImpl::clearExpiredReservations - Clearing expired reservations");
 
-        List<Ticket> expiredTickets = ticketRepository.findByReservationExpiresBefore(LocalDateTime.now());
-        ticketRepository.deleteAll(expiredTickets);
+//        List<Ticket> expiredTickets = ticketRepository.findByReservationExpiresBefore(LocalDateTime.now());
+//        ticketRepository.deleteAll(expiredTickets);
 
-        for (Ticket ticket : expiredTickets) {
-            Event event = eventRepository.findById(ticket.getEventId()).orElse(null);
-            if (event != null) {
-                event.setAvailableTickets(event.getAvailableTickets() + ticket.getNumberOfTickets());
-                eventRepository.save(event);
-                log.info("BookingServiceImpl::clearExpiredReservations - Restored {} tickets for event ID: {}", ticket.getNumberOfTickets(), event.getId());
-            }
-        }
+//        for (Ticket ticket : expiredTickets) {
+//            Event event = eventRepository.findById(new ObjectId(ticket.getEventId())).orElse(null);
+//            if (event != null) {
+////                event.setAvailableTickets(event.getAvailableTickets() + ticket.getTicketReference());
+//                eventRepository.save(event);
+//                log.info("BookingServiceImpl::clearExpiredReservations - Restored {} tickets for event ID: {}", 1, event.getId());
+//            }
+//        }
     }
 
     @Override
@@ -136,6 +137,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public boolean isTicketExpired(Ticket ticket) {
         log.info("BookingServiceImpl::isTicketExpired - Checking if ticket ID: {} is expired", ticket.getId());
-        return ticket.getReservationExpires().isBefore(LocalDateTime.now());
+//        return ticket.getReservationExpires().isBefore(LocalDateTime.now());
+        return false;
     }
 }

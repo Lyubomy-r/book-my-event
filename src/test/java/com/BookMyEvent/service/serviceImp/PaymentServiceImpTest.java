@@ -166,7 +166,7 @@ class PaymentServiceImpTest {
     PaymentRequestDTO paymentRequest =
         new PaymentRequestDTO(
             "67a7b34c48d0462fabc62d22",
-            new ProductDTO("", "700", "1", "700"),
+            new ProductDTO("", "700", "1", "735"),
             "Joh",
             "Feris",
             "+380345728991",

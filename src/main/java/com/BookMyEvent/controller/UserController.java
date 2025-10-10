@@ -115,12 +115,12 @@ public class UserController {
 
   @GetMapping("/orders/{userId}")
 //  @PreAuthorize("#userId == authentication.principal['id']")
-  public ResponseEntity<Page<OrderDetailsDto>> findAllUserOrders(
+  public ResponseEntity<Page<TicketDto>> findAllUserOrders(
       @PathVariable("userId") String userId,
       @PageableDefault(page = 0, size = 6,
       sort = "orderDate", direction = Sort.Direction.DESC) Pageable pageable) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
-      Page<OrderDetailsDto> userResponse = orderDetailsService.findAllUserOrders(userId, pageable);
+      Page<TicketDto> userResponse = orderDetailsService.findAllUserOrders(userId, pageable);
     log.info(
         "{}::{} - /users/orders/{userId} - Return User order. ({})",
         className,

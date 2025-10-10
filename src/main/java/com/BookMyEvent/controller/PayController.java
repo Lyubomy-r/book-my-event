@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -93,7 +94,7 @@ public class PayController {
   @PostMapping("/{eventId}")
   @PreAuthorize("#paymentRequest.userId == authentication.principal['id']")
   public ResponseEntity<PaymentResponseDTO> prepareForPayment(
-      @PathVariable("eventId") String eventId, @RequestBody PaymentRequestDTO paymentRequest) {
+      @PathVariable("eventId") String eventId, @Valid @RequestBody PaymentRequestDTO paymentRequest) {
     String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
     log.info("Class: {}, Method: {} - get request eventId {}", className, methodName, eventId);
     PaymentResponseDTO response = paymentService.prepareForPayment(eventId, paymentRequest);

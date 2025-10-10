@@ -1,10 +1,12 @@
 package com.BookMyEvent.entity.dto;
 
+import jakarta.validation.Valid;
+
 import java.util.List;
 
 public record PaymentRequestDTO(
                                 String userId,
-                                ProductDTO product,
+                                @Valid ProductDTO product,
                                 String clientFirstName,
                                 String clientLastName,
                                 String clientPhone,
