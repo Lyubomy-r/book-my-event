@@ -37,4 +37,6 @@ public interface TicketRepository extends MongoRepository<Ticket, String> {
   Optional<Ticket> findByEventIdAndUserId(String eventId, String userId);
 
   List<Ticket> findByEventIdAndRowAndSeat(String eventId, Long row, Long seat);
+
+  void deleteByEventId(String eventId);
 }

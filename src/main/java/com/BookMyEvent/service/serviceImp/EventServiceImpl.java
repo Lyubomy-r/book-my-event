@@ -1,11 +1,7 @@
 package com.BookMyEvent.service.serviceImp;
 
+import com.BookMyEvent.dao.*;
 import com.BookMyEvent.entity.CityList;
-import com.BookMyEvent.dao.EventDeleteRequestRepository;
-import com.BookMyEvent.dao.EventRepository;
-import com.BookMyEvent.dao.EventUpdateRequestRepository;
-import com.BookMyEvent.dao.ImageRepository;
-import com.BookMyEvent.dao.UserRepository;
 import com.BookMyEvent.entity.*;
 import com.BookMyEvent.entity.Enums.EventCategory;
 import com.BookMyEvent.entity.Enums.EventFormat;
@@ -16,11 +12,7 @@ import com.BookMyEvent.exception.GeneralException;
 import com.BookMyEvent.mapper.EventMapper;
 import com.BookMyEvent.mapper.EventUpdateRequestMapper;
 import com.BookMyEvent.mapper.UserMapper;
-import com.BookMyEvent.service.CloudinaryService;
-import com.BookMyEvent.service.EventService;
-import com.BookMyEvent.service.MailService;
-import com.BookMyEvent.service.UserLikedEventService;
-import com.BookMyEvent.service.UserService;
+import com.BookMyEvent.service.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +52,9 @@ public class EventServiceImpl implements EventService {
   private final EventDeleteRequestRepository eventDeleteRepository;
   private final String className = this.getClass().getSimpleName();
   private final CityList cityList;
+  private final OrderDetailsService orderDetailsService;
+  private final OrderDetailsRepository orderDetailsRepository;
+  private final TicketRepository ticketRepository;
 
   @Override
   @Transactional
@@ -563,6 +558,21 @@ public class EventServiceImpl implements EventService {
     eventDeleteRepository.delete(existDeleteRequest);
     likedEventService.deleteByEventId(event.getId().toHexString());
     log.info("{}::{} - Event marked as deleted: {}", className, methodName, eventId);
+  }
+
+  @Override
+  public void deleteEvents(List<String> eventIds) {
+    String methodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    log.info("{}::{} - Deleting event ID", className, methodName);
+    List <Event> events = eventIds.stream()
+            .map(this::findEventById)
+            .toList();
+    events.forEach(event-> mediaService.deleteAllEventImg(event.getImages()));
+    events.forEach(event-> eventRepository.delete(event));
+    events.forEach(event->  likedEventService.deleteByEventId(event.getId().toHexString()));
+    events.forEach(event->  orderDetailsRepository.deleteByEventId(event.getId()));
+    events.forEach(event->  ticketRepository.deleteByEventId(event.getId().toHexString()));
+    log.info("{}::{} - Event marked as deleted", className, methodName);
   }
 
   @Override

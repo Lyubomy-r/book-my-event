@@ -30,6 +30,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 
+import java.util.List;
 import java.util.Map;
 
 import static com.BookMyEvent.config.SwaggerConfig.PAGE_EVENT_RESPONSEDTO_PAYLOAD_SCHEMA;
@@ -662,4 +663,26 @@ public class AdminController {
     log.info("Class: {}, Method: deleteEvent - Deleting event with id: {}", className, eventId);
     return ResponseEntity.status(HttpStatus.OK).body(response);
   }
+
+//    @DeleteMapping("/events/list")
+//    @Hidden
+//    public ResponseEntity<AppResponse> deleteListEvent(
+//            @RequestBody List<String> eventIds) {
+//        eventService.deleteEvents(eventIds);
+//        AppResponse response = new AppResponse(
+//                HttpStatus.OK.value(), "Event deleted successfully");
+//        log.info("Class: {}, Method: deleteEvent - Deleting event with id", className);
+//        return ResponseEntity.status(HttpStatus.OK).body(response);
+//    }
+//
+//    @DeleteMapping("/users/list")
+//    @Hidden
+//    public ResponseEntity<AppResponse> deleteListUsers(
+//            @RequestBody List<String> userIds) {
+//        String message = userService.deleteUserList(userIds);
+//        AppResponse response = new AppResponse(
+//                HttpStatus.OK.value(), message);
+//        log.info("Class: {}, Method: deleteListUUsers - Deleting users ", className);
+//        return ResponseEntity.status(HttpStatus.OK).body(response);
+//    }
 }

@@ -274,6 +274,33 @@ public class UserServiceImp implements UserService {
   }
 
   @Override
+  public String deleteUserList(List<String> userId) {
+
+//    if (userId == null || userId.isEmpty()) {
+//      log.warn("UserServiceImp::delete. Return error message.");
+//      throw new GeneralException(
+//              String.format("User ID cannot be null or empty. %s ", userId), HttpStatus.BAD_REQUEST);
+//    }
+    List<User> users =userId.stream()
+            .map(srtId-> userRepository
+                    .findById(new ObjectId(srtId)).get())
+            .toList();
+//            userRepository
+//                    .findById(new ObjectId(userId))
+//                    .orElseThrow(
+//                            () -> {
+//                              log.warn("UserServiceImp::updateFields. Return error message.");
+//                              return new GeneralException(
+//                                      String.format(NOT_FOUND_MESSAGE_ID, userId), HttpStatus.NOT_FOUND);
+//                            });
+    log.info("UserServiceImp::deleteUserList. Deleted all user from list by ID.");
+    users.forEach(user-> mediaService.deleteUserImg(user.getAvatarImage()));
+    userRepository.deleteAll(users);
+    users.forEach(user->  likedEventService.deleteByUserId(user.getId().toHexString()));
+    return "Users was deleted successfully.";
+  }
+
+  @Override
   public String deleteFromAdmin(String userId) {
     if (userId == null || userId.isEmpty()) {
       log.warn("UserServiceImp::deleteFromAdmin. Return error message.");

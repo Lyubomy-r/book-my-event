@@ -18,4 +18,5 @@ public interface OrderDetailsRepository extends MongoRepository<OrderDetails, Ob
   List<OrderDetails> findByEvent_IdAndStatus(ObjectId eventId, OrderStatus status);
 
   Page<OrderDetails> findByUser_Id(ObjectId eventId, Pageable pageable);
+  void deleteByEventId(ObjectId eventId);
 }

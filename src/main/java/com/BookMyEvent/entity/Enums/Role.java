@@ -7,7 +7,8 @@ public enum Role {
 
         VISITOR,
         ORGANIZER,
-        ADMIN;
+        ADMIN,
+        DEMO_ADMIN;
 
         public static List<Role> getAllRoles() {
                 return Arrays.asList(Role.values());

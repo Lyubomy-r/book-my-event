@@ -65,4 +65,6 @@ public interface EventService {
 
     void userDeleteEvent(String eventId, String userId);
 
+    void deleteEvents(List<String> eventIds);
+
 }

@@ -52,4 +52,6 @@ public interface UserService {
 
    Optional<User> findById(String userId);
 
+   String deleteUserList(List<String> userId);
+
 }
